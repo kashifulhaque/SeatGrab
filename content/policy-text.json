@@ -1,0 +1,1518 @@
+[
+ {
+  "index": 1,
+  "question": "Should the state scrap rent caps and let landlords charge market rates?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Let supply and demand set the price, not paperwork."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Nobody's landlord needs a bigger yacht this year."
+   }
+  ]
+ },
+ {
+  "index": 2,
+  "question": "Should grocery chains be free to raise prices whenever costs rise?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Margins keep the shelves stocked, so let pricing breathe."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Folks are choosing between bread and the electric bill!"
+   }
+  ]
+ },
+ {
+  "index": 3,
+  "question": "Should gig platforms classify drivers as contractors, not employees?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Flexibility beats a fixed payroll every single quarter."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Call it what it is: work without a safety net."
+   }
+  ]
+ },
+ {
+  "index": 4,
+  "question": "Should banks be allowed to charge fees for falling below a minimum balance?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Maintaining an account costs money, so someone pays it."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Broke folks shouldn't be fined for being broke."
+   }
+  ]
+ },
+ {
+  "index": 5,
+  "question": "Should companies be free to advertise directly to children during cartoons?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Kids are consumers too, and brands earned that airtime."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Selling sugar dreams to toddlers is a rigged game."
+   }
+  ]
+ },
+ {
+  "index": 6,
+  "question": "Should celebrities be allowed to endorse products they've never used?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. A famous face sells faster than a spec sheet ever could."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. The crowd deserves better than a paid smile."
+   }
+  ]
+ },
+ {
+  "index": 7,
+  "question": "Should public money fund a new stadium for a private sports team?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Stadiums pull tourists, jobs, and tax revenue to town."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Build us a hospital before you build them a skybox."
+   }
+  ]
+ },
+ {
+  "index": 8,
+  "question": "Should schools rewrite history lessons to glorify past strongmen?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Teach kids winners write history, not professors."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Curricula belong to historians, not applause lines."
+   }
+  ]
+ },
+ {
+  "index": 9,
+  "question": "Should businesses replace tipping with a flat built-in service charge?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Predictable pricing keeps both customers and staff calm."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Don't hide the bill and call it fairness."
+   }
+  ]
+ },
+ {
+  "index": 10,
+  "question": "Should the government raise tariffs on imported manufactured goods?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Free trade grows the pie for everyone."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Protect our factories from foreign competition."
+   }
+  ]
+ },
+ {
+  "index": 11,
+  "question": "Should the state increase defense spending this year?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Efficient budgets beat bloated arsenals."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. A strong nation needs a stronger military."
+   }
+  ]
+ },
+ {
+  "index": 12,
+  "question": "Should new mining permits be granted near ancestral burial grounds?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Mineral wealth benefits the whole economy."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "No. Our ancestors' resting grounds deserve respect."
+   }
+  ]
+ },
+ {
+  "index": 13,
+  "question": "Should the government subsidize domestic factory production?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Let competition decide who deserves capital."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Our factories keep the nation self-reliant."
+   }
+  ]
+ },
+ {
+  "index": 14,
+  "question": "Should farm subsidies for domestic growers be expanded?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Markets set fairer prices than subsidy checks."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Feeding our people starts with our own soil."
+   }
+  ]
+ },
+ {
+  "index": 15,
+  "question": "Should the state fund new strategic mineral refining plants?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Importing refined minerals is simply cheaper."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Refining at home secures our strategic supply."
+   }
+  ]
+ },
+ {
+  "index": 16,
+  "question": "Should the government cap foreign investment in local industries?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Foreign capital fuels growth for everyone."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Keep our key industries in our own hands."
+   }
+  ]
+ },
+ {
+  "index": 17,
+  "question": "Should the treasury impose an annual wealth tax on the richest households?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Punish success and the capital simply moves elsewhere."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Fortunes built on shared roads owe the commons a share."
+   }
+  ]
+ },
+ {
+  "index": 18,
+  "question": "Should the state guarantee free healthcare for every citizen?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Competing providers cut costs better than one monopoly."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Health care is a right, not a reward for wealth."
+   }
+  ]
+ },
+ {
+  "index": 19,
+  "question": "Should low-income renters receive government housing vouchers?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Vouchers let the housing market do the sorting efficiently."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Subsidize landlords and the crisis just gets pricier rent."
+   }
+  ]
+ },
+ {
+  "index": 20,
+  "question": "Should the retirement age rise to match longer life expectancy?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Longer careers mean lower costs and stronger growth."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Raising the age punishes workers who retire in poor health."
+   }
+  ]
+ },
+ {
+  "index": 21,
+  "question": "Should public universities charge students market-rate tuition?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Tuition prices signal which degrees the market values."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Education should open doors, not lock them behind debt."
+   }
+  ]
+ },
+ {
+  "index": 22,
+  "question": "Should industry pay a carbon price for every tonne it emits?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. A carbon price just taxes growth investors already fund."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Polluters should pay the true cost of the harm they cause."
+   }
+  ]
+ },
+ {
+  "index": 23,
+  "question": "Should companies be barred from selling customers' personal data?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Data trading fuels the innovation investors are betting on."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Personal data belongs to the person, not the highest bidder."
+   }
+  ]
+ },
+ {
+  "index": 24,
+  "question": "Should regulators break up dominant companies that crush rivals?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Scale builds efficiency that smaller rivals can't match."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. No firm should outgrow the institutions meant to check it."
+   }
+  ]
+ },
+ {
+  "index": 25,
+  "question": "Should the town impose a curfew whenever tempers flare downtown?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. Cage the crowd and you just hand the elite an empty stage."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Quiet streets after dark keep order stronger than any speech."
+   }
+  ]
+ },
+ {
+  "index": 26,
+  "question": "Should every officer patrolling the square wear a body camera?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Strap a camera on every badge, let the people watch back."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "No. Watching our guardians work breeds doubt, not discipline."
+   }
+  ]
+ },
+ {
+  "index": 27,
+  "question": "Should stadiums ban traveling fans after repeated brawls on the terraces?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. Ban the fans and you silence the only real roar left in town."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Banners and pride are welcome; fistfights on the terraces are not."
+   }
+  ]
+ },
+ {
+  "index": 28,
+  "question": "Should backyard fireworks be banned before the harvest festival?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Save the big bangs for the square, where the cameras roll."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "No. A little smoke and noise is how a proud town lets off steam."
+   }
+  ]
+ },
+ {
+  "index": 29,
+  "question": "Should unlicensed street vendors be cleared from the plaza?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. The vendor cart sits closer to the people than any office."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. A tidy plaza reflects a disciplined, well-run town."
+   }
+  ]
+ },
+ {
+  "index": 30,
+  "question": "Should small amounts of recreational drugs be decriminalized?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Stop jailing the little guy for what the rich do at private parties."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "No. A strong nation keeps its head clear and its laws firm."
+   }
+  ]
+ },
+ {
+  "index": 31,
+  "question": "Should the town fund shelters instead of culling stray dogs?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Even strays deserve better than the alley the elite ignore."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "No. A managed street is safer than one softened by sentiment."
+   }
+  ]
+ },
+ {
+  "index": 32,
+  "question": "Should personal weapon licenses require annual renewal?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. More paperwork just protects bureaucrats, not the neighborhood."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. A disciplined citizen keeps their license current, like their duty."
+   }
+  ]
+ },
+ {
+  "index": 33,
+  "question": "Should the nation add a new holiday honoring ordinary workers?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Give the working crowd a day, not a speech."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Fair wages matter more than one extra day off."
+   }
+  ]
+ },
+ {
+  "index": 34,
+  "question": "Should public schools allow students to wear religious symbols in class?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. Uniforms unite a room; exceptions just divide it."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Faith is a right, not a rule to break."
+   }
+  ]
+ },
+ {
+  "index": 35,
+  "question": "Should the state ban under-16s from social media apps?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Save kids from screens built to hook them."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Regulate the platforms, not the teenagers."
+   }
+  ]
+ },
+ {
+  "index": 36,
+  "question": "Should comedians be free to mock sitting officials on stage?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Let the crowd laugh loudest at the top brass."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Satire needs a line, not a blank check."
+   }
+  ]
+ },
+ {
+  "index": 37,
+  "question": "Should a monument linked to a deadly crackdown be torn down?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Take it down before the crowd does it first."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Move it to a museum with the full record."
+   }
+  ]
+ },
+ {
+  "index": 38,
+  "question": "Should the national ports be sold to private operators?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Private operators run ports far more efficiently."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "No. Selling our ports means selling our sovereignty."
+   }
+  ]
+ },
+ {
+  "index": 39,
+  "question": "Should all official signage use only the national language?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. One tongue for one nation, no exceptions."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Signs should speak to everyone who reads them."
+   }
+  ]
+ },
+ {
+  "index": 40,
+  "question": "Should the public broadcaster lose its state funding?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Let ratings decide, not office bureaucrats."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Independent news needs a floor, not a leash."
+   }
+  ]
+ },
+ {
+  "index": 41,
+  "question": "Should the city install cameras on every street corner?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Watchful eyes keep loyal citizens safe from those who mean us harm."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Constant filming turns citizens into suspects in their own homes."
+   }
+  ]
+ },
+ {
+  "index": 42,
+  "question": "Should judges be appointed for life to keep courts independent?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Steady judges answer to the nation, not to fleeting political winds."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Lifetime seats shield judges from accountability the public deserves."
+   }
+  ]
+ },
+ {
+  "index": 43,
+  "question": "Should the voting age drop to sixteen?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "No. Citizenship's duties come with age and experience, not just excitement."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Young citizens who work and pay taxes deserve a say in their future."
+   }
+  ]
+ },
+ {
+  "index": 44,
+  "question": "Should new citizens pass a strict loyalty and history test?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Earning citizenship means proving knowledge, loyalty, and shared values."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Fair tests measure paperwork skill, not character or contribution."
+   }
+  ]
+ },
+ {
+  "index": 45,
+  "question": "Should every young adult serve a year in the national guard?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Shared service forges unity and readies our nation for any threat."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Forcing service on the young ignores their own life plans and rights."
+   }
+  ]
+ },
+ {
+  "index": 46,
+  "question": "Should reporters be barred from publishing leaked military documents?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Some secrets protect the nation more than headlines ever could."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. A free press exposing secrets keeps power honest and accountable."
+   }
+  ]
+ },
+ {
+  "index": 47,
+  "question": "Should asylum seekers face indefinite detention while cases are reviewed?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Careful screening at the border protects our people and our order."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Indefinite detention punishes the desperate before any judgment is made."
+   }
+  ]
+ },
+ {
+  "index": 48,
+  "question": "Should tech companies be forced to install encryption backdoors for police?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Backdoors let us stop plots before they ever reach our streets."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. A backdoor for police is a backdoor for every criminal too."
+   }
+  ]
+ },
+ {
+  "index": 49,
+  "question": "Should the state keep running a public lottery to raise revenue?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Let the crowd dream big for the price of a ticket."
+   },
+   {
+    "archetype": "corporate",
+    "text": "No. Gambling revenue is a lousy substitute for tax policy."
+   }
+  ]
+ },
+ {
+  "index": 50,
+  "question": "Should large stores be allowed to stay open every hour of the day?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. More open hours simply means more chances to sell."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Workers need rest more than shareholders need one more hour."
+   }
+  ]
+ },
+ {
+  "index": 51,
+  "question": "Should the sovereign wealth fund invest in casino resort projects?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Casino resorts promise strong returns for the fund."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "No. Gambling dens don't reflect our nation's values."
+   }
+  ]
+ },
+ {
+  "index": 52,
+  "question": "Should the state approve arms exports to an active war zone?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Arms contracts strengthen our defense industry's balance sheet."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "No. We won't arm conflicts that aren't ours to fight."
+   }
+  ]
+ },
+ {
+  "index": 53,
+  "question": "Should the minimum wage rise faster than inflation?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Steep wage floors just price the young out of jobs."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. A full day's work should always cover a full day's needs."
+   }
+  ]
+ },
+ {
+  "index": 54,
+  "question": "Should sugary drinks carry a special public health tax?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Let shoppers choose; the market already sells diet options."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. A small tax now beats a lifetime of preventable illness."
+   }
+  ]
+ },
+ {
+  "index": 55,
+  "question": "Should police be allowed to disperse rallies that run past midnight?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. The square belongs to the crowd, not whoever holds the whistle."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Order after midnight matters more than any chant still going."
+   }
+  ]
+ },
+ {
+  "index": 56,
+  "question": "Should open drinking be allowed during the street festival?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Let the people toast in the square, not just in private clubs."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "No. A proud festival stays dignified, not stumbling by sundown."
+   }
+  ]
+ },
+ {
+  "index": 57,
+  "question": "Should censors get the power to ban entire films outright?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Ban the elite's propaganda reels for good."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Ratings inform viewers; bans just silence artists."
+   }
+  ]
+ },
+ {
+  "index": 58,
+  "question": "Should libraries pull explicit books from their teen sections?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Keep the shelves clean and the parents cheering."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Age labels work better than empty shelves."
+   }
+  ]
+ },
+ {
+  "index": 59,
+  "question": "Should whistleblowers get full legal immunity for exposing wrongdoing?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "No. Leaking secrets, even noble ones, weakens the nation's defenses."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Protecting truth-tellers keeps every institution honest and open."
+   }
+  ]
+ },
+ {
+  "index": 60,
+  "question": "Should minor crimes skip juries and go straight to a judge?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Swift judges deliver order faster than slow, unpredictable juries."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. A jury of peers is the fairest shield against unchecked power."
+   }
+  ]
+ },
+ {
+  "index": 61,
+  "question": "Should shops be allowed to sell alcohol around the clock?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Round-the-clock sales are round-the-clock revenue."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. 3 a.m. sales help nobody but the hangover industry."
+   }
+  ]
+ },
+ {
+  "index": 62,
+  "question": "Should the city keep courting more tourists even as rents climb?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Visitors bring cash that locals can't replace alone."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Our streets aren't a theme park for outsiders."
+   }
+  ]
+ },
+ {
+  "index": 63,
+  "question": "Should factory unions gain stronger collective bargaining rights?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Flexible labor rules keep factories competitive."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Loyal workers deserve a stronger voice."
+   }
+  ]
+ },
+ {
+  "index": 64,
+  "question": "Should the state expand the national rail freight network?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Private freight haulers already move goods efficiently."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. A strong rail network binds the nation together."
+   }
+  ]
+ },
+ {
+  "index": 65,
+  "question": "Should shipbuilding contracts be reserved for domestic yards?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Open bidding gets taxpayers the best price."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Our ships should be built by our own hands."
+   }
+  ]
+ },
+ {
+  "index": 66,
+  "question": "Should large inheritances be taxed before they pass to heirs?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Taxing inheritance just chases family capital abroad."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Opportunity shouldn't be inherited only by the lucky few."
+   }
+  ]
+ },
+ {
+  "index": 67,
+  "question": "Should protest organizers need a permit filed a week in advance?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. Real anger doesn't wait a week for a stamp from city hall."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Notice and order let a rally stay peaceful and proud."
+   }
+  ]
+ },
+ {
+  "index": 68,
+  "question": "Should standing for the anthem be mandatory at public events?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. Loyalty forced by rule is just theater for the cameras."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Standing together for the anthem is the least a nation asks."
+   }
+  ]
+ },
+ {
+  "index": 69,
+  "question": "Should national museums start charging visitors an entry fee?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. Culture isn't a toll booth for working folks."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Fees fund the archives future generations need."
+   }
+  ]
+ },
+ {
+  "index": 70,
+  "question": "Should the city fund murals painted by local street artists?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Paint the walls with the people's own voice."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Fund studios and grants, not just blank walls."
+   }
+  ]
+ },
+ {
+  "index": 71,
+  "question": "Should the leader gain emergency powers during a national crisis?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "Yes. A firm hand can act fast when the nation faces real danger."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Emergency powers, once granted, rarely get handed back freely."
+   }
+  ]
+ },
+ {
+  "index": 72,
+  "question": "Should every citizen carry a mandatory national ID card?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "Yes. One card, one nation, one clear way to know who belongs here."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Mandatory ID cards track citizens who've done nothing wrong at all."
+   }
+  ]
+ },
+ {
+  "index": 73,
+  "question": "Should ride-hailing apps be free to set fares with surge pricing?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Prices rise with demand, same as any honest market."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Charging double in a storm is just plain greed."
+   }
+  ]
+ },
+ {
+  "index": 74,
+  "question": "Should delivery apps keep charging restaurants a cut of every order?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. The app built the road, so it earns the toll."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. The little diner shouldn't feed a giant's commission."
+   }
+  ]
+ },
+ {
+  "index": 75,
+  "question": "Should the government approve construction of new nuclear power plants?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Reactors cost too much for shaky investor returns."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Nuclear power frees us from foreign energy."
+   }
+  ]
+ },
+ {
+  "index": 76,
+  "question": "Should the government subsidize domestic solar panel manufacturing?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Cheaper imported panels serve consumers better."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Our own panels mean energy we control."
+   }
+  ]
+ },
+ {
+  "index": 77,
+  "question": "Should the water supply remain a fully public utility?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. A privatized network attracts the investment pipes need."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. No investor should profit from a resource life depends on."
+   }
+  ]
+ },
+ {
+  "index": 78,
+  "question": "Should the government subsidize childcare for working parents?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Subsidized childcare grows the workforce and the economy."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Vouchers just hand public money to for-profit chains."
+   }
+  ]
+ },
+ {
+  "index": 79,
+  "question": "Should religious processions be rerouted away from the main square?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. The square belongs to the people's rituals, not the planners."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Old rites deserve a quieter path, not a traffic jam."
+   }
+  ]
+ },
+ {
+  "index": 80,
+  "question": "Should festival crowd sizes be capped for safety?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. The bigger the crowd, the louder the message to the palace."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. A well-ordered festival honors tradition without the crush."
+   }
+  ]
+ },
+ {
+  "index": 81,
+  "question": "Should reality shows featuring politicians be pulled off air?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. Let the cameras catch them being themselves."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Governing isn't a script written for ratings."
+   }
+  ]
+ },
+ {
+  "index": 82,
+  "question": "Should the city enforce a strict nighttime noise curfew?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. Let the people party past the elite's bedtime."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Quiet nights are a right for every worker."
+   }
+  ]
+ },
+ {
+  "index": 83,
+  "question": "Should major laws require a public referendum before taking effect?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "No. Elected leaders were chosen to decide, not endless public polling."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Letting citizens vote directly keeps power close to the people."
+   }
+  ]
+ },
+ {
+  "index": 84,
+  "question": "Should doctors be legally required to report suspected abuse at home?",
+  "advisory": "trigger",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Guarding the family unit means catching abuse before it spreads."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Reporting rules can scare victims away from seeking any help."
+   }
+  ]
+ },
+ {
+  "index": 85,
+  "question": "Should landlords be encouraged to offer rent-to-own housing schemes?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Rent-to-own turns tenants into customers building equity."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. These schemes trap renters in contracts stacked against them."
+   }
+  ]
+ },
+ {
+  "index": 86,
+  "question": "Should credit card companies be free to raise interest rates at will?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Risk-based pricing keeps credit available to everyone."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Squeezing families for missing one payment is cruel."
+   }
+  ]
+ },
+ {
+  "index": 87,
+  "question": "Should new toll roads be built along major freight corridors?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Tolls attract investors to fund faster roads."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "No. Free roads keep our nation moving as one."
+   }
+  ]
+ },
+ {
+  "index": 88,
+  "question": "Should billboards be allowed to cover entire building facades?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Bigger ads mean bigger budgets for the whole block."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Nobody voted to live inside somebody's advert."
+   }
+  ]
+ },
+ {
+  "index": 89,
+  "question": "Should the government cap prices on life-saving medicines?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Price caps starve the research pipeline of new cures."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. No patient should ration medicine to afford next month's dose."
+   }
+  ]
+ },
+ {
+  "index": 90,
+  "question": "Should public transit fares be subsidized to near-free levels?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Fare-free transit is a subsidy investors never asked for."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Getting to work shouldn't depend on what a fare costs."
+   }
+  ]
+ },
+ {
+  "index": 91,
+  "question": "Should underground betting dens near the stadium be raided?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. Raid the alley bets and the big houses still play untouched."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Cleaning out the dens protects the nation's good name."
+   }
+  ]
+ },
+ {
+  "index": 92,
+  "question": "Should the town raise its yearly immigration quota?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Fresh hands in the market beat empty stalls and slogans."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "No. Our people first, before the gates open any wider."
+   }
+  ]
+ },
+ {
+  "index": 93,
+  "question": "Should libraries stay open as shelters during a citywide emergency?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Open the doors while officials still dither."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Shelters need trained staff, not just bookshelves."
+   }
+  ]
+ },
+ {
+  "index": 94,
+  "question": "Should games with gambling-style loot boxes carry a warning label?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Warn folks before the house takes their cash."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Ban the mechanic; a label alone won't stop it."
+   }
+  ]
+ },
+ {
+  "index": 95,
+  "question": "Should riot police get broader powers to disperse unruly crowds?",
+  "advisory": "trigger",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Firm crowd control keeps order before unrest turns into chaos."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Broader force powers too often land hardest on peaceful protesters."
+   }
+  ]
+ },
+ {
+  "index": 96,
+  "question": "Should health authorities be able to enforce quarantine by force?",
+  "advisory": "trigger",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "Yes. Strict quarantine enforcement protects the whole nation from disease."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. Forced quarantine without consent tramples basic personal freedom."
+   }
+  ]
+ },
+ {
+  "index": 97,
+  "question": "Should resellers be free to mark up event tickets as high as they want?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. A ticket's worth whatever a fan will pay for it."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Scalpers grab the seats before the fans get a shot."
+   }
+  ]
+ },
+ {
+  "index": 98,
+  "question": "Should influencers be free to promote products without disclosing pay?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Their audience, their content, their own call."
+   },
+   {
+    "archetype": "populist",
+    "text": "No. Fans deserve to know when the love is rented."
+   }
+  ]
+ },
+ {
+  "index": 99,
+  "question": "Should the state fund a domestic space launch industry?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Rockets are a risky bet for shareholder returns."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. A flag in orbit proves our nation's strength."
+   }
+  ]
+ },
+ {
+  "index": 100,
+  "question": "Should the state subsidize the domestic alcohol export industry?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "Yes. Alcohol exports open lucrative new markets abroad."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "No. Our traditions aren't for sale to outsiders."
+   }
+  ]
+ },
+ {
+  "index": 101,
+  "question": "Should the state forgive outstanding student loan debt?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Blanket forgiveness rewards debt over disciplined budgeting."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. A generation shouldn't start adulthood buried in debt."
+   }
+  ]
+ },
+ {
+  "index": 102,
+  "question": "Should idle land be taxed at its full potential value?",
+  "answers": [
+   {
+    "archetype": "corporate",
+    "text": "No. Taxing land value scares off developers who'd build there."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Land shouldn't sit idle while families go without homes."
+   }
+  ]
+ },
+ {
+  "index": 103,
+  "question": "Should the border wall be extended along the disputed ridge?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. Walls cost a fortune while the crowd pays for bread."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "Yes. A firm wall on the ridge is worth more than any speech."
+   }
+  ]
+ },
+ {
+  "index": 104,
+  "question": "Should the town hold a military parade on founding day?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Give the people a spectacle, not another closed-door meeting."
+   },
+   {
+    "archetype": "nationalist",
+    "text": "No. Real pride marches quietly; parades are for show, not strength."
+   }
+  ]
+ },
+ {
+  "index": 105,
+  "question": "Should police clear busking crowds that block a public sidewalk?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "Yes. Clear it fast before things turn ugly for shoppers."
+   },
+   {
+    "archetype": "reformer",
+    "text": "No. De-escalate first; force should be the last resort."
+   }
+  ]
+ },
+ {
+  "index": 106,
+  "question": "Should citizens be fined for displaying a torn national flag?",
+  "answers": [
+   {
+    "archetype": "populist",
+    "text": "No. Fine the profiteers, not a faded old flag."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Respect deserves clear, enforceable standards."
+   }
+  ]
+ },
+ {
+  "index": 107,
+  "question": "Should terminally ill patients have the right to choose assisted dying?",
+  "advisory": "sensitive",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "No. The state should defend life, not help arrange its ending."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. A dignified choice at life's end respects personal liberty fully."
+   }
+  ]
+ },
+ {
+  "index": 108,
+  "question": "Should campaigns face strict caps on election spending?",
+  "answers": [
+   {
+    "archetype": "nationalist",
+    "text": "No. Strong campaigns need resources to defend the nation's interests."
+   },
+   {
+    "archetype": "reformer",
+    "text": "Yes. Spending caps stop wealthy elites from buying every election outright."
+   }
+  ]
+ }
+]

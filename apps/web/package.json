@@ -1,0 +1,28 @@
+{
+  "name": "@seatgrab/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode online",
+    "dev:local": "vite --mode local-play",
+    "build": "vite build --mode local-play",
+    "build:online": "vite build --mode online",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@seatgrab/computer": "workspace:*",
+    "@seatgrab/content": "workspace:*",
+    "@seatgrab/engine": "workspace:*",
+    "@seatgrab/protocol": "workspace:*",
+    "@seatgrab/seat": "workspace:*",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.1.4",
+    "vite": "7.3.1"
+  }
+}

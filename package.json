@@ -1,0 +1,28 @@
+{
+  "name": "seatgrab",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "tsc -b && pnpm --filter @seatgrab/web build",
+    "build:online": "tsc -b && pnpm --filter @seatgrab/web build:online",
+    "dev": "pnpm --parallel --filter @seatgrab/server --filter @seatgrab/web dev",
+    "start": "pnpm --filter @seatgrab/server start",
+    "typecheck": "tsc -b --pretty false && tsc -p apps/web/tsconfig.json --pretty false && tsc -p apps/server/tsconfig.test.json --pretty false && node scripts/check_emitted_imports.mjs",
+    "test": "vitest run",
+    "check:imports": "node scripts/check_emitted_imports.mjs",
+    "check:build": "node scripts/check_build_privacy.mjs",
+    "generate:content": "python3 scripts/generate_decks.py && python3 scripts/generate_board.py"
+  },
+  "devDependencies": {
+    "@types/node": "26.5.1",
+    "fake-indexeddb": "6.2.5",
+    "jsdom": "30.0.1",
+    "tsx": "4.23.13",
+    "typescript": "7.0.2",
+    "vitest": "5.0.0"
+  }
+}

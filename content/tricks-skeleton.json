@@ -1,0 +1,202 @@
+[
+ {
+  "id": "TRK001",
+  "deck": "trick",
+  "handlerId": "trick.skimming",
+  "copies": 2,
+  "advisory": null,
+  "twoPlayerExcluded": true,
+  "markerSlots": 2,
+  "backCost": 4
+ },
+ {
+  "id": "TRK002",
+  "deck": "trick",
+  "handlerId": "trick.skimming",
+  "copies": 2,
+  "advisory": null,
+  "twoPlayerExcluded": true,
+  "markerSlots": 2,
+  "backCost": 4
+ },
+ {
+  "id": "TRK003",
+  "deck": "trick",
+  "handlerId": "trick.turncoat",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 5
+ },
+ {
+  "id": "TRK004",
+  "deck": "trick",
+  "handlerId": "trick.veto",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 4
+ },
+ {
+  "id": "TRK005",
+  "deck": "trick",
+  "handlerId": "trick.boomerang",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 4
+ },
+ {
+  "id": "TRK006",
+  "deck": "trick",
+  "handlerId": "trick.grandCoalition",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 5
+ },
+ {
+  "id": "TRK007",
+  "deck": "trick",
+  "handlerId": "trick.flipFlop",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 4
+ },
+ {
+  "id": "TRK008",
+  "deck": "trick",
+  "handlerId": "trick.longMarch",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 5
+ },
+ {
+  "id": "TRK009",
+  "deck": "trick",
+  "handlerId": "trick.loyalBase",
+  "copies": 1,
+  "advisory": "trigger",
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 5
+ },
+ {
+  "id": "TRK010",
+  "deck": "trick",
+  "handlerId": "trick.redevelopment",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 4
+ },
+ {
+  "id": "TRK011",
+  "deck": "trick",
+  "handlerId": "trick.blacklist",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 1,
+  "backCost": 4
+ },
+ {
+  "id": "TRK012",
+  "deck": "trick",
+  "handlerId": "trick.dragnet",
+  "copies": 1,
+  "advisory": "trigger",
+  "twoPlayerExcluded": false,
+  "markerSlots": 5,
+  "backCost": 4
+ },
+ {
+  "id": "TRK013",
+  "deck": "trick",
+  "handlerId": "trick.rollPurge",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 4
+ },
+ {
+  "id": "TRK014",
+  "deck": "trick",
+  "handlerId": "trick.scorchedEarth",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 3,
+  "backCost": 4
+ },
+ {
+  "id": "TRK015",
+  "deck": "trick",
+  "handlerId": "trick.starPower",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 5
+ },
+ {
+  "id": "TRK016",
+  "deck": "trick",
+  "handlerId": "trick.musicalChairs",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 4
+ },
+ {
+  "id": "TRK017",
+  "deck": "trick",
+  "handlerId": "trick.cornerstone",
+  "copies": 4,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 5
+ },
+ {
+  "id": "TRK018",
+  "deck": "trick",
+  "handlerId": "trick.cornerstone",
+  "copies": 4,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 5
+ },
+ {
+  "id": "TRK019",
+  "deck": "trick",
+  "handlerId": "trick.cornerstone",
+  "copies": 4,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 5
+ },
+ {
+  "id": "TRK020",
+  "deck": "trick",
+  "handlerId": "trick.cornerstone",
+  "copies": 4,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": 5
+ }
+]

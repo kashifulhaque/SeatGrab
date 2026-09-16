@@ -1,0 +1,122 @@
+[
+ {
+  "id": "NEWS001",
+  "title": "Brain Drain",
+  "flavorText": "The brightest minds left for better weather, and their ballots followed them out of the zone.",
+  "rulesText": "For the rest of the game, every time you buy a 3-voter card, the player after you may move one of your non-majority voters to an adjacent zone."
+ },
+ {
+  "id": "NEWS002",
+  "title": "Guest Editor",
+  "flavorText": "The paper handed its front page to a stranger, and the stranger had firm opinions about your map.",
+  "rulesText": "Choose an opponent. On their next turn, they may use all of your redistricting rights."
+ },
+ {
+  "id": "NEWS003",
+  "title": "Standoff",
+  "flavorText": "Nobody moved for six hours, and then everybody moved at once.",
+  "rulesText": "Move any 3 voters that are in this zone; they stay within it.\nOR\nMove any 3 voters out of this zone."
+ },
+ {
+  "id": "NEWS004",
+  "title": "Ransom Note",
+  "flavorText": "The demands were cut from newsprint, and the asking price per constituent was quietly negotiable.",
+  "rulesText": "Take 4 of your voters off the board and hold them on this card. You may pay 1 resource to get one of them back."
+ },
+ {
+  "id": "NEWS005",
+  "title": "Retraction",
+  "flavorText": "Correction: every promise printed last week was attributed to the wrong person entirely.",
+  "rulesText": "Starting with you and going around, each player may give one of their Policy cards to the player on their left. A player who does gains 6 resources of their choice."
+ },
+ {
+  "id": "NEWS006",
+  "title": "Dynasty",
+  "flavorText": "The family name polls better than any of the people currently carrying it.",
+  "rulesText": "Draw 2 voter cards. Keep one and give the other to an opponent. Both cards are taken for free right now, with no payment."
+ },
+ {
+  "id": "NEWS007",
+  "title": "Leaked Tapes",
+  "flavorText": "Ninety minutes of recording, and the only clean part was the hum of the machine.",
+  "rulesText": "For the rest of the game, every Dirty Trick card you buy costs 1 extra resource."
+ },
+ {
+  "id": "NEWS008",
+  "title": "Backroom Deal",
+  "flavorText": "Two chairs, one table, and a handshake nobody was ever meant to photograph.",
+  "rulesText": "Choose 2 players. On their next turns, each may also use the other's unlocked Level 3 powers. If either of them has no unlocked Level 3 power, both may instead use any one Level 3 power of their choice."
+ },
+ {
+  "id": "NEWS009",
+  "title": "Flood Relief",
+  "flavorText": "The water rose overnight, and by morning whole neighborhoods had woken up somewhere else.",
+  "rulesText": "Starting with you and going around, every player may immediately move 1 voter, majority or not, as if using redistricting rights. None of these voters may be moved into a volatile area."
+ },
+ {
+  "id": "NEWS010",
+  "title": "Quarantine",
+  "flavorText": "The cordon went up quietly, and so did the numbers on the far side of it.",
+  "rulesText": "Every opponent evicts 1 of their own voters. If a player breaks a majority by doing so, every other player gains 1 resource of their choice."
+ },
+ {
+  "id": "NEWS011",
+  "title": "Relief Fund",
+  "flavorText": "The fund was announced before the emergency ended and audited long after everyone stopped asking.",
+  "rulesText": "Pay 1 resource of each of the four types to the bank. Until you have paid all four, you cannot buy anything."
+ },
+ {
+  "id": "NEWS012",
+  "title": "Tabloid Scandal",
+  "flavorText": "The photograph was blurry, the headline was not, and the presses ran until morning.",
+  "rulesText": "On your next turn, every voter card costs 1 extra resource of any type."
+ },
+ {
+  "id": "NEWS013",
+  "title": "Anonymous Tip",
+  "flavorText": "The envelope carried no name, which somehow made everyone want it more.",
+  "rulesText": "Draw the top 3 Dirty Trick cards. Keep one without showing it and shuffle the other two back into the deck. Then you must auction the kept card, with bidding starting at 2 resources."
+ },
+ {
+  "id": "NEWS014",
+  "title": "Turf War",
+  "flavorText": "Two blocks changed hands before lunch and not one complaint was ever filed.",
+  "rulesText": "Every player converts 2 voters belonging to the player on their left. Each player who does not break a majority by doing so gains 2 resources."
+ },
+ {
+  "id": "NEWS015",
+  "title": "Tax Audit",
+  "flavorText": "The letter arrived on the cheapest possible paper and cost you a great deal anyway.",
+  "rulesText": "You receive no resources from your next Policy card."
+ },
+ {
+  "id": "NEWS016",
+  "title": "Data Broker",
+  "flavorText": "Somebody sold everyone's habits back to them, then let the room pick the delivery address.",
+  "rulesText": "The next Dirty Trick card in the draw pile is given away for free. All players vote on who receives it. Nobody may vote for themselves, and a tie is voted again."
+ },
+ {
+  "id": "NEWS017",
+  "title": "Echo Chamber",
+  "flavorText": "Say a thing loudly enough in a small enough room and it comes back to you with interest.",
+  "rulesText": "Choose an opponent. On your next turn, they receive the same resources you receive."
+ },
+ {
+  "id": "NEWS018",
+  "title": "Hydra",
+  "flavorText": "Every crackdown seemed to produce two more organizers than it managed to remove.",
+  "rulesText": "For one round starting this turn, gain 1 voter every time an opponent moves one of your voters."
+ },
+ {
+  "id": "NEWS019",
+  "title": "Disqualified",
+  "flavorText": "The paperwork was filed one day late, and a district lost its name on a technicality.",
+  "rulesText": "The next 3 players after you each choose one open voter card and discard it, gaining the resources shown on it. No new voter card opens until all 3 have been discarded."
+ },
+ {
+  "id": "NEWS020",
+  "title": "Supply Shortage",
+  "flavorText": "The warehouses emptied first, and the queues outside them filled in before dawn.",
+  "rulesText": "Starting from the player on your left and going around, each player must choose one:\nDiscard 1 of their own voters.\nOR\nChoose an opponent, who gains a free voter."
+ }
+]

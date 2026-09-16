@@ -1,0 +1,202 @@
+[
+ {
+  "id": "NEWS001",
+  "deck": "news",
+  "handlerId": "news.brainDrain",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS002",
+  "deck": "news",
+  "handlerId": "news.guestEditor",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 1,
+  "backCost": null
+ },
+ {
+  "id": "NEWS003",
+  "deck": "news",
+  "handlerId": "news.standoff",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS004",
+  "deck": "news",
+  "handlerId": "news.ransomNote",
+  "copies": 1,
+  "advisory": "sensitive",
+  "twoPlayerExcluded": false,
+  "markerSlots": 4,
+  "backCost": null
+ },
+ {
+  "id": "NEWS005",
+  "deck": "news",
+  "handlerId": "news.retraction",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS006",
+  "deck": "news",
+  "handlerId": "news.dynasty",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS007",
+  "deck": "news",
+  "handlerId": "news.leakedTapes",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS008",
+  "deck": "news",
+  "handlerId": "news.backroomDeal",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": true,
+  "markerSlots": 2,
+  "backCost": null
+ },
+ {
+  "id": "NEWS009",
+  "deck": "news",
+  "handlerId": "news.floodRelief",
+  "copies": 1,
+  "advisory": "sensitive",
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS010",
+  "deck": "news",
+  "handlerId": "news.quarantine",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS011",
+  "deck": "news",
+  "handlerId": "news.reliefFund",
+  "copies": 1,
+  "advisory": "trigger",
+  "twoPlayerExcluded": false,
+  "markerSlots": 4,
+  "backCost": null
+ },
+ {
+  "id": "NEWS012",
+  "deck": "news",
+  "handlerId": "news.tabloidScandal",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS013",
+  "deck": "news",
+  "handlerId": "news.anonymousTip",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": true,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS014",
+  "deck": "news",
+  "handlerId": "news.turfWar",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS015",
+  "deck": "news",
+  "handlerId": "news.taxAudit",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS016",
+  "deck": "news",
+  "handlerId": "news.dataBroker",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": true,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS017",
+  "deck": "news",
+  "handlerId": "news.echoChamber",
+  "copies": 1,
+  "advisory": null,
+  "twoPlayerExcluded": false,
+  "markerSlots": 1,
+  "backCost": null
+ },
+ {
+  "id": "NEWS018",
+  "deck": "news",
+  "handlerId": "news.hydra",
+  "copies": 1,
+  "advisory": "trigger",
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS019",
+  "deck": "news",
+  "handlerId": "news.disqualified",
+  "copies": 1,
+  "advisory": "trigger",
+  "twoPlayerExcluded": true,
+  "markerSlots": 0,
+  "backCost": null
+ },
+ {
+  "id": "NEWS020",
+  "deck": "news",
+  "handlerId": "news.supplyShortage",
+  "copies": 1,
+  "advisory": "trigger",
+  "twoPlayerExcluded": false,
+  "markerSlots": 0,
+  "backCost": null
+ }
+]

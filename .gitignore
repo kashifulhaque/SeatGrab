@@ -1,0 +1,9 @@
+node_modules/
+dist/
+extraction/work/
+apps/server/data/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example

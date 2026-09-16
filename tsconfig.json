@@ -1,0 +1,23 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/content"
+    },
+    {
+      "path": "packages/protocol"
+    },
+    {
+      "path": "packages/engine"
+    },
+    {
+      "path": "packages/seat"
+    },
+    {
+      "path": "packages/computer"
+    },
+    {
+      "path": "apps/server"
+    }
+  ]
+}

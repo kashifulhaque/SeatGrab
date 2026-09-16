@@ -1,0 +1,122 @@
+[
+ {
+  "id": "TRK001",
+  "title": "Skimming",
+  "flavorText": "Every invoice the ministry signs is a little heavier than the work it pays for, and nobody can say quite where the extra goes.",
+  "rulesText": "Choose an opponent and a resource type. Whenever they spend that resource, it goes to you instead of the bank. If another Skimming card is played by anyone, discard this card."
+ },
+ {
+  "id": "TRK002",
+  "title": "Skimming",
+  "flavorText": "The auditor's report runs to nine hundred pages and somehow never reaches the column where the money used to be.",
+  "rulesText": "Choose an opponent and a resource type. Whenever they spend that resource, it goes to you instead of the bank. If another Skimming card is played by anyone, discard this card."
+ },
+ {
+  "id": "TRK003",
+  "title": "Turncoat",
+  "flavorText": "He crossed the floor at noon, crossed back by supper, and called both trips a matter of deep conviction.",
+  "rulesText": "This card counts as one extra Policy card under an archetype of your choice. An opponent may take this card by paying you resources equal to the number of cards under that archetype. At the end of your turn you may move this card to a different archetype."
+ },
+ {
+  "id": "TRK004",
+  "title": "Veto",
+  "flavorText": "The committee met for eleven minutes, and ten of them were spent finding a pen large enough for the word no.",
+  "rulesText": "Reaction: play immediately, out of turn, when an opponent plays a Dirty Trick card, to cancel its effect.\nOR\nOn your turn, discard one Dirty Trick or Breaking News card that is in play."
+ },
+ {
+  "id": "TRK005",
+  "title": "Boomerang",
+  "flavorText": "The smear was so well researched that reporters traced every line of it straight back to the desk that wrote it.",
+  "rulesText": "Reaction. When an opponent's Dirty Trick card targets you, play this immediately to turn its effect back on them."
+ },
+ {
+  "id": "TRK006",
+  "title": "Grand Coalition",
+  "flavorText": "Four rival banners shared one stage for an afternoon, and each claimed afterwards to have been standing in the middle.",
+  "rulesText": "This turn, you may use each of your Level 3 powers twice."
+ },
+ {
+  "id": "TRK007",
+  "title": "Flip-Flop",
+  "flavorText": "She has always held this position, she explained, adding that she had also always held the opposite one.",
+  "rulesText": "Flip one of your own Policy cards to its other answer."
+ },
+ {
+  "id": "TRK008",
+  "title": "Long March",
+  "flavorText": "Five busloads of supporters were sent off with flags, sandwiches, and a rival's address written on the ticket.",
+  "rulesText": "At the end of your turn, evict 5 voters and put them on opponents' mats; you choose which opponent gets each. They may place those voters anywhere on their turn."
+ },
+ {
+  "id": "TRK009",
+  "title": "Loyal Base",
+  "flavorText": "The ward has voted the same way for thirty years, and the returning officer has stopped pretending to be surprised.",
+  "rulesText": "Choose one of your majorities. Opponents cannot affect it. Any opponent may convert 3 of their own voters into yours to take this card from you."
+ },
+ {
+  "id": "TRK010",
+  "title": "Redevelopment",
+  "flavorText": "The notices went up on a Friday, the bulldozers arrived on a Monday, and the new tenants were already on the rolls.",
+  "rulesText": "When you place the voters from your next two 2-voter cards, you may discard that many non-majority voters from the zone you place into."
+ },
+ {
+  "id": "TRK011",
+  "title": "Blacklist",
+  "flavorText": "The permit office discovered a rule requiring rallies to be booked one full term in advance.",
+  "rulesText": "Choose a zone and an opponent. They cannot place voters in that zone on their next turn."
+ },
+ {
+  "id": "TRK012",
+  "title": "Dragnet",
+  "flavorText": "Five names were removed from the rolls for review, and the review desk keeps a tariff for getting them back.",
+  "rulesText": "Discard 5 non-majority voters and hold them on this card. A player may pay you any 1 resource to get one of their voters back."
+ },
+ {
+  "id": "TRK013",
+  "title": "Roll Purge",
+  "flavorText": "A clerical cleanup removed exactly one household per district, all of them in streets that never voted the right way.",
+  "rulesText": "Discard one voter in each of up to 4 zones where you hold redistricting rights."
+ },
+ {
+  "id": "TRK014",
+  "title": "Scorched Earth",
+  "flavorText": "If the boundary must be surrendered, said the memo, let there be nothing behind it worth counting.",
+  "rulesText": "The next 3 voters you move using redistricting rights are discarded instead of moved."
+ },
+ {
+  "id": "TRK015",
+  "title": "Star Power",
+  "flavorText": "The singer endorsed nobody in particular, yet the queues outside the campaign office have not thinned since.",
+  "rulesText": "For the rest of the game, at the end of each of your turns, if any 1-voter cards are open, take them all for free."
+ },
+ {
+  "id": "TRK016",
+  "title": "Musical Chairs",
+  "flavorText": "Two families woke up in the same houses and discovered they now lived in each other's constituencies.",
+  "rulesText": "Swap the positions of two non-majority voters. You may do this up to 3 times."
+ },
+ {
+  "id": "TRK017",
+  "title": "Cornerstone",
+  "flavorText": "The foundation stone was laid with a small ceremony, a large cheque, and a promise nobody wrote down.",
+  "rulesText": "Gain any 4 resources of your choice.\nOR\nTurn in 3 Cornerstone cards together to choose a zone with a 6-of-11 threshold and convert every voter in it into yours; that play cannot be cancelled by Veto or turned back by Boomerang."
+ },
+ {
+  "id": "TRK018",
+  "title": "Cornerstone",
+  "flavorText": "Three plaques, three donors, one building that turned out to be the whole district's future.",
+  "rulesText": "Gain any 4 resources of your choice.\nOR\nTurn in 3 Cornerstone cards together to choose a zone with a 6-of-11 threshold and convert every voter in it into yours; that play cannot be cancelled by Veto or turned back by Boomerang."
+ },
+ {
+  "id": "TRK019",
+  "title": "Cornerstone",
+  "flavorText": "Nobody asked who paid for the new civic hall until the ribbon had been cut and the tenants had been chosen.",
+  "rulesText": "Gain any 4 resources of your choice.\nOR\nTurn in 3 Cornerstone cards together to choose a zone with a 6-of-11 threshold and convert every voter in it into yours; that play cannot be cancelled by Veto or turned back by Boomerang."
+ },
+ {
+  "id": "TRK020",
+  "title": "Cornerstone",
+  "flavorText": "The architect's drawings showed a library; the deed, filed later, showed something closer to a fortress.",
+  "rulesText": "Gain any 4 resources of your choice.\nOR\nTurn in 3 Cornerstone cards together to choose a zone with a 6-of-11 threshold and convert every voter in it into yours; that play cannot be cancelled by Veto or turned back by Boomerang."
+ }
+]

@@ -1,0 +1,28 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    restart: unless-stopped
+    environment:
+      SEATGRAB_HOST: 0.0.0.0
+      SEATGRAB_PORT: "8787"
+      SEATGRAB_DB_PATH: /data/seatgrab.db
+      SEATGRAB_ALLOWED_ORIGINS: ${SEATGRAB_ALLOWED_ORIGINS:-https://seatgrab.ifkash.dev}
+    volumes:
+      - server-data:/data
+    expose:
+      - "8787"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "127.0.0.1:8788:80"
+
+volumes:
+  server-data:
