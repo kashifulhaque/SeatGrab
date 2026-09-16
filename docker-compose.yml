@@ -18,11 +18,18 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+    container_name: seatgrab-web
     restart: unless-stopped
     depends_on:
       - server
-    ports:
-      - "127.0.0.1:8788:80"
+    networks:
+      - default
+      - edge
 
 volumes:
   server-data:
+
+networks:
+  default:
+  edge:
+    external: true
