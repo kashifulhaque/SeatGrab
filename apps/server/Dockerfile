@@ -11,7 +11,7 @@ RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 COPY . .
-RUN pnpm --filter @seatgrab/server... build
+RUN pnpm exec tsc -b
 
 FROM node:24-slim AS runtime
 WORKDIR /repo

@@ -11,7 +11,7 @@ RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 COPY . .
-RUN pnpm --filter @seatgrab/web build:online
+RUN pnpm exec tsc -b && pnpm --filter @seatgrab/web build:online
 
 FROM nginx:1.27-alpine AS runtime
 COPY --from=build /repo/apps/web/dist /usr/share/nginx/html
