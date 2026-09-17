@@ -1,14 +1,20 @@
 /**
  * The rules in one minute, folded into the action column.
  *
- * A first-time player usually has not read the rules screen, and it is a screen away from
- * the match. This is the short form, collapsed by default, drawn on the shared surface and
- * in every seat's action column so it is one tap away throughout the match. Every sentence
+ * A first-time player usually has not read the rulebook, and it is a screen away from the
+ * match. This is the cheat sheet: the goal, the three steps of a turn, the four resources,
+ * the cap and the one thing that costs people voters, with a link to the full rulebook
+ * for everything else. It is collapsed by default and drawn on the shared surface and in
+ * every seat's action column, so it is one tap away throughout the match. Every sentence
  * restates a rule the engine enforces; nothing here is a strategy tip.
+ *
+ * It stays a `details.drawer.drawer--help` so the surfaces that mount it need no change.
  */
 import { RESOURCE_ASSETS } from '../assets/manifest';
 
 import { ROUTES } from './routes';
+
+import './rules/cheatsheet.css';
 
 const RESOURCE_ARCHETYPES = [
   { resource: 'cash', archetype: 'Corporate' },
@@ -17,93 +23,70 @@ const RESOURCE_ARCHETYPES = [
   { resource: 'faith', archetype: 'Reformer' },
 ] as const;
 
+const RESOURCE_CAP = 12;
+
 export function HowToPlay() {
   return (
     <details className="drawer drawer--help">
       <summary>
         <h3>How to play</h3>
-        <span className="small">The rules in one minute</span>
+        <span className="small">The one-minute cheat sheet</span>
       </summary>
-      <div className="help">
-        <section>
-          <h4>The goal</h4>
-          <p>
-            Each zone shows how many voters it takes to hold it. Reach that number with your own
-            voters and the zone is yours; each of those voters scores one point. The game ends
-            when every zone is held, and the player with the most scoring voters wins. Voters
-            above the number, or in zones you do not hold, score nothing.
-          </p>
-        </section>
-        <section>
-          <h4>Your turn</h4>
-          <ol>
-            <li>
-              <strong>Answer a policy question.</strong> Two answers are offered; take the one you
-              agree with. Each answer builds one of four archetypes and pays the resources shown
-              on it. Pay any four resources to draw a different question.
+      <div className="rb-cheat">
+        <p className="rb-cheat-goal">
+          <span className="rb-cheat-goal__label">The goal</span>
+          Fill a district’s threshold with your own voters to hold it. When all nine are held,
+          the most <strong>majority voters</strong> wins. Voters above a threshold don’t score.
+        </p>
+
+        <ol className="rb-cheat-steps" aria-label="Your turn, in three steps">
+          <li className="rb-cheat-step">
+            <span className="rb-cheat-step__n" aria-hidden="true">1</span>
+            <span className="rb-cheat-step__text">
+              <strong>Answer the question.</strong> Pick one of two answers. It builds an
+              archetype and pays resources.
+            </span>
+          </li>
+          <li className="rb-cheat-step">
+            <span className="rb-cheat-step__n" aria-hidden="true">2</span>
+            <span className="rb-cheat-step__text">
+              <strong>Buy voters and place them.</strong> Pay a market card’s price; all its
+              voters go into one district. Use powers, tricks and trades too.
+            </span>
+          </li>
+          <li className="rb-cheat-step">
+            <span className="rb-cheat-step__n" aria-hidden="true">3</span>
+            <span className="rb-cheat-step__text">
+              <strong>End your turn.</strong> Play passes clockwise.
+            </span>
+          </li>
+        </ol>
+
+        <ul className="rb-cheat-resources" aria-label="The four resources">
+          {RESOURCE_ARCHETYPES.map(({ resource, archetype }) => (
+            <li key={resource} className="rb-cheat-resource" style={{ '--rb-accent': `var(--${resource})` } as React.CSSProperties}>
+              <img src={RESOURCE_ASSETS[resource].url} alt="" aria-hidden="true" width={22} height={22} />
+              <span>
+                <strong>{RESOURCE_ASSETS[resource].label}</strong>
+                <span className="rb-cheat-resource__sub">{archetype}</span>
+              </span>
             </li>
-            <li>
-              <strong>Buy voters and place them.</strong> Pay a market card’s price to take its
-              voters, then put all of them in one zone. Buy as many cards as you can afford. You
-              may also use a power you have unlocked, buy or play a Dirty Trick, and trade.
-            </li>
-            <li>
-              <strong>End your turn.</strong> Voters you did not place are lost.
-            </li>
-          </ol>
-        </section>
-        <section>
-          <h4>Resources</h4>
-          <ul className="help__resources">
-            {RESOURCE_ARCHETYPES.map(({ resource, archetype }) => (
-              <li key={resource}>
-                <img src={RESOURCE_ASSETS[resource].url} alt="" aria-hidden="true" width={20} height={20} />
-                <span>
-                  <strong>{RESOURCE_ASSETS[resource].label}</strong> · {archetype}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p>
-            A <strong>?</strong> in a price means any one resource. You may hold at most 12
-            resources; above that, you discard down immediately.
-          </p>
-        </section>
-        <section>
-          <h4>Archetypes and powers</h4>
-          <p>
-            Every answer you keep is a card for its archetype. Each pair of cards in one archetype
-            pays you one resource of its type at the start of your turn. Three cards unlock that
-            archetype’s first power and five unlock the second. Lose the cards and the power goes
-            with them. Your mat lists all eight.
-          </p>
-        </section>
-        <section>
-          <h4>Redistricting</h4>
-          <p>
-            Hold strictly the most voters in a zone and you gain its redistricting rights: once a
-            turn, move one voter, yours or a rival’s, into, out of or within that zone. A voter
-            that already counts toward a majority cannot be moved this way.
-          </p>
-        </section>
-        <section>
-          <h4>Volatile areas</h4>
-          <p>
-            Areas with a dashed ring are volatile. A voter placed there is fixed for the rest of
-            the game, and its owner draws a Breaking News card that resolves at the end of the
-            turn.
-          </p>
-        </section>
-        <section>
-          <h4>Dirty Tricks and trades</h4>
-          <p>
-            A Dirty Trick is bought face down for the price on its back and played on your own
-            turn, or as a reaction when the card says so. A trade must involve the player whose
-            turn it is, must move resources both ways, and needs both sides to agree.
-          </p>
-        </section>
-        <p className="small">
-          <a href={ROUTES.rules}>The full rules and the house rules this app applies</a>
+          ))}
+        </ul>
+
+        <ul className="rb-cheat-notes">
+          <li className="rb-cheat-note">
+            <span className="rb-cheat-note__badge">{RESOURCE_CAP}</span>
+            Hold at most {RESOURCE_CAP} resources. Above that, you discard down at once.
+          </li>
+          <li className="rb-cheat-note rb-cheat-note--warn">
+            <span className="rb-cheat-note__badge" aria-hidden="true">!</span>
+            Unplaced voters are lost when your turn ends.
+          </li>
+        </ul>
+
+        <p className="rb-cheat-more">
+          <a href={ROUTES.rules}>Read the full rulebook</a>
         </p>
       </div>
     </details>

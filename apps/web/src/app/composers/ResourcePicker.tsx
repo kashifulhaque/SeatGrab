@@ -5,9 +5,11 @@
  * icons to the payer, so the control is one counter per resource type the price can be
  * paid in, and the payer sees what they hold beside what they are spending.
  *
- * Each counter is a pair of buttons rather than a number field: a stepper is reachable
- * from the keyboard, is comfortably tappable at the 44px section 13.10 asks for, and
- * cannot be left holding text that is not a number.
+ * Each row is the resource as a coin, with the count held as its badge, and a stepper of
+ * two round 44px buttons around the amount. A stepper rather than a number field is
+ * reachable from the keyboard, comfortably tappable and cannot be left holding text that
+ * is not a number. The amount is keyed on its value so a change remounts it and the bump
+ * plays again.
  *
  * `rows` narrows the four counters to the types a price names, and carries the shortfall
  * for each one so it is drawn beside the counter that is short. Which types those are,
@@ -18,6 +20,9 @@ import { RESOURCE_TYPES, type ResourceType } from '@gerrymander/content';
 import type { ResourceVectorDto } from '@gerrymander/protocol';
 
 import { RESOURCE_ASSETS } from '../../assets/manifest';
+import { ResourceChip } from '../cards/ResourceChip';
+
+import '../cards/cards.css';
 
 export interface PickerRow {
   resource: ResourceType;
@@ -54,47 +59,48 @@ export function ResourcePicker({
 }) {
   const drawn: readonly PickerRow[] = rows ?? RESOURCE_TYPES.map((resource) => ({ resource }));
   return (
-    <fieldset className="picker" disabled={disabled}>
+    <fieldset className="card-picker" disabled={disabled}>
       <legend>{legend}</legend>
       {hint === undefined ? null : <p className="hint">{hint}</p>}
       {drawn.length === 0 ? <p className="field-problem">You hold nothing to pay with.</p> : null}
-      <ul className="picker__rows">
+      <ul className="card-picker__rows">
         {drawn.map((row) => {
           const asset = RESOURCE_ASSETS[row.resource];
           const amount = value[row.resource];
           const problem = row.problem ?? null;
+          const heldCount = held === undefined ? undefined : held[row.resource];
+          const notes = [row.note, heldCount === undefined ? null : `${heldLabel} ${heldCount}`]
+            .filter((part) => part !== null && part !== undefined);
           return (
-            <li key={row.resource} className={`picker__row${problem === null ? '' : ' picker__row--problem'}`}>
-              <span className="picker__label">
-                <img src={asset.url} alt="" aria-hidden="true" width={22} height={22} />
-                <span>
-                  {asset.label}
-                  {held === undefined && row.note === undefined ? null : (
-                    <span className="small">
-                      {' '}
-                      {[row.note, held === undefined ? null : `${heldLabel} ${held[row.resource]}`]
-                        .filter((part) => part !== null && part !== undefined)
-                        .join(' · ')}
-                    </span>
-                  )}
-                </span>
+            <li key={row.resource} className={`card-picker__row${problem === null ? '' : ' card-picker__row--problem'}`}>
+              <ResourceChip
+                resource={row.resource}
+                size="md"
+                {...(heldCount === undefined ? {} : { count: heldCount })}
+                label={heldCount === undefined ? asset.label : `${asset.label}, ${heldLabel} ${heldCount}`}
+              />
+              <span className="card-picker__label">
+                <span className="card-picker__name">{asset.label}</span>
+                {notes.length === 0 ? null : (
+                  <span className="card-picker__note">{notes.join(' · ')}</span>
+                )}
               </span>
-              <span className="picker__stepper">
+              <span className="card-picker__stepper">
                 <button
                   type="button"
-                  className="button button--quiet picker__step"
+                  className="card-picker__step"
                   aria-label={`One less ${asset.label}`}
                   disabled={amount <= 0}
                   onClick={() => onChange(row.resource, amount - 1)}
                 >
                   −
                 </button>
-                <output className="picker__amount" aria-label={`${asset.label} allocated`}>
+                <output key={amount} className="card-picker__amount" aria-label={`${asset.label} allocated`}>
                   {amount}
                 </output>
                 <button
                   type="button"
-                  className="button button--quiet picker__step"
+                  className="card-picker__step"
                   aria-label={`One more ${asset.label}`}
                   onClick={() => onChange(row.resource, amount + 1)}
                 >
@@ -102,14 +108,14 @@ export function ResourcePicker({
                 </button>
               </span>
               {problem === null ? null : (
-                <span className="field-problem picker__problem" role="status">{problem}</span>
+                <span className="field-problem card-picker__problem" role="status">{problem}</span>
               )}
             </li>
           );
         })}
       </ul>
       {footer === undefined ? null : (
-        <p className={footer.problem ? 'field-problem' : 'picker__footer'} role="status">
+        <p className={footer.problem ? 'field-problem' : 'card-picker__footer'} role="status">
           {footer.text}
         </p>
       )}

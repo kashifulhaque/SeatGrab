@@ -1,0 +1,148 @@
+/*
+ * The one-minute cheat sheet inside the match screen's help drawer.
+ *
+ * It sits in an action column that is already full, so everything here is compact: one
+ * goal line, three numbered steps, the four resources as chips, and two facts with a
+ * badge. The classes are `rb-cheat-` so they cannot collide with `app.css` or with the
+ * rulebook's own `rb-` classes.
+ */
+
+.rb-cheat {
+  display: grid;
+  gap: 10px;
+  padding: 2px 0 8px;
+  font-size: var(--text-small);
+  line-height: 1.45;
+}
+
+.rb-cheat p {
+  margin: 0;
+}
+
+.rb-cheat-goal {
+  padding: 8px 10px;
+  background: var(--paper-sunk);
+  border-left: 3px solid var(--trim);
+  border-radius: var(--radius-small);
+}
+
+.rb-cheat-goal__label {
+  display: block;
+  margin-bottom: 2px;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  color: var(--ink-soft);
+}
+
+.rb-cheat-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.rb-cheat-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.rb-cheat-step__n {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--frame);
+  color: var(--trim);
+  border: 2px solid var(--trim);
+  font-family: var(--condensed);
+  font-size: 12px;
+  font-weight: var(--weight-bold);
+}
+
+.rb-cheat-step__text {
+  padding-top: 1px;
+}
+
+.rb-cheat-resources {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.rb-cheat-resource {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  background: var(--paper-bright);
+  border: 1px solid var(--paper-edge);
+  border-left: 3px solid var(--rb-accent, var(--trim));
+  border-radius: var(--radius-small);
+  line-height: 1.2;
+}
+
+.rb-cheat-resource span {
+  display: grid;
+}
+
+.rb-cheat-resource__sub {
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.rb-cheat-notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.rb-cheat-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rb-cheat-note__badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--frame);
+  color: var(--paper);
+  font-family: var(--condensed);
+  font-size: 12px;
+  font-weight: var(--weight-bold);
+}
+
+.rb-cheat-note--warn .rb-cheat-note__badge {
+  background: var(--influence);
+  color: #fff;
+}
+
+.rb-cheat-more a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: var(--weight-bold);
+  color: var(--frame);
+}

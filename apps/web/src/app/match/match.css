@@ -1,0 +1,1694 @@
+/*
+ * The match screen: one surface, three arrangements, and the motion that shows a board
+ * game being played.
+ *
+ * Everything here is prefixed `ms-` and belongs to the components under `app/match/`, to
+ * `TableSurface`, `StatusBar`, `SeatSurface` and `SeatSwitcher`. The visual language is
+ * the application's: the dark navy frame, parchment panels, amber trim and condensed
+ * uppercase headings that `app.css` defines as tokens.
+ *
+ * The three arrangements come from `useViewport`, written as a class on `.ms-layout`
+ * rather than as media queries, so the component and the stylesheet agree on which one
+ * is in use. A phone gets the action sheet pinned to the bottom; a tablet gets the board
+ * beside a docked panel with the seats above; a desktop gets three columns.
+ *
+ * Every animation is either a state arriving — a coin count changing, a token leaving the
+ * tray, a majority being marked, a turn beginning — or a pointer at something the player
+ * should look at. No animation gates a control, and the reduce-motion block at the foot
+ * of this file takes all of it away without hiding a state.
+ */
+
+/* ------------------------------------------------------------------- layout */
+
+.ms-layout {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ms-table {
+  display: grid;
+  gap: 12px;
+  align-items: start;
+  min-width: 0;
+}
+
+.ms-notices {
+  display: grid;
+  gap: 12px;
+}
+
+.ms-layout--desktop .ms-table {
+  grid-template-columns: minmax(180px, 220px) minmax(0, 1fr) minmax(320px, 380px);
+  grid-template-areas: 'seats board sheet';
+}
+
+.ms-layout--tablet .ms-table {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  /* The strip keeps its own height; the tall docked sheet stretches the board's row only. */
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'seats sheet'
+    'board sheet';
+}
+
+.ms-layout--phone .ms-table {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+
+.ms-seats {
+  grid-area: seats;
+  min-width: 0;
+}
+
+.ms-board {
+  grid-area: board;
+  min-width: 0;
+}
+
+.ms-sheet--docked {
+  grid-area: sheet;
+}
+
+.ms-layout--phone .ms-board {
+  order: 1;
+}
+
+.ms-layout--phone .ms-seats {
+  order: 2;
+  /* The chips sit on the board's bottom edge, over the sea, so board and seats read as one. */
+  position: relative;
+  z-index: 2;
+  margin-top: -30px;
+}
+
+.ms-layout--phone .ms-chip__button {
+  min-height: 40px;
+  padding: 3px 10px 3px 4px;
+  gap: 6px;
+}
+
+.ms-layout--phone .ms-chip__mark .party-mark {
+  width: 24px;
+  height: 24px;
+}
+
+.ms-layout--phone .ms-chip__score {
+  font-size: 20px;
+}
+
+/* The page keeps room under its content for the collapsed sheet, so nothing hides under it. */
+.ms-layout--phone {
+  padding-bottom: calc(var(--ms-sheet-pad, 84px) + 20px + env(safe-area-inset-bottom, 0px));
+}
+
+/* -------------------------------------------------------------------- the bar */
+
+.status-bar.ms-bar {
+  position: sticky;
+  top: 0;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 16px;
+  background: linear-gradient(180deg, #2a3350, var(--frame));
+  color: var(--paper);
+  border: 1px solid #f4b94288;
+  /* The party of whoever must act, as a stripe down the left edge. It cross-fades. */
+  border-left: 6px solid var(--party);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 18px #00000080;
+  min-width: 0;
+  transition: border-color 600ms ease;
+}
+
+.ms-bar__turn {
+  margin: 0;
+  flex: none;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: var(--weight-bold);
+  color: var(--frame-deep);
+  background: var(--trim);
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.ms-bar__who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ms-bar__mark {
+  display: inline-flex;
+  flex: none;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--frame-deep);
+  box-shadow: 0 0 0 2px var(--party);
+  transition: box-shadow 600ms ease;
+}
+
+.ms-bar__news {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 16px;
+  font-weight: var(--weight-bold);
+  line-height: 1.15;
+  animation: ms-crossfade 320ms ease-out;
+}
+
+/* The ellipsis lives on the text itself: a flex container's own text never clips. */
+.ms-bar__news-text {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ms-bar--mine .ms-bar__news {
+  color: var(--trim);
+}
+
+/* The computer is thinking: three dots that bounce in turn. */
+.ms-dots {
+  display: inline-flex;
+  gap: 3px;
+  align-items: flex-end;
+  height: 10px;
+}
+
+.ms-dots i {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--trim);
+  animation: ms-bounce 1s ease-in-out infinite;
+}
+
+.ms-dots i:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.ms-dots i:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+.ms-bar__menu {
+  flex: none;
+  margin-left: auto;
+}
+
+.ms-menu-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--trim);
+  background: transparent;
+  color: var(--paper);
+  font: inherit;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  font-weight: var(--weight-bold);
+  cursor: pointer;
+}
+
+.ms-layout--phone .ms-menu-button {
+  padding: 0;
+  width: 40px;
+  justify-content: center;
+}
+
+.ms-layout--phone .ms-menu-button__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.ms-menu-button svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.ms-menu-button:hover {
+  background: #f4b94222;
+}
+
+/* On a phone the bar is two rows: the turn, the coins and the menu, then who is acting. */
+.ms-layout--phone .status-bar.ms-bar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'turn coins menu'
+    'who who who';
+  gap: 4px 8px;
+  padding: 6px 8px 8px 14px;
+}
+
+.ms-layout--phone .ms-bar__turn {
+  grid-area: turn;
+  align-self: center;
+}
+
+.ms-layout--phone .ms-coins {
+  grid-area: coins;
+  justify-self: end;
+}
+
+.ms-layout--phone .ms-bar__menu {
+  grid-area: menu;
+  margin-left: 0;
+}
+
+.ms-layout--phone .ms-bar__who {
+  grid-area: who;
+}
+
+.ms-layout--phone .ms-bar__news {
+  font-size: 15px;
+}
+
+.ms-event-cue {
+  position: fixed;
+  top: calc(var(--bar-h) + 10px);
+  left: 50%;
+  z-index: 34;
+  translate: -50% 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  padding: 8px 12px;
+  border: 1px solid var(--trim);
+  border-left: 5px solid var(--trim);
+  border-radius: 999px;
+  background: var(--paper-bright);
+  color: var(--ink);
+  box-shadow: 0 8px 24px #0008;
+  font-size: 13px;
+  pointer-events: none;
+  animation: ms-event-cue 2.4s ease both;
+}
+
+.ms-event-cue__label {
+  flex: none;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: var(--weight-bold);
+  color: var(--ink-soft);
+}
+
+.ms-event-cue--news {
+  border-left-color: var(--press);
+}
+
+.ms-event-cue--trick {
+  border-left-color: #a83a4c;
+}
+
+.ms-event-cue--trade,
+.ms-event-cue--auction {
+  border-left-color: var(--cash);
+}
+
+.ms-event-cue--power {
+  border-left-color: var(--faith);
+}
+
+.ms-event-cue--result {
+  border-width: 2px 2px 2px 6px;
+  animation-duration: 5s;
+}
+
+/* ---------------------------------------------------------------------- coins */
+
+.ms-coins {
+  list-style: none;
+  margin: 0;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--frame-deep);
+  border: 1px solid #f4b94266;
+  border-radius: 999px;
+  color: var(--paper);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex: none;
+}
+
+.ms-coin {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ms-coin img {
+  width: 20px;
+  height: 20px;
+}
+
+.ms-coin__count {
+  display: inline-block;
+  min-width: 1ch;
+  font-weight: var(--weight-bold);
+  font-size: 15px;
+}
+
+.ms-coin__count--changed {
+  animation: ms-pop 460ms cubic-bezier(0.2, 1.4, 0.5, 1);
+}
+
+/* What just changed, rising out of the coin and fading. */
+.ms-coin__delta {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  font-size: 13px;
+  font-weight: var(--weight-bold);
+  pointer-events: none;
+  animation: ms-rise-fade 1.3s ease-out forwards;
+}
+
+.ms-coin__delta--up {
+  color: #8fe6ad;
+}
+
+.ms-coin__delta--down {
+  color: #ff9d8b;
+}
+
+.ms-coins__cap {
+  font-size: 13px;
+  font-weight: var(--weight-bold);
+  padding-left: 8px;
+  border-left: 1px solid #f4b94266;
+}
+
+.ms-coins__cap--over {
+  color: #ff9d8b;
+}
+
+.ms-coins__cap-of {
+  font-weight: var(--weight-regular);
+  color: var(--trim);
+}
+
+.ms-layout--phone .ms-coins {
+  gap: 5px;
+  padding: 3px 7px;
+  min-width: 0;
+}
+
+.ms-layout--phone .ms-coin {
+  gap: 2px;
+}
+
+.ms-layout--phone .ms-coin img {
+  width: 15px;
+  height: 15px;
+}
+
+.ms-layout--phone .ms-coin__count {
+  font-size: 12px;
+}
+
+.ms-layout--phone .ms-coins__cap {
+  font-size: 11px;
+  padding-left: 5px;
+}
+
+/* --------------------------------------------------------------------- seats */
+
+.ms-seats__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ms-layout--phone .ms-seats__list {
+  overflow-x: auto;
+  padding: 10px 12px 6px;
+  margin: 0 -12px;
+  scrollbar-width: none;
+}
+
+.ms-layout--phone .ms-seats__list::-webkit-scrollbar {
+  display: none;
+}
+
+.ms-layout--tablet .ms-seats__list {
+  flex-wrap: wrap;
+}
+
+.ms-layout--desktop .ms-seats {
+  position: sticky;
+  top: calc(var(--bar-h) + 8px);
+}
+
+.ms-layout--desktop .ms-seats__list {
+  flex-direction: column;
+}
+
+.ms-chip {
+  position: relative;
+  flex: none;
+  min-width: 0;
+}
+
+.ms-layout--desktop .ms-chip {
+  flex: 1 1 auto;
+}
+
+.ms-chip__button {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
+  padding: 4px 12px 4px 5px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-edge);
+  border-left: 5px solid var(--party);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow 200ms ease, transform 120ms ease;
+}
+
+.ms-chip__button:hover {
+  transform: translateY(-1px);
+}
+
+/* The seat that must act wears a pulsing ring in its party's colour, and says so in words. */
+.ms-chip--acting .ms-chip__button {
+  box-shadow: 0 0 0 2px var(--party);
+  animation: ms-ring 1.6s ease-in-out infinite;
+}
+
+.ms-chip--turn:not(.ms-chip--acting) .ms-chip__button {
+  box-shadow: 0 0 0 2px #1f2a4455;
+}
+
+.ms-chip--open .ms-chip__button {
+  background: var(--paper-bright);
+}
+
+.ms-chip__mark {
+  display: inline-flex;
+  flex: none;
+}
+
+.ms-chip__text {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.ms-chip__name {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--weight-bold);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ms-chip__tags {
+  display: flex;
+  gap: 4px;
+  min-height: 12px;
+}
+
+.ms-chip__badge,
+.ms-chip__state {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
+  border-radius: 999px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+.ms-chip__badge {
+  background: var(--frame);
+  color: var(--paper);
+}
+
+.ms-chip__state {
+  background: var(--paper-sunk);
+  color: var(--ink-soft);
+}
+
+.ms-chip__state--acting {
+  background: var(--influence);
+  color: #fff;
+}
+
+.ms-chip__score {
+  margin-left: auto;
+  padding-left: 6px;
+  font-family: var(--condensed);
+  font-size: 24px;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  min-width: 1.1ch;
+  text-align: center;
+}
+
+.ms-chip__score-num {
+  display: inline-block;
+  animation: ms-pop 460ms cubic-bezier(0.2, 1.4, 0.5, 1);
+}
+
+/* The seat that just acted flashes once. Remounted on every new event. */
+.ms-chip__flash {
+  position: absolute;
+  inset: 0;
+  background: var(--trim);
+  pointer-events: none;
+  animation: ms-flash 900ms ease-out forwards;
+}
+
+.ms-chip__pop {
+  position: absolute;
+  z-index: 25;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 240px;
+  background: var(--paper-bright);
+  color: var(--ink);
+  border: 1px solid var(--panel-edge);
+  border-top: 4px solid var(--party);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  box-shadow: 0 10px 24px #00000055;
+  font-size: 13px;
+  animation: ms-rise 200ms ease-out;
+}
+
+.ms-chip__pop[hidden] {
+  display: none;
+}
+
+.ms-layout--desktop .ms-chip__pop {
+  position: static;
+  margin-top: 4px;
+  min-width: 0;
+}
+
+/* On a phone the strip scrolls sideways, so the popover floats above the sheet instead. */
+.ms-layout--phone .ms-chip__pop {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  top: auto;
+  bottom: calc(var(--ms-sheet-head, 84px) + 14px + env(safe-area-inset-bottom, 0px));
+  z-index: 37;
+}
+
+.ms-chip__facts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+  gap: 6px 10px;
+}
+
+.ms-chip__facts div {
+  display: grid;
+  gap: 1px;
+}
+
+.ms-chip__facts dt {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+  color: var(--ink-soft);
+}
+
+.ms-chip__facts dd {
+  margin: 0;
+  font-weight: var(--weight-bold);
+}
+
+.ms-chip__resources {
+  margin: 8px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ms-chip__resources > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ms-chip__cap {
+  color: var(--ink-soft);
+  padding-left: 6px;
+  border-left: 1px solid var(--paper-edge);
+}
+
+.ms-chip__policy {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+/* --------------------------------------------------------------------- board */
+
+.ms-board {
+  position: relative;
+}
+
+.ms-board__tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+
+.ms-zoom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ms-zoom__level {
+  margin: 0;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 12px;
+  color: var(--paper);
+  min-width: 6ch;
+  text-align: center;
+}
+
+/* While an action wants an area, the map is told so, above it. */
+.ms-board__call {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  background: #7b4fbf2e;
+  border: 1px solid #7b4fbf99;
+  border-left: 4px solid var(--faith);
+  border-radius: var(--radius);
+  color: var(--paper);
+  font-size: 14px;
+  font-weight: 600;
+  animation: ms-rise 220ms ease-out;
+}
+
+.ms-board__call--none {
+  background: #b3261e2e;
+  border-color: #b3261e99;
+  border-left-color: var(--problem);
+}
+
+.ms-board__pin {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--faith);
+  box-shadow: 0 0 0 3px #7b4fbf55;
+  animation: ms-pin-bob 1.2s ease-in-out infinite;
+}
+
+.ms-board__call--none .ms-board__pin {
+  background: var(--problem);
+  box-shadow: 0 0 0 3px #b3261e55;
+  animation: none;
+}
+
+.ms-board__frame {
+  transition: box-shadow 300ms ease;
+}
+
+.ms-board__frame--wanted {
+  box-shadow: 0 0 0 3px #7b4fbfaa, 0 4px 12px #00000040;
+}
+
+/* The board runs edge to edge on a phone; the screen is the frame. */
+.ms-layout--phone .ms-board__frame {
+  width: auto;
+  margin: 0 -12px;
+  border-radius: 0;
+  padding: 4px;
+}
+
+.ms-layout--phone .ms-board__call {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+/* What is on a selected area, said once, then gone. */
+.ms-board__toast {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  translate: -50% 8px;
+  z-index: 3;
+  margin: 0;
+  max-width: calc(100% - 24px);
+  padding: 8px 14px;
+  background: var(--frame-deep);
+  color: var(--paper);
+  border: 1px solid var(--trim);
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease, translate 220ms ease;
+}
+
+.ms-board__toast--on {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+/* A zone's plaque flashes when its count changes. Remounted on each change. */
+.ms-plaque-glow {
+  fill: var(--trim);
+  pointer-events: none;
+  animation: ms-glow 900ms ease-out forwards;
+}
+
+/* A majority marked for the first time bursts a ring out of the plaque. */
+.ms-burst {
+  pointer-events: none;
+}
+
+.ms-burst__ring {
+  fill: none;
+  stroke: var(--trim);
+  stroke-width: 6;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ms-burst 1100ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+.ms-burst__ring--late {
+  stroke: var(--paper);
+  stroke-width: 3;
+  animation-delay: 180ms;
+}
+
+/* --------------------------------------------------------------- action sheet */
+
+.ms-sheet {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--panel-edge);
+  border-top: 4px solid var(--party);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 0 #ffffff33 inset, 0 3px 0 #14090f, 0 10px 24px #00000040;
+  transition: border-color 600ms ease;
+}
+
+/* Docked beside the board: a column that scrolls on its own under the bar. */
+.ms-sheet--docked {
+  position: sticky;
+  top: calc(var(--bar-h) + 8px);
+  max-height: calc(100dvh - var(--bar-h) - 16px);
+}
+
+.ms-sheet--docked .ms-sheet__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+/*
+ * Pinned to the bottom of a phone. The sheet is always full height and is translated
+ * down so that `--ms-sheet-visible` of it shows; the body's own height follows, so what
+ * scrolls is exactly what is on screen. Dragging adds `--ms-drag` and switches the
+ * transition off; letting go snaps to a level with a slight overshoot.
+ */
+.ms-layout--phone .ms-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 36;
+  height: calc(100dvh - var(--bar-h) - 12px);
+  border-radius: 18px 18px 0 0;
+  border-bottom: 0;
+  box-shadow: 0 -8px 30px #00000066;
+  transform: translateY(calc(100% - var(--ms-sheet-visible) + var(--ms-drag, 0px)));
+  transition: transform 460ms cubic-bezier(0.32, 1.25, 0.5, 1), border-color 600ms ease;
+  will-change: transform;
+}
+
+.ms-sheet--collapsed {
+  --ms-sheet-visible: var(--ms-sheet-head, 84px);
+}
+
+.ms-sheet--half {
+  --ms-sheet-visible: min(46dvh, 420px);
+}
+
+.ms-sheet--full {
+  --ms-sheet-visible: 100%;
+}
+
+.ms-sheet--full.ms-sheet--teaching {
+  --ms-sheet-visible: min(58dvh, 460px);
+}
+
+.ms-sheet--dragging {
+  transition: none !important;
+}
+
+.ms-layout--phone .ms-sheet__body {
+  height: max(0px, calc(var(--ms-sheet-visible) - var(--ms-sheet-head, 84px) - var(--ms-sheet-teaching, 0px)));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transition: height 460ms cubic-bezier(0.32, 1.25, 0.5, 1);
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+.ms-layout--phone .ms-sheet--collapsed .ms-sheet__body {
+  visibility: hidden;
+  transition: height 460ms cubic-bezier(0.32, 1.25, 0.5, 1), visibility 0s 460ms;
+}
+
+.ms-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 34;
+  background: #0b1020b3;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 320ms ease;
+}
+
+.ms-sheet-backdrop--on {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ms-sheet__head {
+  position: relative;
+  padding: 8px 14px 10px;
+  display: grid;
+  gap: 6px;
+  border-bottom: 1px solid var(--paper-edge);
+  background: var(--paper-bright);
+  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+}
+
+.ms-layout--phone .ms-sheet__head {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  border-radius: 16px 16px 0 0;
+  padding-top: 6px;
+}
+
+.ms-sheet__teaching {
+  flex: none;
+}
+
+.ms-layout--phone .ms-sheet__teaching .coach {
+  margin: 0;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  animation: none;
+}
+
+.ms-layout--phone .ms-sheet__teaching .coach__lesson > summary,
+.ms-layout--phone .ms-sheet__teaching .coach__quiet-controls > summary {
+  padding: 8px 14px;
+}
+
+.ms-layout--phone .ms-sheet__teaching .coach__content,
+.ms-layout--phone .ms-sheet__teaching .coach__quiet-line,
+.ms-layout--phone .ms-sheet__teaching .coach__quiet-controls > .actions {
+  margin-inline: 14px;
+}
+
+.ms-layout--phone .ms-sheet__teaching .coach__content {
+  max-height: min(22dvh, 150px);
+  overflow-y: auto;
+  padding-bottom: 10px;
+}
+
+.ms-sheet__handle {
+  display: block;
+  width: 44px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--panel-edge);
+  margin: 0 auto 2px;
+}
+
+.ms-sheet__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.ms-sheet__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ms-sheet__eyebrow {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.ms-sheet__you {
+  font-weight: var(--weight-bold);
+  color: var(--ink);
+}
+
+.ms-sheet__news {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.15;
+  animation: ms-crossfade 320ms ease-out;
+}
+
+.ms-layout--phone .ms-sheet__news {
+  font-size: 17px;
+}
+
+.ms-sheet__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.ms-sheet__actions .button {
+  white-space: nowrap;
+}
+
+.ms-sheet__more {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--paper-edge);
+  background: var(--paper);
+  color: var(--frame);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ms-sheet__more svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 320ms ease;
+}
+
+.ms-sheet--full .ms-sheet__more svg {
+  transform: rotate(180deg);
+}
+
+/* The turn as three quiet words, the current one plain and dark. */
+.ms-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 4px;
+}
+
+.ms-steps__step + .ms-steps__step::before {
+  content: '·';
+  margin-right: 4px;
+  color: var(--panel-edge);
+}
+
+.ms-steps__step--done {
+  opacity: 0.7;
+}
+
+.ms-steps__step--current {
+  color: var(--frame);
+  font-weight: var(--weight-bold);
+}
+
+/* End turn, and its reason on a long press. */
+.ms-end {
+  position: relative;
+  display: inline-flex;
+}
+
+.ms-end__reason {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  z-index: 5;
+  width: max-content;
+  max-width: 260px;
+  padding: 8px 10px;
+  background: var(--frame-deep);
+  color: var(--paper);
+  border: 1px solid var(--trim);
+  border-radius: var(--radius);
+  font-size: 12px;
+  line-height: 1.3;
+  font-family: var(--body);
+  text-transform: none;
+  letter-spacing: 0;
+  animation: ms-rise 160ms ease-out;
+}
+
+.ms-pass {
+  justify-content: center;
+}
+
+.ms-layout--phone .ms-sheet__actions .button {
+  padding: 8px 12px;
+  min-height: 42px;
+  font-size: 12px;
+}
+
+/* A pass control is a sentence, so on a phone it takes a row of its own under the text. */
+.ms-layout--phone .ms-sheet__row--pass {
+  flex-wrap: wrap;
+}
+
+.ms-layout--phone .ms-sheet__row--pass .ms-sheet__text {
+  flex: 1 1 auto;
+}
+
+.ms-layout--phone .ms-sheet__row--pass .ms-sheet__actions {
+  flex: 1 1 100%;
+}
+
+.ms-layout--phone .ms-sheet__row--pass .ms-pass {
+  flex: 1 1 auto;
+  min-height: 48px;
+}
+
+.ms-sheet__body {
+  padding: 4px 14px 16px;
+}
+
+/* ---------------------------------------------------------------- voter tray */
+
+.ms-tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 2px;
+}
+
+/* On a phone the tokens sit on the sheet's edge, over the board, like pieces on a rail. */
+.ms-layout--phone .ms-tray {
+  margin-top: -20px;
+}
+
+.ms-tray__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 12px 3px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--paper-edge);
+  background: var(--paper-bright);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 3px 8px #00000033;
+  transition: box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.ms-tray__group--open {
+  border-color: var(--party);
+  box-shadow: 0 0 0 2px var(--party), 0 3px 8px #00000033;
+}
+
+.ms-tray__group:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.ms-tray__tokens {
+  display: inline-flex;
+  padding-left: 8px;
+}
+
+.ms-token {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-left: -9px;
+  border-radius: 999px;
+  background: var(--party);
+  border: 2px solid var(--frame-deep);
+  box-shadow: 0 2px 0 #00000055;
+}
+
+.ms-token--arriving {
+  animation: ms-token-in 360ms cubic-bezier(0.2, 1.3, 0.5, 1) both;
+  animation-delay: calc(180ms + var(--i, 0) * 70ms);
+}
+
+.ms-token img {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+}
+
+/* A token that has an area now: it leaves the tray for the board. */
+.ms-token--placed {
+  animation: ms-token-out 360ms ease-in forwards;
+  animation-delay: 0ms;
+}
+
+.ms-tray__label {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 12px;
+  font-weight: var(--weight-bold);
+}
+
+/* ------------------------------------------------------------ the seat's body */
+
+.ms-seat {
+  display: grid;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.ms-seat__failure {
+  margin: 0;
+}
+
+.ms-seat__finished {
+  margin: 6px 0;
+}
+
+.ms-seat__detail {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.ms-seat__label {
+  margin: 4px 0 4px;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.ms-seat__note {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.ms-market {
+  min-width: 0;
+}
+
+/* The thing being done now: a prompt in red, an open action in gold. */
+.ms-now {
+  position: relative;
+  border-radius: var(--radius);
+  padding: 10px 12px 12px;
+  animation: ms-rise 220ms ease-out;
+}
+
+.ms-now:focus {
+  outline: none;
+}
+
+.ms-now--prompt {
+  background: var(--paper-bright);
+  border: 2px solid var(--influence);
+}
+
+.ms-now--composing {
+  background: var(--paper-sunk);
+  border: 2px solid var(--trim);
+}
+
+.ms-now__flash {
+  position: absolute;
+  inset: -3px;
+  border-radius: calc(var(--radius) + 3px);
+  background: var(--trim);
+  pointer-events: none;
+  animation: ms-flash 900ms ease-out forwards;
+}
+
+.ms-now__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ms-now__eyebrow {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  color: var(--ink-soft);
+}
+
+.ms-now__cancel {
+  min-height: 36px;
+  padding: 6px 10px;
+}
+
+.ms-now .composer {
+  margin: 0;
+}
+
+.ms-drawer > summary h3 {
+  font-size: var(--text-body);
+}
+
+.ms-public__detail {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+/* ---------------------------------------------------------------------- menu */
+
+.ms-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  visibility: hidden;
+  transition: visibility 0s 340ms;
+}
+
+.ms-menu--open {
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.ms-menu__backdrop {
+  position: absolute;
+  inset: 0;
+  background: #0b1020b3;
+  opacity: 0;
+  transition: opacity 320ms ease;
+}
+
+.ms-menu--open .ms-menu__backdrop {
+  opacity: 1;
+}
+
+.ms-menu__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 92vw);
+  background: var(--paper);
+  color: var(--ink);
+  border-left: 3px solid var(--trim);
+  box-shadow: -10px 0 30px #00000066;
+  overflow-y: auto;
+  padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(100%);
+  transition: transform 340ms cubic-bezier(0.32, 1.12, 0.5, 1);
+}
+
+.ms-menu--open .ms-menu__panel {
+  transform: none;
+}
+
+.ms-menu__head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 0;
+  margin-bottom: 6px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--paper-edge);
+}
+
+.ms-menu__head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.ms-menu__section {
+  border-bottom: 1px solid var(--paper-edge);
+  padding: 2px 0;
+}
+
+.ms-menu__section > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 0;
+}
+
+.ms-menu__section > summary::-webkit-details-marker {
+  display: none;
+}
+
+.ms-menu__section > summary::before {
+  content: '▸';
+  color: var(--trim);
+  font-size: var(--text-small);
+}
+
+.ms-menu__section[open] > summary::before {
+  content: '▾';
+}
+
+.ms-menu__title {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: var(--weight-bold);
+  font-size: 14px;
+}
+
+.ms-menu__note {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.ms-menu__content {
+  padding: 0 0 12px;
+  animation: ms-rise 220ms ease-out;
+}
+
+.ms-menu__section--help .drawer,
+.ms-menu__section--extras .settings {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ms-menu__section--extras .settings > summary {
+  min-height: 44px;
+  padding: 10px 0;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: var(--weight-bold);
+  font-size: 14px;
+}
+
+.ms-menu__home {
+  margin: 16px 0 0;
+}
+
+.ms-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.ms-log li {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  background: var(--paper-bright);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius);
+  font-size: 13px;
+  line-height: 1.35;
+  animation: ms-rise 320ms ease-out both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+
+.ms-log__actor {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: var(--weight-bold);
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.ms-switch {
+  display: grid;
+  gap: 8px;
+}
+
+.ms-switch__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.ms-switch__list .button {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.ms-switch__list .button[aria-pressed='true'] {
+  background: var(--paper-sunk);
+  border-color: var(--frame);
+}
+
+.ms-pace {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ms-pace__note {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+/* ----------------------------------------------------------------- keyframes */
+
+@keyframes ms-rise {
+  0% { transform: translateY(6px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes ms-crossfade {
+  0% { opacity: 0; transform: translateY(3px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ms-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.45); }
+  100% { transform: scale(1); }
+}
+
+@keyframes ms-rise-fade {
+  0% { transform: translate(-50%, 0); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(-50%, -22px); opacity: 0; }
+}
+
+@keyframes ms-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
+}
+
+@keyframes ms-ring {
+  0%, 100% { box-shadow: 0 0 0 2px var(--party); }
+  50% { box-shadow: 0 0 0 5px var(--party); }
+}
+
+@keyframes ms-flash {
+  0% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+@keyframes ms-token-in {
+  0% { transform: translateY(14px) scale(0.4); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes ms-token-out {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: translateY(-18px) scale(0.2); opacity: 0; }
+}
+
+@keyframes ms-glow {
+  0% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+@keyframes ms-burst {
+  0% { transform: scale(0.4); opacity: 1; }
+  100% { transform: scale(4.2); opacity: 0; }
+}
+
+@keyframes ms-pin-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes ms-event-cue {
+  0% { opacity: 0; transform: translateY(-8px); }
+  12%, 82% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+
+/* ------------------------------------------------------------- reduced motion */
+
+/*
+ * Motion is decoration here, so switching it off must leave every state readable. The
+ * sheet still moves between its levels — that is a state change, not decoration — but it
+ * cuts rather than springs, and nothing else here moves at all.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .ms-bar__news,
+  .ms-event-cue,
+  .ms-dots i,
+  .ms-coin__count,
+  .ms-coin__delta,
+  .ms-chip__button,
+  .ms-chip__score-num,
+  .ms-chip__flash,
+  .ms-chip__pop,
+  .ms-board__call,
+  .ms-board__pin,
+  .ms-plaque-glow,
+  .ms-burst__ring,
+  .ms-sheet__news,
+  .ms-token,
+  .ms-now,
+  .ms-now__flash,
+  .ms-menu__content,
+  .ms-log li,
+  .ms-end__reason {
+    animation: none;
+  }
+
+  .ms-coin__delta,
+  .ms-chip__flash,
+  .ms-plaque-glow,
+  .ms-burst,
+  .ms-now__flash {
+    display: none;
+  }
+
+  .ms-token--placed {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+
+  .ms-chip--acting .ms-chip__button {
+    box-shadow: 0 0 0 3px var(--party);
+  }
+
+  .ms-layout--phone .ms-sheet,
+  .ms-layout--phone .ms-sheet__body,
+  .ms-sheet-backdrop,
+  .ms-menu__panel,
+  .ms-menu__backdrop,
+  .ms-menu,
+  .ms-bar__stripe,
+  .ms-bar__mark,
+  .ms-board__toast,
+  .ms-board__frame,
+  .ms-sheet,
+  .ms-sheet__more svg,
+  .ms-chip__button {
+    transition: none;
+  }
+
+  .ms-chip__button:hover {
+    transform: none;
+  }
+}

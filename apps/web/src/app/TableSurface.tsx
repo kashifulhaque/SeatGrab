@@ -1,654 +1,267 @@
 /**
- * The shared table: the board and everything anyone at the table can see beside it.
+ * The match screen's layout: the bar, the board, the seats and the action sheet, on one
+ * screen.
  *
- * Section 13.4 wants the board dominant rather than a stamp between dashboards, the
- * three voter cards visible without opening anything, the deck counts and public effects
- * readable without exposing order. All of that is public, so this component takes the
- * public projection and renders it for the whole table at once. Nothing private is drawn
- * here; the privacy cover in `MatchShell` owns that, and this surface is what stays on
- * screen behind it. The decision owner lives in `StatusBar`, which is pinned above this.
+ * The first design put the board, the actions, the seats and the log in four panels and,
+ * on a phone, behind four tabs. The owner's verdict was that the board and the cards had
+ * "significant disconnect" and that nobody but the developer could follow it. So this
+ * component lays the four out as one surface instead:
  *
- * The grid is the structure of 13.4: seat summaries on the left, the board filling the
- * centre, and the action column on the right. The action column is handed in as `aside`
- * — the revealed seat's `SeatSurface` — because it is private and this file must never
- * know a seat. When no seat is revealed, the column shows the market read-only and what
- * the table is waiting on. Below the grid, In play and the Log stay as they were.
+ * - the slim status bar, pinned;
+ * - the board, fitted to the width, with the seats as a strip of chips against it;
+ * - the action sheet, pinned to the bottom of a phone or docked beside the board on a
+ *   wider screen, carrying what to do now and the controls that do it;
+ * - and a menu drawer for everything that is not needed every turn: the log, the cards
+ *   in play, the rules, the mode's own controls and the frozen settings.
  *
- * The board and the zone list are two views of the same nine zones. The board is the
- * primary one and is fully keyboard navigable; the zone list exists because a phone in
- * portrait cannot make 129 areas comfortably tappable, and because a table sometimes just
- * wants the numbers. Both are rendered from the same summaries, so they cannot disagree.
+ * Which of the three arrangements is used comes from `useViewport`: a phone gets the
+ * sheet, a tablet gets the board beside a docked panel with the strip above, a desktop
+ * gets three columns with the strip on the left. Every region is in the document at every
+ * width, so a render test finds the same controls whatever the layout.
  *
- * One thing crosses the line between the shared surface and a seat's own: when a seat is
- * composing an action, its legal areas are ringed here and clicking one feeds the choice
- * back. The set arrives already computed; this file neither derives it nor decides what
- * choosing one means, so the shared board stays a board rather than becoming a composer.
- * The banner that says so sits *above* the map rather than under it, because it is an
- * instruction about the map and a player reads down into the thing it is about.
+ * Nothing private is drawn here. The revealed seat's own surface arrives already built,
+ * as `seat`, and this file never knows a seat: the privacy cover in `MatchShell` owns
+ * which seat that is, and online there is only ever one.
  *
- * Section 13.10 also asks for a zoomable board on a phone. The zoom here enlarges the
- * drawing inside a frame that then scrolls, rather than transforming a fixed box: the
- * areas grow with it, so a magnified area is a bigger hit target and not just a bigger
- * picture of a small one. It is driven by ordinary buttons, so it is as available to a
- * keyboard as to a pinch, and the browser's own pinch-zoom is left switched on beside it.
- *
- * Three layouts, per 13.10, chosen by `useViewport`: three columns on a desktop; on a
- * tablet the seats become a strip above the board and the action column a drawer over
- * its right edge; on a phone the four regions become tabs under the status bar.
+ * One thing crosses between the shared board and a seat's own sheet: while the seat is
+ * composing an action, its legal areas are ringed on the board and tapping one feeds the
+ * choice back through `onPickSlot`. The set arrives already computed; this file neither
+ * derives it nor decides what choosing one means.
  */
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
-import type { PlayerView } from '@gerrymander/protocol';
+import type { PlayerView, PublicPlayerView, VisibleEvent } from '@gerrymander/protocol';
 
-import { BOARD_VIEW_RATIO, TableBoard, slotLabel } from '../board/TableBoard';
-import { PARTY_BY_ID, RESOURCE_ASSETS } from '../assets/manifest';
+import { PARTY_BY_ID } from '../assets/manifest';
 
-import { HowToPlay } from './HowToPlay';
+import { StatusBar } from './StatusBar';
+import type { Availability, Targeting } from './actions';
+import { ActionSheet } from './match/ActionSheet';
+import { BoardRegion } from './match/BoardRegion';
+import { MatchMenuButton, MatchMenuDrawer, type MatchMenuItems } from './match/MatchMenu';
+import { SeatsStrip } from './match/SeatsStrip';
 import { Market } from './Market';
-import { PartyMark } from './PartyMark';
-import type { Targeting } from './actions';
-import {
-  describeDecision,
-  describeDecks,
-  describeSlot,
-  mustActSeat,
-  summarizePlayers,
-  summarizeZones,
-  type PlayerSummary,
-  type ZoneSummary,
-  marksComputer,
-} from './table';
+import { describeDecision, mustActSeat, summarizePlayers, summarizeZones } from './table';
 import { useViewport } from './useViewport';
 
-const RESOURCE_ORDER = ['cash', 'influence', 'press', 'faith'] as const;
+import './match/match.css';
 
-/**
- * The zoom steps the board offers, as a multiple of the fitted width.
- *
- * Discrete steps rather than a slider: a slider is a poor target on a phone and an
- * awkward one from a keyboard, and three steps are enough to make the most crowded zone
- * comfortable at 400px.
- */
-const ZOOM_STEPS = [1, 1.5, 2, 3] as const;
-
-type Tab = 'board' | 'act' | 'seats' | 'log';
-
-/**
- * One seat as a compact scoreboard row that expands to the full card.
- *
- * The row leads with the number that wins — voters counted in a majority — and says so
- * in words, because "score" on its own meant nothing to a first-time player. The rest of
- * the row is one line of plain counts, and the resources are drawn as the same icons the
- * status bar and the market use, so a player learns each icon once.
- */
-function SeatRow({ summary }: { summary: PlayerSummary }) {
-  const { player } = summary;
-  const party = PARTY_BY_ID.get(player.partyId);
-  return (
-    <li
-      className={`seat-row${summary.deciding ? ' seat-row--deciding' : ''}${summary.active ? ' seat-row--active' : ''}`}
-      style={party === undefined ? undefined : ({ '--party': party.color } as CSSProperties)}
-    >
-      <details>
-        <summary>
-          <span className="seat-row__who">
-            <PartyMark partyId={player.partyId} size={30} />
-            <span className="seat-row__name">{player.displayName}</span>
-            {marksComputer(player) ? (
-              <span className="seat-row__badge">computer</span>
-            ) : null}
-            {summary.deciding ? (
-              <span className="seat-row__badge seat-row__badge--deciding">To act</span>
-            ) : summary.active ? (
-              <span className="seat-row__badge">Their turn</span>
-            ) : null}
-          </span>
-          <span className="seat-row__score">
-            <strong>{summary.majorityVoters}</strong>
-            <span>majority voter{summary.majorityVoters === 1 ? '' : 's'}</span>
-          </span>
-          <span className="seat-row__line">
-            {summary.boardVoters} on board · {summary.zonesLed.length} zone{summary.zonesLed.length === 1 ? '' : 's'} led ·{' '}
-            {player.trickHandCount} card{player.trickHandCount === 1 ? '' : 's'}
-          </span>
-          <span className="seat-row__resources" aria-label={`${player.displayName}’s resources`}>
-            {RESOURCE_ORDER.map((resource) => (
-              <span key={resource}>
-                <img src={RESOURCE_ASSETS[resource].url} alt="" aria-hidden="true" width={16} height={16} />
-                <span className="visually-hidden">{RESOURCE_ASSETS[resource].label} </span>
-                {player.resources[resource]}
-              </span>
-            ))}
-            <span className="seat-row__cap">{summary.resourceTotal}/{player.resourceCap}</span>
-          </span>
-        </summary>
-        <dl className="facts facts--tight">
-          <div>
-            <dt>Seat</dt>
-            <dd>{player.seat + 1}</dd>
-          </div>
-          <div>
-            <dt>Majority voters</dt>
-            <dd>{summary.majorityVoters}</dd>
-          </div>
-          <div>
-            <dt>Voters on board</dt>
-            <dd>{summary.boardVoters}</dd>
-          </div>
-          <div>
-            <dt>Zones held</dt>
-            <dd>{summary.zonesLed.length === 0 ? 'none' : summary.zonesLed.join(', ')}</dd>
-          </div>
-          <div>
-            <dt>Zones present in</dt>
-            <dd>{summary.zonesPresent} of 9</dd>
-          </div>
-          <div>
-            <dt>Tricks held</dt>
-            <dd>{player.trickHandCount}</dd>
-          </div>
-        </dl>
-        <p className="small">
-          Policy cards kept — corporate {player.policyCounts.corporate}, nationalist{' '}
-          {player.policyCounts.nationalist}, populist {player.policyCounts.populist}, reformer{' '}
-          {player.policyCounts.reformer}.
-        </p>
-        {summary.zonesWithRights.length === 0 ? null : (
-          <p className="small">redistricting rights: {summary.zonesWithRights.join(', ')}.</p>
-        )}
-      </details>
-    </li>
-  );
-}
-
-function ZoneList({ zones }: { zones: readonly ZoneSummary[] }) {
-  return (
-    <ul className="zone-list">
-      {zones.map((zone) => (
-        <li key={zone.id} className="zone-card">
-          <div className="zone-card__head">
-            <h3>{zone.displayName}</h3>
-            <p className="zone-card__threshold">
-              {zone.majorityThreshold} of {zone.capacity} for a majority
-            </p>
-          </div>
-          <p className="zone-card__fill">
-            {zone.filled} filled · {zone.empty} empty · {zone.volatileSlots} volatile
-          </p>
-          {zone.holdings.length === 0 ? (
-            <p className="small">No voters here yet.</p>
-          ) : (
-            <ul className="zone-card__holdings">
-              {zone.holdings.map((holding) => (
-                <li key={holding.playerId}>
-                  <PartyMark partyId={holding.partyId} size={20} />
-                  <span>
-                    {holding.displayName}: {holding.voters}
-                    {holding.majorityVoters > 0 ? ` (${holding.majorityVoters} marked)` : ''}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="zone-card__majority">
-            {zone.majorityOwner === null
-              ? 'No majority yet.'
-              : `Majority: ${zone.majorityOwner.displayName}.`}
-            {zone.rightsOwner === null
-              ? ''
-              : ` redistricting rights: ${zone.rightsOwner.displayName}.`}
-          </p>
-        </li>
-      ))}
-    </ul>
-  );
+/** The revealed seat's own sheet, built by `seatSheet` in `SeatSurface.tsx`. */
+export interface SeatSheet {
+  seatId: string;
+  /** The one line: what to do now. */
+  news: string;
+  /** Voter tokens waiting to be placed, or nothing. */
+  tray?: ReactNode;
+  /** The sheet body: the prompt, the open action, the market and the seat's drawers. */
+  body: ReactNode;
+  /** A name for what the body is about; a change opens a collapsed sheet. */
+  subject: string;
 }
 
 /**
- * What the marks on the board mean, in one line each.
- *
- * Every mark here is also stated in words on the zone list and in the spoken zone
- * descriptions, so this is a reading aid rather than the only source. It is drawn
- * beside the map because a first-time player asked what the dashed rings were.
+ * The sheet body when no seat is revealed: the market to read, and what the table is
+ * waiting on. The pass control, when the mode has one, is in the sheet header.
  */
-function BoardLegend() {
-  return (
-    <ul className="board-key" aria-label="What the marks on the board mean">
-      <li>
-        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-          <circle cx="11" cy="11" r="8" className="board__slot board__slot--taken" />
-          <circle cx="11" cy="11" r="4" fill="var(--frame)" />
-        </svg>
-        <span>A voter. The emblem says whose.</span>
-      </li>
-      <li>
-        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-          <circle cx="11" cy="11" r="9" className="board__majority-ring" />
-          <path d="M6 11l3.5 3.5L16 8" className="board__majority-tick" />
-        </svg>
-        <span>Counted in a majority. It scores.</span>
-      </li>
-      <li>
-        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-          <circle cx="11" cy="11" r="6" className="board__slot" />
-          <circle cx="11" cy="11" r="9.5" className="board__slot-volatile" />
-        </svg>
-        <span>Volatile area: a voter here never moves again and triggers a news.</span>
-      </li>
-      <li>
-        <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
-          <circle cx="11" cy="11" r="6" className="board__slot" />
-          <circle cx="11" cy="11" r="9.5" className="board__legal-ring" />
-        </svg>
-        <span>A legal target for the action you are taking.</span>
-      </li>
-      <li>
-        <span className="board-key__plaque" aria-hidden="true">2/17 · need 9</span>
-        <span>Voters in the zone, of its areas. A majority needs that many of one party.</span>
-      </li>
-    </ul>
-  );
-}
-
-/**
- * The right column when no seat is revealed: whose move it is, the one thing to do about
- * it, the market to read, and the rules.
- *
- * `pass` is the mode's own control for handing the device to that seat. It is drawn here
- * as well as in the status bar because a table looking at the shared view has exactly one
- * next step, and a first-time player looks for it beside the explanation, not in the bar.
- */
-function PublicAside({ view, pass }: { view: PlayerView; pass?: ReactNode }) {
+function PublicBody({ view }: { view: PlayerView }) {
   const decision = describeDecision(view);
-  const next = mustActSeat(view);
-  const party = next === null ? undefined : PARTY_BY_ID.get(next.partyId);
   return (
-    <section
-      className="panel action-column"
-      aria-labelledby="table-aside-heading"
-      style={party === undefined ? undefined : ({ '--party': party.color } as CSSProperties)}
-    >
-      <h2 id="table-aside-heading">Whose move</h2>
-      {next === null ? (
-        <p>{decision.detail}</p>
-      ) : (
-        <section className="now now--free" aria-labelledby="whose-move-heading">
-          <p className="now__eyebrow">Now</p>
-          <h3 id="whose-move-heading" className="now__news now__news--seat">
-            <PartyMark partyId={next.partyId} size={28} /> {next.displayName}
-            {decision.waitingOn.length > 1
-              ? ` and ${decision.waitingOn.length - 1} other${decision.waitingOn.length === 2 ? '' : 's'}`
-              : ''}
-          </h3>
-          <p className="now__detail">{decision.detail}</p>
-          {pass === undefined ? null : <div className="now__body now__body--actions">{pass}</div>}
-        </section>
-      )}
-      <h3 className="options__label">Voter market</h3>
+    <div className="ms-public">
+      <p className="ms-public__detail">{decision.detail}</p>
+      <h3 className="ms-seat__label">Voter market</h3>
       <p className="small">Face up for everyone. The seat acting may buy any of them.</p>
-      <Market view={view} />
-      <HowToPlay />
-    </section>
+      <div data-coach-anchor="market">
+        <Market view={view} />
+      </div>
+    </div>
   );
 }
 
-function ActiveEffects({ view }: { view: PlayerView }) {
-  const named = (playerId: string): string =>
-    view.players.find((player) => player.id === playerId)?.displayName ?? playerId;
-  return (
-    <section className="panel" aria-labelledby="effects-heading">
-      <h2 id="effects-heading">In play</h2>
-      {view.activeEffects.length === 0 ? (
-        <p>No card is exerting a continuing effect.</p>
-      ) : (
-        <ul className="effects">
-          {view.activeEffects.map((effect) => (
-            <li key={effect.id}>
-              <strong>{effect.title}</strong>
-              <span className="small">
-                {named(effect.ownerId)}
-                {effect.targetPlayerIds.length > 0
-                  ? ` → ${effect.targetPlayerIds.map(named).join(', ')}`
-                  : ''}
-                {effect.targetZoneIds.length > 0 ? ` · ${effect.targetZoneIds.join(', ')}` : ''}
-                {effect.remainingUses === undefined ? '' : ` · ${effect.remainingUses} uses left`}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-      {view.pendingVoterGroups.length === 0 ? null : (
-        <>
-          <h3>Voters waiting to be placed</h3>
-          <ul className="effects">
-            {view.pendingVoterGroups.map((group) => (
-              <li key={group.id}>
-                <strong>
-                  {group.count} voter{group.count === 1 ? '' : 's'} for {named(group.ownerId)}
-                </strong>
-                <span className="small">
-                  Placed by {named(group.controllerId)}
-                  {group.sameZone ? ' · all in one zone' : ' · zones may differ'}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-      {view.turncoatHoldings.length === 0 ? null : (
-        <>
-          <h3>Turncoat placements</h3>
-          <ul className="effects">
-            {view.turncoatHoldings.map((holding) => (
-              <li key={holding.effectId}>
-                <strong>
-                  {named(holding.ownerId)} · {holding.archetype}
-                </strong>
-                <span className="small">Acquire for {holding.acquisitionCost} resources.</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-      <details className="disclosure">
-        <summary>Draw piles</summary>
-        <dl className="facts facts--tight">
-          {describeDecks(view).map((entry) => (
-            <div key={entry.label}>
-              <dt>{entry.label}</dt>
-              <dd>{entry.value}</dd>
-            </div>
-          ))}
-        </dl>
-        <p className="hint">
-          Counts only. The order of every draw pile, and the identity of the next card in it,
-          stay where they belong.
-        </p>
-      </details>
-    </section>
-  );
-}
+function EventCue({ view }: { view: PlayerView }) {
+  const latest = view.history[view.history.length - 1];
+  const baseline = useRef({
+    matchId: view.matchId,
+    eventId: latest?.id,
+    status: view.status,
+  });
+  const [cue, setCue] = useState<{ event: VisibleEvent; kind: string; label: string } | null>(null);
 
-function History({ view }: { view: PlayerView }) {
-  const recent = [...view.history].slice(-25).reverse();
+  useEffect(() => {
+    if (baseline.current.matchId !== view.matchId) {
+      baseline.current = { matchId: view.matchId, eventId: latest?.id, status: view.status };
+      setCue(null);
+      return;
+    }
+    const finishedNow = baseline.current.status !== 'finished' && view.status === 'finished';
+    baseline.current.status = view.status;
+    if (latest === undefined || (baseline.current.eventId === latest.id && !finishedNow)) return;
+    baseline.current.eventId = latest.id;
+    const kind = finishedNow
+      ? 'result'
+      : /News/i.test(latest.type)
+        ? 'news'
+        : /Trick|Priority/i.test(latest.type)
+          ? 'trick'
+          : /Trade|Debt|Obligation/i.test(latest.type)
+            ? 'trade'
+            : /Auction|Bid/i.test(latest.type)
+              ? 'auction'
+              : /Gerrymander|Arbitrage|Shakedown|Demolition|Crackdown|Outreach|Turncoat/i.test(latest.type)
+                ? 'power'
+                : 'table';
+    const label = kind === 'result'
+      ? 'Final result'
+      : kind === 'news'
+        ? 'Breaking News'
+        : kind === 'trick'
+          ? 'Dirty Trick'
+          : kind === 'trade'
+            ? 'Trade'
+            : kind === 'auction'
+              ? 'Auction'
+              : kind === 'power'
+                ? 'Power'
+                : 'Table update';
+    setCue({ event: latest, kind, label });
+    const timer = setTimeout(() => setCue(null), kind === 'result' ? 5000 : 2400);
+    return () => clearTimeout(timer);
+  }, [latest?.id, view.matchId, view.status]);
+
+  if (cue === null) return null;
   return (
-    <section className="panel" aria-labelledby="history-heading">
-      <h2 id="history-heading">Log</h2>
-      {recent.length === 0 ? (
-        <p>Nothing yet.</p>
-      ) : (
-        <ol className="history">
-          {recent.map((event) => (
-            <li key={event.id}>
-              <span className="history__actor">
-                {event.actorId === undefined
-                  ? '—'
-                  : view.players.find((player) => player.id === event.actorId)?.displayName
-                    ?? event.actorId}
-              </span>
-              <span>{event.message}</span>
-            </li>
-          ))}
-        </ol>
-      )}
-      <p className="small">The 25 most recent public events, newest first.</p>
-    </section>
+    <div key={cue.event.id} className={`ms-event-cue ms-event-cue--${cue.kind}`} role="status" aria-live="polite">
+      <span className="ms-event-cue__label">{cue.label}</span>
+      <span>{cue.event.message}</span>
+    </div>
   );
 }
 
 export function TableSurface({
   view,
+  me,
   targeting,
   onPickSlot,
-  aside,
-  pass,
   attention = false,
+  seat,
+  pass,
+  endTurn,
+  thinking = null,
+  menu,
+  tutorial,
+  notices,
 }: {
   view: PlayerView;
+  /** The revealed seat's public row, whose resources the bar draws. `null` draws none. */
+  me: PublicPlayerView | null;
   /** Legal areas for the action the revealed seat is composing, or `null` for none. */
   targeting?: Targeting | null;
   /** Called when a legal area is chosen. Absent while no seat holds the device. */
   onPickSlot?: ((slotId: string) => void) | undefined;
-  /** The revealed seat's action column. Absent draws the market read-only. */
-  aside?: ReactNode;
+  /** True when the revealed seat has something to do, so the sheet opens to show it. */
+  attention?: boolean;
+  /** The revealed seat's own sheet. Absent draws the public body. */
+  seat?: SeatSheet | undefined;
   /** The mode's control for handing the device to the seat that must act, if any. */
   pass?: ReactNode;
-  /** True when the revealed seat has something to do, so the phone's Act tab says so. */
-  attention?: boolean;
+  endTurn: Availability & { onEndTurn: () => void; busy: boolean };
+  /** The computer seat about to act, or `null`. */
+  thinking?: PublicPlayerView | null;
+  menu: MatchMenuItems;
+  /** Tutorial coach. On phones it attaches to the action sheet; wider screens keep it above the table. */
+  tutorial?: ReactNode;
+  /** Alerts and results drawn between the bar and the board. */
+  notices?: ReactNode;
 }) {
   const viewport = useViewport();
-  const [tab, setTab] = useState<Tab>('board');
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [boardTab, setBoardTab] = useState<'board' | 'zones'>('board');
-  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
-  const [zoomStep, setZoomStep] = useState(0);
-  const zoom = ZOOM_STEPS[zoomStep] ?? 1;
+  // The menu's button is in the bar and its drawer is a sibling of the bar: the bar is a
+  // sticky stacking context, and a drawer inside it would sit under the action sheet.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const zones = useMemo(() => summarizeZones(view), [view]);
+  const players = useMemo(() => summarizePlayers(view, zones), [view, zones]);
+  const wantsBoard = (targeting?.slotIds.size ?? 0) > 0;
+  const next = mustActSeat(view);
 
-  const hasSeat = aside !== undefined;
-  // A seat that has just revealed itself wants its actions, so the tablet drawer opens
-  // and the phone lands on the Act tab; going back to the table view reverses both.
-  useEffect(() => {
-    setDrawerOpen(hasSeat);
-    setTab(hasSeat ? 'act' : 'board');
-  }, [hasSeat]);
+  // The sheet wears the party of whoever it is for: the revealed seat, or on the shared
+  // surface the seat the table is waiting on.
+  const sheetParty = seat === undefined
+    ? next === null ? undefined : PARTY_BY_ID.get(next.partyId)?.color
+    : PARTY_BY_ID.get(view.players.find((player) => player.id === seat.seatId)?.partyId ?? '')?.color;
 
-  const zones = summarizeZones(view);
-  const players = summarizePlayers(view, zones);
-  const selectedSlot = selectedSlotId === null
-    ? null
-    : view.slots.find((slot) => slot.slotId === selectedSlotId) ?? null;
-
-  const tabs: readonly { id: Tab; label: string }[] = [
-    { id: 'board', label: 'Board' },
-    { id: 'act', label: hasSeat ? 'Act' : 'Market' },
-    { id: 'seats', label: 'Seats' },
-    { id: 'log', label: 'Log' },
-  ];
-  // On a phone the board is a tab rather than the middle of the screen, so a step that
-  // wants an area tapped has to say that the board is where that happens.
-  const boardWanted = (targeting?.slotIds.size ?? 0) > 0;
+  // The shared surface's headline names who must act; the seat's own says what to do.
+  const waiting = describeDecision(view).waitingOn.length;
+  const news = seat?.news ?? (
+    view.status === 'finished'
+      ? 'The match is over'
+      : next === null
+        ? describeDecision(view).news
+        : waiting > 1
+          ? `${next.displayName} and ${waiting - 1} other${waiting === 2 ? '' : 's'}`
+          : next.displayName
+  );
+  // On a table with several people, the sheet says whose it is.
+  const humans = view.players.filter((player) => player.controller !== 'computer').length;
+  const eyebrow = seat !== undefined && humans > 1
+    ? view.players.find((player) => player.id === seat.seatId)?.displayName
+    : seat === undefined && next !== null && view.status !== 'finished'
+      ? 'Whose move'
+      : undefined;
 
   return (
-    <>
-      {viewport === 'phone' ? (
-        <div className="table-tabs" role="tablist" aria-label="Table sections">
-          {tabs.map((entry) => (
-            <button
-              key={entry.id}
-              type="button"
-              role="tab"
-              className={`tab ${tab === entry.id ? 'tab--active' : ''}`}
-              aria-selected={tab === entry.id}
-              onClick={() => setTab(entry.id)}
-            >
-              {entry.label}
-              {entry.id === 'act' && hasSeat && attention ? (
-                <span className="tab__dot" aria-label="Something is waiting on you" />
-              ) : null}
-              {entry.id === 'board' && boardWanted ? (
-                <span className="tab__dot" aria-label="Areas are ringed here for what you are doing" />
-              ) : null}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      {viewport === 'tablet' ? (
-        <div className="table-tools">
-          <button
-            type="button"
-            className={`button ${drawerOpen ? 'button--primary' : ''}`}
-            aria-expanded={drawerOpen}
-            aria-controls="table-aside"
-            onClick={() => setDrawerOpen((open) => !open)}
-          >
-            {hasSeat ? 'Your actions' : 'Market'}
-          </button>
-        </div>
-      ) : null}
+    <div className={`ms-layout ms-layout--${viewport}`}>
+      <StatusBar
+        view={view}
+        me={me}
+        thinking={thinking}
+        menu={(
+          <MatchMenuButton
+            open={menuOpen}
+            onToggle={() => setMenuOpen((current) => !current)}
+            buttonRef={menuButton}
+          />
+        )}
+      />
+      <EventCue view={view} />
+      <MatchMenuDrawer
+        view={view}
+        zones={zones}
+        items={menu}
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        returnFocusTo={menuButton}
+      />
 
-      <div
-        className={`table-grid table-grid--${viewport}${drawerOpen ? ' table-grid--drawer-open' : ''}`}
-        data-tab={tab}
-      >
-        <section className="panel table-grid__seats" aria-labelledby="seats-heading">
-          <h2 id="seats-heading">Seats</h2>
-          <ul className="seat-rows">
-            {players.map((summary) => (
-              <SeatRow key={summary.player.id} summary={summary} />
-            ))}
-          </ul>
-          <p className="small seats__key">
-            Majority voters are the score. Select a seat for the rest.
-          </p>
-        </section>
+      {tutorial === undefined || tutorial === null || viewport === 'phone'
+        ? null
+        : <div className="ms-notices">{tutorial}</div>}
+      {notices === undefined || notices === null ? null : <div className="ms-notices">{notices}</div>}
 
-        <section className="panel table-grid__board" aria-labelledby="board-heading">
-          <div className="board-head">
-            <h2 id="board-heading">Board</h2>
-            <div className="board-head__tabs" role="group" aria-label="How to read the board">
-              <button
-                type="button"
-                className={`tab ${boardTab === 'board' ? 'tab--active' : ''}`}
-                aria-pressed={boardTab === 'board'}
-                onClick={() => setBoardTab('board')}
-              >
-                Map
-              </button>
-              <button
-                type="button"
-                className={`tab ${boardTab === 'zones' ? 'tab--active' : ''}`}
-                aria-pressed={boardTab === 'zones'}
-                onClick={() => setBoardTab('zones')}
-              >
-                Zone list
-              </button>
-            </div>
-            {boardTab === 'board' ? (
-              <div className="board-zoom" role="group" aria-label="Board magnification">
-                <button
-                  type="button"
-                  className="button button--quiet button--icon"
-                  disabled={zoomStep === 0}
-                  title="Zoom out"
-                  onClick={() => setZoomStep((step) => Math.max(0, step - 1))}
-                >
-                  <span aria-hidden="true">−</span>
-                  <span className="visually-hidden">Zoom out</span>
-                </button>
-                <p className="board-zoom__level" role="status">
-                  {zoom === 1 ? 'Fitted' : `${zoom}×`}
-                </p>
-                <button
-                  type="button"
-                  className="button button--quiet button--icon"
-                  disabled={zoomStep === ZOOM_STEPS.length - 1}
-                  title="Zoom in"
-                  onClick={() => setZoomStep((step) => Math.min(ZOOM_STEPS.length - 1, step + 1))}
-                >
-                  <span aria-hidden="true">+</span>
-                  <span className="visually-hidden">Zoom in</span>
-                </button>
-                {zoomStep === 0 ? null : (
-                  <button
-                    type="button"
-                    className="button button--quiet"
-                    onClick={() => setZoomStep(0)}
-                  >
-                    Fit
-                  </button>
-                )}
-              </div>
-            ) : null}
-          </div>
-
-          {boardTab === 'board' ? (
-            <>
-              {targeting === null || targeting === undefined ? null : (
-                <p
-                  className={`board-legend${targeting.slotIds.size === 0 ? ' board-legend--none' : ''}`}
-                  role="status"
-                >
-                  <span className="board-legend__pin" aria-hidden="true" />
-                  <span>
-                    {targeting.slotIds.size === 0
-                      ? `No area on this board is a legal place to ${targeting.label}.`
-                      : targeting.slotIds.size > 40
-                        ? `Tap a ringed area to ${targeting.label}.`
-                        : `Tap one of the ${targeting.slotIds.size} ringed areas to ${targeting.label}.`}
-                  </span>
-                </p>
-              )}
-              <div
-                className={`board-frame${zoom > 1 ? ' board-frame--zoomed' : ''}`}
-                style={{ '--board-ratio': BOARD_VIEW_RATIO } as CSSProperties}
-              >
-                <div className="board-frame__inner" style={{ '--board-zoom': zoom } as CSSProperties}>
-                  <TableBoard
-                    zones={view.zones}
-                    slots={view.slots}
-                    players={view.players}
-                    summaries={zones}
-                    selectedSlotId={selectedSlotId}
-                    onSelectSlot={(slotId) => {
-                      setSelectedSlotId(slotId);
-                      if (slotId !== null && targeting?.slotIds.has(slotId) === true) {
-                        onPickSlot?.(slotId);
-                      }
-                    }}
-                    {...(targeting === null || targeting === undefined
-                      ? {}
-                      : { highlightedSlotIds: targeting.slotIds, highlightLabel: targeting.label })}
-                  />
-                </div>
-              </div>
-              <p className="board-caption" role="status">
-                {selectedSlot === null
-                  ? 'Select an area to read what is on it.'
-                  : `${describeSlot(
-                    selectedSlot,
-                    view.zones.find((zone) => zone.id === selectedSlot.zoneId),
-                    view.players,
-                  )} Select it again to stop.`}
-              </p>
-              <details className="disclosure disclosure--key">
-                <summary>What the marks mean</summary>
-                <BoardLegend />
-                <p className="small">
-                  From the keyboard: Tab reaches the board, the arrow keys move between areas,
-                  Page Up and Page Down change zone, and Enter inspects one.
-                </p>
-              </details>
-            </>
-          ) : (
-            <ZoneList zones={zones} />
-          )}
-
-          <details className="disclosure">
-            <summary>Every zone, in words</summary>
-            <ul className="spoken-zones">
-              {zones.map((zone) => (
-                <li key={zone.id}>{zone.spoken}</li>
-              ))}
-            </ul>
-          </details>
-        </section>
-
-        <div className="table-grid__aside" id="table-aside">
-          {viewport === 'tablet' ? (
-            <div className="table-grid__aside-close">
-              <button type="button" className="button button--quiet" onClick={() => setDrawerOpen(false)}>
-                Close
-              </button>
-            </div>
-          ) : null}
-          {aside ?? <PublicAside view={view} {...(pass === undefined ? {} : { pass })} />}
-        </div>
-
-        <div className="table-grid__below">
-          <ActiveEffects view={view} />
-          <History view={view} />
-        </div>
+      <div className="ms-table" inert={menuOpen} aria-hidden={menuOpen}>
+        <SeatsStrip view={view} players={players} meId={me?.id ?? null} />
+        <BoardRegion
+          view={view}
+          zones={zones}
+          targeting={targeting}
+          onPickSlot={onPickSlot}
+          zoomable={viewport !== 'phone'}
+        />
+        <ActionSheet
+          view={view}
+          docked={viewport !== 'phone'}
+          news={news}
+          eyebrow={eyebrow}
+          endTurn={endTurn}
+          {...(pass === undefined ? {} : { pass })}
+          {...(seat?.tray === undefined ? {} : { tray: seat.tray })}
+          wantsBoard={wantsBoard}
+          attention={attention}
+          subject={seat?.subject ?? 'none'}
+          partyColor={sheetParty}
+          {...(viewport === 'phone' && tutorial !== undefined ? { teaching: tutorial } : {})}
+        >
+          {seat === undefined ? <PublicBody view={view} /> : seat.body}
+        </ActionSheet>
       </div>
-    </>
+    </div>
   );
 }

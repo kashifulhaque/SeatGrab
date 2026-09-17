@@ -109,6 +109,110 @@ export function TableBoard({
     if (selectedSlotId !== null) setFocusSlotId(selectedSlotId);
   }, [selectedSlotId]);
 
+  // Slot changes are classified once per projection. Initial state is only remembered:
+  // opening a save must not pretend every established token just landed.
+  const previousSlots = useRef<readonly PublicSlotView[] | null>(null);
+  const motionTick = useRef(0);
+  const [slotMotions, setSlotMotions] = useState<Readonly<Record<string, {
+    tick: number;
+    token?: 'land' | 'move' | 'convert';
+    fromSlotId?: string;
+    removed?: NonNullable<PublicSlotView['voter']>;
+    majority?: true;
+  }>>>({});
+  useEffect(() => {
+    const before = previousSlots.current;
+    previousSlots.current = slots;
+    if (before === null) return;
+
+    const beforeBySlot = new Map(before.map((slot) => [slot.slotId, slot]));
+    const beforeByVoter = new Map(before.flatMap((slot) => (
+      slot.voter === undefined ? [] : [[slot.voter.id, slot] as const]
+    )));
+    const nowByVoter = new Map(slots.flatMap((slot) => (
+      slot.voter === undefined ? [] : [[slot.voter.id, slot] as const]
+    )));
+    const next: Record<string, {
+      tick: number;
+      token?: 'land' | 'move' | 'convert';
+      fromSlotId?: string;
+      removed?: NonNullable<PublicSlotView['voter']>;
+      majority?: true;
+    }> = {};
+
+    for (const slot of slots) {
+      const voter = slot.voter;
+      const wasHere = beforeBySlot.get(slot.slotId)?.voter;
+      if (voter === undefined) continue;
+      const was = beforeByVoter.get(voter.id);
+      const tick = ++motionTick.current;
+      if (was !== undefined && was.slotId !== slot.slotId) {
+        next[slot.slotId] = { tick, token: 'move', fromSlotId: was.slotId };
+      } else if (was === undefined) {
+        next[slot.slotId] = {
+          tick,
+          token: wasHere !== undefined && wasHere.ownerId !== voter.ownerId ? 'convert' : 'land',
+        };
+      } else if (was.voter?.ownerId !== voter.ownerId) {
+        next[slot.slotId] = { tick, token: 'convert' };
+      }
+      if (voter.majority && (was?.voter?.majority !== true)) {
+        next[slot.slotId] = { ...(next[slot.slotId] ?? { tick }), majority: true };
+      }
+    }
+    for (const slot of before) {
+      if (slot.voter === undefined || nowByVoter.has(slot.voter.id)) continue;
+      const current = slots.find((candidate) => candidate.slotId === slot.slotId);
+      if (current?.voter !== undefined) continue;
+      next[slot.slotId] = {
+        tick: ++motionTick.current,
+        removed: slot.voter,
+      };
+    }
+    if (Object.keys(next).length === 0) return;
+    setSlotMotions(next);
+    const timer = setTimeout(() => setSlotMotions({}), 700);
+    return () => clearTimeout(timer);
+  }, [slots]);
+
+  // Two things a zone announces when they happen to it, not on the first draw: its filled
+  // count changing, which flashes its plaque, and its majority being marked for the first
+  // time. Both leave the final state in place when their decoration ends.
+  const [glows, setGlows] = useState<Readonly<Record<string, number>>>({});
+  const [bursts, setBursts] = useState<Readonly<Record<string, number>>>({});
+  const seen = useRef<Map<string, { filled: number; owner: string | undefined }> | null>(null);
+  useEffect(() => {
+    const now = new Map(summaries.map((summary) => [
+      summary.id,
+      { filled: summary.filled, owner: summary.majorityOwner?.playerId },
+    ]));
+    const before = seen.current;
+    seen.current = now;
+    if (before === null) return;
+    const glowing: string[] = [];
+    const bursting: string[] = [];
+    for (const [zoneId, state] of now) {
+      const was = before.get(zoneId);
+      if (was === undefined) continue;
+      if (was.filled !== state.filled) glowing.push(zoneId);
+      if (was.owner === undefined && state.owner !== undefined) bursting.push(zoneId);
+    }
+    if (glowing.length > 0) {
+      setGlows((current) => {
+        const next = { ...current };
+        for (const zoneId of glowing) next[zoneId] = (current[zoneId] ?? 0) + 1;
+        return next;
+      });
+    }
+    if (bursting.length > 0) {
+      setBursts((current) => {
+        const next = { ...current };
+        for (const zoneId of bursting) next[zoneId] = (current[zoneId] ?? 0) + 1;
+        return next;
+      });
+    }
+  }, [summaries]);
+
   // Focus follows a keyboard move, and only a keyboard move: taking focus on any other
   // render would drag the page to the board while the player is using another panel.
   useEffect(() => {
@@ -157,6 +261,8 @@ export function TableBoard({
   // the ringed ones are what the eye lands on. Nothing is hidden: a faded area is still
   // readable, still focusable and still carries its own description.
   const targeting = highlighted.size > 0;
+  const reducedMotion = typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
   // A ringed area is a pointer. A hundred of them at once is wallpaper, so past this many
   // the stylesheet stops them pulsing and draws them quietly instead. The composers avoid
   // reaching it by narrowing first — placement asks for a zone before it asks for an area.
@@ -192,9 +298,17 @@ export function TableBoard({
           const at = toDrawing(geometry.position.x, geometry.position.y);
           const radius = geometry.radius * WIDTH;
           const hit = geometry.hitRadius * WIDTH;
+          const motion = slotMotions[slot.slotId];
           const party = slot.voter === undefined ? undefined : PARTY_BY_ID.get(
             players.find((player) => player.id === slot.voter?.ownerId)?.partyId ?? '',
           );
+          const removedParty = motion?.removed === undefined ? undefined : PARTY_BY_ID.get(
+            players.find((player) => player.id === motion.removed?.ownerId)?.partyId ?? '',
+          );
+          const fromGeometry = motion?.fromSlotId === undefined ? undefined : SLOT_GEOMETRY.get(motion.fromSlotId);
+          const from = fromGeometry === undefined
+            ? undefined
+            : toDrawing(fromGeometry.position.x, fromGeometry.position.y);
           const selected = slot.slotId === selectedSlotId;
           const legal = highlighted.has(slot.slotId);
           const classes = ['board__area'];
@@ -217,15 +331,23 @@ export function TableBoard({
               onFocus={() => setFocusSlotId(slot.slotId)}
               onClick={() => onSelectSlot(selected ? null : slot.slotId)}
             >
-              {/* The hit area is invisible and larger than the drawn dot. */}
               <circle className="board__hit" cx={at.x} cy={at.y} r={hit} />
               {slot.voter === undefined ? (
                 <circle className="board__slot" cx={at.x} cy={at.y} r={radius} />
               ) : (
-                /* Keyed on the voter, so a voter arriving on an empty area mounts a fresh
-                   node and the stylesheet's arrival animation plays for it. A token that
-                   changes hands remounts for the same reason. */
-                <g className="board__voter" key={slot.voter.id}>
+                <g
+                  className={`board__voter${motion?.token === undefined ? '' : ` board__voter--${motion.token}`}`}
+                  key={`${slot.voter.id}:${motion?.tick ?? 0}`}
+                >
+                  {motion?.token !== 'move' || from === undefined || reducedMotion ? null : (
+                    <animateTransform
+                      attributeName="transform"
+                      type="translate"
+                      from={`${from.x - at.x} ${from.y - at.y}`}
+                      to="0 0"
+                      dur="450ms"
+                    />
+                  )}
                   <circle
                     className="board__slot board__slot--taken"
                     cx={at.x}
@@ -246,8 +368,30 @@ export function TableBoard({
                   )}
                 </g>
               )}
+              {motion?.removed === undefined ? null : (
+                <g className="board__voter board__voter--remove" key={`removed:${motion.removed.id}:${motion.tick}`}>
+                  <circle
+                    className="board__slot board__slot--taken"
+                    cx={at.x}
+                    cy={at.y}
+                    r={radius}
+                    style={removedParty === undefined ? undefined : { fill: removedParty.color }}
+                  />
+                  {removedParty === undefined ? null : (
+                    <image
+                      className="board__token"
+                      href={removedParty.url}
+                      x={at.x - radius * 0.78}
+                      y={at.y - radius * 0.78}
+                      width={radius * 1.56}
+                      height={radius * 1.56}
+                      preserveAspectRatio="xMidYMid meet"
+                    />
+                  )}
+                </g>
+              )}
               {slot.voter?.majority === true ? (
-                <g className="board__majority">
+                <g className={`board__majority${motion?.majority === true ? ' board__majority--new' : ''}`}>
                   <circle className="board__majority-ring" cx={at.x} cy={at.y} r={radius + 4} />
                   <path
                     className="board__majority-tick"
@@ -283,11 +427,20 @@ export function TableBoard({
                   label must not be. The holder is named in the zone list and in the
                   roster; here it is the party's own emblem. */}
               <path className="board__plaque" d={PLAQUE} />
+              {(glows[zone.id] ?? 0) === 0 ? null : (
+                <path key={`glow-${glows[zone.id]}`} className="ms-plaque-glow" d={PLAQUE} />
+              )}
+              {(bursts[zone.id] ?? 0) === 0 ? null : (
+                <g key={`burst-${bursts[zone.id]}`} className="ms-burst">
+                  <circle className="ms-burst__ring" r={30} />
+                  <circle className="ms-burst__ring ms-burst__ring--late" r={30} />
+                </g>
+              )}
               <text className="board__plaque-name" y={-7}>
                 {shortName(zone.displayName)}
               </text>
               <text
-                key={summary === undefined ? 'none' : summary.filled}
+                key={summary === undefined ? 'none' : `count-${summary.filled}`}
                 className="board__plaque-count"
                 x={-4}
                 y={17}
@@ -314,12 +467,4 @@ export function TableBoard({
       </g>
     </svg>
   );
-}
-
-/** Zone name and area number for a slot, for a caption outside the board. */
-export function slotLabel(slotId: string, zones: readonly PublicZoneView[]): string {
-  const geometry = BOARD.slots.find((slot) => slot.slotId === slotId);
-  if (geometry === undefined) return slotId;
-  const zone = zones.find((candidate) => candidate.id === geometry.zoneId);
-  return `${zone?.displayName ?? geometry.zoneId}, area ${SLOT_ORDINALS.get(slotId) ?? '?'}`;
 }

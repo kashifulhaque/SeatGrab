@@ -1,5 +1,5 @@
 /**
- * A printed price, drawn with the manifest icons and always spelled out in text.
+ * A printed price, drawn as coins and always spelled out in text.
  *
  * The `?` icon is a wildcard payment, not a fifth resource, so it is labelled as one.
  *
@@ -14,6 +14,8 @@ import type { Cost } from '@gerrymander/content';
 import { RESOURCE_ASSETS } from '../assets/manifest';
 import type { CostIconId } from '../assets/manifest';
 
+import { PriceStrip } from './cards/PriceStrip';
+
 const ICON_ORDER: readonly CostIconId[] = [...RESOURCE_TYPES, 'generic'];
 
 export function costToText(cost: Cost): string {
@@ -27,21 +29,9 @@ export function costToText(cost: Cost): string {
 export function CostIcons({ cost }: { cost: Cost }) {
   const text = costToText(cost);
   return (
-    <span className="cost" role="img" aria-label={text}>
-      {ICON_ORDER.flatMap((id) =>
-        Array.from({ length: cost[id] }, (_unused, index) => (
-          <img
-            key={`${id}-${index}`}
-            className="cost__icon"
-            src={RESOURCE_ASSETS[id].url}
-            alt=""
-            aria-hidden="true"
-            width={20}
-            height={20}
-          />
-        )),
-      )}
-      <span className="cost__text">{text}</span>
+    <span className="card-cost" role="img" aria-label={text}>
+      <PriceStrip cost={cost} size={20} />
+      <span className="card-cost__text" aria-hidden="true">{text}</span>
     </span>
   );
 }

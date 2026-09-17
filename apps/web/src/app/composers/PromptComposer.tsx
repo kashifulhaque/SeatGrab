@@ -21,6 +21,7 @@
 import { useEffect, useState } from 'react';
 
 import type { GameCommand, PlayerView, ResourceVectorDto, StructuredChoicePromptView } from '@gerrymander/protocol';
+import { CORE_CONTENT } from '@gerrymander/engine';
 
 import type { DrawableViewResult } from '../../transport';
 import {
@@ -46,7 +47,15 @@ import {
   type DraftAction,
 } from '../actions';
 
+import { CoinSlots, EffectCard, PolicyCard, ResourceStack, SeatCard } from '../cards';
+
 import { ResourcePicker } from './ResourcePicker';
+
+import '../cards/cards.css';
+
+const EFFECT_CARD_BY_ID = Object.fromEntries(
+  [...CORE_CONTENT.newsCards, ...CORE_CONTENT.trickCards].map((card) => [card.id, card]),
+) as Readonly<Record<string, (typeof CORE_CONTENT.newsCards)[number]>>;
 
 export interface ComposerSubmit {
   /** Sends one command and reports the engine's refusal, if it refuses. */
@@ -72,21 +81,23 @@ function FirstPlayerVote({
   const candidates = view.players.filter((player) => player.id !== seatId);
   return (
     <div className="composer">
-      <p>
-        <strong>Vote for the first player.</strong> Nobody may vote for themselves, and a tied
-        round is rerun until one seat leads alone.
+      <p className="card-prompt__lede">
+        Choose another player. Nobody may vote for themselves; a tied round is rerun until
+        one seat leads alone.
       </p>
-      <div className="actions">
-        {candidates.map((candidate) => (
-          <button
+      <div className="card-vote" role="group" aria-label="Candidates">
+        {candidates.map((candidate, index) => (
+          <SeatCard
             key={candidate.id}
-            type="button"
-            className="button button--primary"
+            partyId={candidate.partyId}
+            name={candidate.displayName}
+            action="Vote"
+            ariaLabel={`Vote for ${candidate.displayName}`}
             disabled={busy}
-            onClick={() => submit({ type: 'VoteForFirstPlayer', candidateId: candidate.id })}
-          >
-            Vote for {candidate.displayName}
-          </button>
+            index={index}
+            note={candidate.controller === 'computer' ? 'computer' : undefined}
+            onPress={() => submit({ type: 'VoteForFirstPlayer', candidateId: candidate.id })}
+          />
         ))}
       </div>
     </div>
@@ -109,10 +120,15 @@ function StartingResources({
       : `Take ${total - quota} fewer.`;
   return (
     <div className="composer">
-      <p>
-        <strong>Take your starting resources.</strong> The first player takes one, the next two,
-        and so on clockwise. This seat takes {quota}.
+      <p className="card-prompt__lede">
+        Choose any mix of the four resource types. This seat takes {quota}.
       </p>
+      <div className="card-prompt__figure">
+        <span className="card__eyebrow" style={{ color: 'var(--ink-soft)' }}>
+          Your {quota} starting resource{quota === 1 ? '' : 's'}
+        </span>
+        <CoinSlots slots={quota} filled={chosen} size="lg" label="Starting resources" />
+      </div>
       <ResourcePicker
         legend={`Choose ${quota} resource${quota === 1 ? '' : 's'}`}
         value={chosen}
@@ -159,27 +175,12 @@ function PolicyAnswer({
 
   return (
     <div className="composer">
-      <p className="prompt__question">{prompt.question}</p>
-      <p className="hint">
-        Which archetype each answer feeds, and what it pays, stay hidden until you choose. Your
-        answer is final.
-      </p>
-      <ol className="prompt__answers">
-        {prompt.answers.map((answer, index) => (
-          <li key={answer.text}>
-            <span>{answer.text}</span>
-            <button
-              type="button"
-              className="button button--primary"
-              disabled={busy}
-              onClick={() =>
-                submit({ type: 'CommitPolicyAnswer', answerIndex: index === 0 ? 0 : 1 })}
-            >
-              Choose this answer
-            </button>
-          </li>
-        ))}
-      </ol>
+      <PolicyCard
+        question={prompt.question}
+        answers={prompt.answers}
+        busy={busy}
+        onChoose={(answerIndex) => submit({ type: 'CommitPolicyAnswer', answerIndex })}
+      />
 
       {redrawing ? (
         <>
@@ -241,10 +242,20 @@ function CapDiscard({
         : `Discard ${total - prompt.excess} fewer.`;
   return (
     <div className="composer">
-      <p>
+      <p className="card-prompt__lede">
         <strong>You are over your resource cap.</strong> Discard {prompt.excess} before anything
         else happens. The cap counts every type together, not each type separately.
       </p>
+      <div className="card-prompt__row">
+        <div className="card-prompt__figure">
+          <span className="card__eyebrow" style={{ color: 'var(--ink-soft)' }}>You hold {totalOf(held)}</span>
+          <ResourceStack resources={held} size="md" label="You hold" />
+        </div>
+        <div className="card-prompt__figure">
+          <span className="card__eyebrow" style={{ color: 'var(--problem)' }}>Give back {prompt.excess}</span>
+          <CoinSlots slots={prompt.excess} filled={discard} size="md" label="Resources to give back" />
+        </div>
+      </div>
       <ResourcePicker
         legend={`Discard ${prompt.excess}`}
         value={discard}
@@ -589,11 +600,22 @@ function ChoiceControls({
  */
 function GenericChoice({ view, seatId, prompt, draft, dispatch, submit, busy }: ChoiceProps) {
   const outcome = choiceCommand(view, seatId, prompt, draft);
+  const source = prompt.sourceCardId === undefined ? undefined : EFFECT_CARD_BY_ID[prompt.sourceCardId];
   return (
     <div className="composer">
-      <p className="prompt__question">{prompt.explanation}</p>
-      {prompt.sourceCardId === undefined ? null : (
-        <p className="hint">From {cardTitle(prompt.sourceCardId)}.</p>
+      {source === undefined ? (
+        <p className="prompt__question">{prompt.explanation}</p>
+      ) : (
+        <div className="card-source">
+          <EffectCard
+            deck={source.deck}
+            title={source.title}
+            rulesText={source.rulesText}
+            flavorText={source.flavorText}
+            size="sm"
+          />
+          <p className="prompt__question card-source__explanation">{prompt.explanation}</p>
+        </div>
       )}
       <ChoiceControls
         view={view}
@@ -768,13 +790,27 @@ function ReactionWindow({ view, seatId, prompt, submit, busy }: Omit<ChoiceProps
   if (prompt.context.op !== 'trickPriority') return null;
   const context = prompt.context;
   const playable = reactionCardIds(view, seatId, context.playedCardId, context.playedByPlayerId);
+  const played = EFFECT_CARD_BY_ID[context.playedCardId];
   return (
     <div className="composer">
       <p className="prompt__question">{prompt.explanation}</p>
-      <p className="hint">
-        {playerName(view, context.playedByPlayerId)} played {cardTitle(context.playedCardId)}:{' '}
-        {cardRules(context.playedCardId) ?? 'its rules text is not in this content pack.'}
-      </p>
+      {played === undefined ? (
+        <p className="hint">
+          {playerName(view, context.playedByPlayerId)} played {cardTitle(context.playedCardId)}:{' '}
+          {cardRules(context.playedCardId) ?? 'its rules text is not in this content pack.'}
+        </p>
+      ) : (
+        <div className="card-source">
+          <EffectCard
+            deck={played.deck}
+            title={played.title}
+            rulesText={played.rulesText}
+            flavorText={played.flavorText}
+            size="sm"
+            footer={`Played by ${playerName(view, context.playedByPlayerId)}`}
+          />
+        </div>
+      )}
       {playable.length === 0 ? (
         <p className="notice">
           You hold nothing that answers this card. Passing lets it resolve.

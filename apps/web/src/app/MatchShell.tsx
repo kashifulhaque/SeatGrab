@@ -1,9 +1,5 @@
 /**
- * The match screen: status bar, shared table, privacy cover, and one seat's own surface.
- *
- * Session 08 built the handoff, session 09 replaced its placeholder panel with the real
- * table, and session 10 gave the private surface controls: the setup prompts, the player
- * mat, and every ordinary action of a turn. The surface now acts as well as reports.
+ * The match screen: the table, the privacy cover, and one seat's own surface.
  *
  * Three rules hold here and are worth stating plainly:
  *
@@ -21,28 +17,24 @@
  * the board underneath has to highlight its legal targets. Keeping the draft here means
  * one state produces both the controls and the ring on the map, so they cannot disagree.
  *
- * The seat's own surface is `SeatSurface`, which session 15 moved next door so the online
- * screen could draw the same one. What stays here is the part the cover owns: *which*
- * seat is drawn, and that nothing private is drawn at all until that seat asks.
+ * A fourth rule: when the projection says the match is finished, no composer is drawn at
+ * all. The engine has cleared the interaction stack and `getLegalActions` answers with
+ * nothing, so every control a composer could offer would be one the engine refuses. The
+ * results screen takes their place, and the seats keep the privacy cover so each can
+ * still look over its own kept cards.
  *
- * A fourth rule joined them in session 12: when the projection says the match is
- * finished, no composer is drawn at all. The engine has cleared the interaction stack
- * and `getLegalActions` answers with nothing, so every control a composer could offer
- * would be one the engine refuses. The results screen takes their place, and the seats
- * keep the privacy cover so each can still look over its own kept cards.
- *
- * The order of the page follows how a turn is played rather than how the code is laid
- * out: the status bar first and pinned, then the table with the board in the middle and
- * the revealed seat's actions beside it, and the immutable match settings last, folded
- * into the footer. The first playtest had that order inverted, with the board four
- * screens down.
+ * The screen itself is `TableSurface`: the bar, the board with the seats against it, and
+ * the action sheet. What stays here is the part the cover owns — *which* seat is drawn,
+ * and that nothing private is drawn at all until that seat asks — plus the mode's own
+ * controls that go in the menu: passing the device, the computer's pace, and the frozen
+ * match settings with the export.
  *
  * A tutorial match — one whose ID `isTutorialMatchId` recognizes — draws `TutorialCoach`
- * between the status bar and the table. It is the only difference between a tutorial and
- * any other local match: the engine, the content, the computer seats and every control
- * are the same ones, so a rule the coach teaches is a rule the player has just used.
+ * between the bar and the table. It is the only difference between a tutorial and any
+ * other local match: the engine, the content, the computer seats and every control are
+ * the same ones, so a rule the coach teaches is a rule the player has just used.
  */
-import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 import { CORE_CONTENT } from '@gerrymander/engine';
 import type { GameCommand, PlayerView } from '@gerrymander/protocol';
@@ -59,9 +51,8 @@ import { PARTY_BY_ID } from '../assets/manifest';
 import { INSTALLED_CAMPAIGN } from './edition';
 import { PageFrame } from './PageFrame';
 import { PartyMark } from './PartyMark';
-import { SeatSurface } from './SeatSurface';
-import { SeatSwitcher } from './SeatSwitcher';
-import { StatusBar } from './StatusBar';
+import { seatSheet } from './SeatSurface';
+import { SeatSwitcher, hasSeatsToPass } from './SeatSwitcher';
 import { TableSurface } from './TableSurface';
 import { TutorialCoach } from './TutorialCoach';
 import { ROUTES } from './routes';
@@ -147,37 +138,31 @@ function Cover({
 }
 
 /**
- * How quickly the computer takes its turn, as a menu beside the seat switcher.
+ * How quickly the computer takes its turn, as two buttons in the menu.
  *
  * The pace is a property of this browser rather than of the match: it says how fast the
  * person watching wants to read what happened, and it is stored under
  * `gerrymander.computerPace` so the next match starts the way the last one ended.
  */
 function PaceMenu({ pace, onChoose }: { pace: ComputerPace; onChoose: (pace: ComputerPace) => void }) {
-  const menu = useRef<HTMLDetailsElement>(null);
   return (
-    <details ref={menu} className="menu">
-      <summary className="button button--quiet">Computer pace</summary>
-      <ul className="menu__list">
-        {COMPUTER_PACES.map((option) => (
-          <li key={option.id}>
-            <button
-              type="button"
-              className="button button--quiet"
-              aria-pressed={pace === option.id}
-              title={option.description}
-              onClick={() => {
-                if (menu.current !== null) menu.current.open = false;
-                onChoose(option.id);
-              }}
-            >
-              {option.label}
-              {pace === option.id ? <span className="small"> · in use</span> : null}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </details>
+    <div className="ms-pace" role="group" aria-label="Computer pace">
+      {COMPUTER_PACES.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          className={`button ${pace === option.id ? 'button--primary' : 'button--quiet'}`}
+          aria-pressed={pace === option.id}
+          title={option.description}
+          onClick={() => onChoose(option.id)}
+        >
+          {option.label}
+        </button>
+      ))}
+      <p className="small ms-pace__note">
+        {COMPUTER_PACES.find((option) => option.id === pace)?.description}
+      </p>
+    </div>
   );
 }
 
@@ -360,8 +345,8 @@ export function MatchShell({
       : draftTargeting(seatResult.view, revealed, draft)
         ?? promptTargeting(seatResult.view, revealed);
 
-    // The phone's Act tab carries a dot while the revealed seat has something to do: a
-    // decision waiting on it, or an unblocked turn of its own.
+    // The sheet opens itself while the revealed seat has something to do: a decision
+    // waiting on it, or an unblocked turn of its own.
     const decision = describeDecision(publicResult.view);
     const attention = revealed !== null && !finished && (
       decision.waitingOn.some((seat) => seat.id === revealed)
@@ -379,11 +364,68 @@ export function MatchShell({
         }
       : endTurnAvailability(seatResult.view, revealed);
 
+    // The one primary action on a shared table: hand the device to the person who must
+    // act. A computer seat never holds the device, and the revealed seat is already
+    // holding it.
+    const pass = mustAct === null || finished || mustAct.controller === 'computer' || mustAct.id === revealed
+      ? undefined
+      : (
+        <button
+          type="button"
+          className="button button--primary ms-pass"
+          onClick={() => dispatch({ type: 'passTo', seatId: mustAct.id })}
+        >
+          <PartyMark partyId={mustAct.partyId} size={22} />
+          Pass the device to {mustAct.displayName}
+        </button>
+      );
+
+    const passing = hasSeatsToPass(seats);
+    const computersSeated = seats.some((seat) => seat.controller === 'computer');
+
+    // Tutorial teaching is placed by TableSurface: beside the board on wide screens and
+    // attached to the action sheet on phones. Alerts and results remain ordinary notices.
+    const tutorialCoach = tutorial && revealed !== null && seatResult !== null
+      ? <TutorialCoach matchId={matchId} view={seatResult.view} seatId={revealed} />
+      : undefined;
+    const notices: ReactNode[] = [];
+    if (computers.stuck !== null) {
+      notices.push(
+        <div key="stuck" className="alert alert--error" role="alert">
+          <p>
+            {computers.stuck.some((refusal) => refusal.code === 'NO_PROGRESS')
+              ? 'This match cannot reach an ending: the board has empty areas no seat can '
+                + 'fill. Export it and report it.'
+              : 'The computer could not find a legal move. Export this match and report it.'}
+          </p>
+          <ul className="small">
+            {computers.stuck.map((refusal, index) => (
+              <li key={`${refusal.command}-${index}`}>
+                {refusal.command}: {refusal.code} — {refusal.message}
+              </li>
+            ))}
+          </ul>
+        </div>,
+      );
+    }
+    if (finished) {
+      notices.push(
+        <ResultsSurface
+          key="results"
+          view={publicResult.view}
+          again={<LocalRematch view={publicResult.view} store={store} />}
+        />,
+      );
+    }
+
     return (
       <>
-        <StatusBar
+        <TableSurface
           view={publicResult.view}
           me={me}
+          targeting={targeting}
+          attention={attention}
+          thinking={thinking}
           endTurn={{
             ...endTurn,
             busy,
@@ -391,49 +433,48 @@ export function MatchShell({
               if (revealed !== null) submit(revealed, { type: 'RequestEndTurn' });
             },
           }}
-          thinking={thinking}
-          switcher={
-            <SeatSwitcher
-              seats={seats}
-              handoff={handoff}
-              mustAct={mustAct}
-              dispatch={dispatch}
-              sharedButtonRef={sharedButton}
-            />
-          }
-          {...(seats.some((seat) => seat.controller === 'computer')
-            ? { settings: <PaceMenu pace={pace} onChoose={choosePace} /> }
-            : {})}
+          {...(pass === undefined ? {} : { pass })}
+          onPickSlot={revealed === null || seatResult === null
+            ? undefined
+            : (slotId) => dispatchDraft({
+              type: 'pick',
+              slotId,
+              voterId: voterAt(seatResult.view, slotId),
+            })}
+          seat={revealed !== null && seatResult !== null
+            ? seatSheet({
+              result: seatResult,
+              seatId: revealed,
+              draft,
+              dispatch: dispatchDraft,
+              targeting,
+              submit: (command) => submit(revealed, command),
+              busy,
+              failure: rejection,
+              finished,
+            })
+            : undefined}
+          menu={{
+            ...(passing
+              ? {
+                switcher: (
+                  <SeatSwitcher
+                    seats={seats}
+                    handoff={handoff}
+                    mustAct={mustAct}
+                    dispatch={dispatch}
+                    sharedButtonRef={sharedButton}
+                  />
+                ),
+              }
+              : {}),
+            ...(computersSeated ? { settings: <PaceMenu pace={pace} onChoose={choosePace} /> } : {}),
+            extras: <MatchSettings view={publicResult.view} matchId={matchId} onExport={download} />,
+            home: { href: ROUTES.home, label: 'Home' },
+          }}
+          tutorial={tutorialCoach}
+          notices={notices.length === 0 ? undefined : <>{notices}</>}
         />
-
-        {tutorial && revealed !== null && seatResult !== null ? (
-          <TutorialCoach matchId={matchId} view={seatResult.view} seatId={revealed} />
-        ) : null}
-
-        {computers.stuck === null ? null : (
-          <div className="alert alert--error" role="alert">
-            <p>
-              {computers.stuck.some((refusal) => refusal.code === 'NO_PROGRESS')
-                ? 'This match cannot reach an ending: the board has empty areas no seat can '
-                  + 'fill. Export it and report it.'
-                : 'The computer could not find a legal move. Export this match and report it.'}
-            </p>
-            <ul className="small">
-              {computers.stuck.map((refusal, index) => (
-                <li key={`${refusal.command}-${index}`}>
-                  {refusal.command}: {refusal.code} — {refusal.message}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {finished ? (
-          <ResultsSurface
-            view={publicResult.view}
-            again={<LocalRematch view={publicResult.view} store={store} />}
-          />
-        ) : null}
 
         {covered !== null ? (
           <Cover
@@ -443,51 +484,6 @@ export function MatchShell({
             onCancel={returnFocusToShared}
           />
         ) : null}
-
-        <TableSurface
-          view={publicResult.view}
-          targeting={targeting}
-          attention={attention}
-          {...(mustAct === null || finished || mustAct.controller === 'computer'
-            ? {}
-            : {
-              pass: (
-                <button
-                  type="button"
-                  className="button button--primary button--large"
-                  onClick={() => dispatch({ type: 'passTo', seatId: mustAct.id })}
-                >
-                  <PartyMark partyId={mustAct.partyId} size={22} />
-                  Pass the device to {mustAct.displayName}
-                </button>
-              ),
-            })}
-          onPickSlot={revealed === null || seatResult === null
-            ? undefined
-            : (slotId) => dispatchDraft({
-              type: 'pick',
-              slotId,
-              voterId: voterAt(seatResult.view, slotId),
-            })}
-          {...(revealed !== null && seatResult !== null
-            ? {
-              aside: (
-                <SeatSurface
-                  key={revealed}
-                  result={seatResult}
-                  seatId={revealed}
-                  draft={draft}
-                  dispatch={dispatchDraft}
-                  targeting={targeting}
-                  submit={(command) => submit(revealed, command)}
-                  busy={busy}
-                  failure={rejection}
-                  finished={finished}
-                />
-              ),
-            }
-            : {})}
-        />
       </>
     );
   };
@@ -498,9 +494,6 @@ export function MatchShell({
       back={{ href: ROUTES.home, label: 'Home' }}
       wide
       compact
-      footer={publicResult === null ? undefined : (
-        <MatchSettings view={publicResult.view} matchId={matchId} onExport={download} />
-      )}
     >
       {body()}
     </PageFrame>
@@ -508,7 +501,7 @@ export function MatchShell({
 }
 
 /**
- * The settings frozen into the match when it was created, folded into the footer.
+ * The settings frozen into the match when it was created, in the menu.
  *
  * Every value comes from `view.setup`, which the projection carries for every viewer.
  * This screen used to read the advisory filters from the authoritative state, which

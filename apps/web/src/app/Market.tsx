@@ -1,24 +1,24 @@
 /**
- * The three face-up voter cards, drawn once.
+ * The three face-up voter cards, drawn once, as cards.
  *
- * Section 13.4 wants them visible without opening anything, and the first playtest found
- * them drawn twice: once on the shared surface, and again far below as a purchase list,
- * where only the far copy acted. This is the one drawing. On the shared surface it is
- * read-only; in a revealed seat's action column each card is the purchase button, and the
- * reason a purchase is not on offer is written once beside the list rather than on every
- * card.
+ * They are visible without opening anything, and they are drawn in exactly one place: on
+ * the shared surface read-only, and in a revealed seat's action column as the purchase
+ * controls. There the whole card is the button, because a card is what a player reaches
+ * for at a table, and the reason a purchase is off is written once beside the list rather
+ * than on every card.
  *
  * A buyable card says, before it is opened, whether the seat can pay for it, in the
- * plainest words available: "You can pay this", or "Need 1 more Faith". The second
- * playtest opened cards it could not afford and met the shortfall only inside the
- * composer. The arithmetic is `affordability` in `actions.ts`; the card only prints it.
- * The button stays enabled either way, because Volunteers or a trade may still make
- * the purchase possible and the engine is the one that refuses.
+ * plainest words available on a ribbon across its face: "You can pay this", or "Short by
+ * 1 Faith". The arithmetic is `affordability` in `actions.ts`; the card only prints it.
+ * The button stays enabled either way, because Volunteers or a trade may still make the
+ * purchase possible and the engine is the one that refuses.
  */
 import type { PlayerView } from '@gerrymander/protocol';
 
-import { CostIcons } from './CostIcons';
 import { NO_RESOURCES, affordability, volunteersRemaining, purchaseCost } from './actions';
+import { VoterCard, type VoterCardState } from './cards/VoterCard';
+
+import './cards/cards.css';
 
 /** `Short 1 Faith.` from the derivation, said as a gap: `Short by 1 Faith`. */
 function needed(short: string): string {
@@ -49,47 +49,49 @@ export function Market({
     : view.players.find((player) => player.id === buy.seatId)?.resources ?? NO_RESOURCES;
   const discount = buy === undefined ? 0 : volunteersRemaining(view, buy.seatId);
   return (
-    <ul className={`market${buy === undefined ? '' : ' market--buyable'}`} aria-label="Voter market">
-      {view.voterCards.map((card) => {
+    <ul className={`card-market${buy === undefined ? '' : ' card-market--buyable'}`} aria-label="Voter market">
+      {view.voterCards.map((card, index) => {
         const cost = buy === undefined ? card.cost : purchaseCost(view, buy.seatId, card.id) ?? card.cost;
         const afford = held === null ? null : affordability(cost, held, discount);
         const open = buy?.openCardId === card.id;
-        const state = afford === null
-          ? ''
+        const state: VoterCardState | undefined = open
+          ? 'open'
+          : afford === null || !buy?.can
+            ? undefined
+            : afford.short === null
+              ? 'can'
+              : afford.viaDiscount
+                ? 'discount'
+                : 'short';
+        const ribbon = afford === null || !buy?.can
+          ? undefined
           : afford.short === null
-            ? ' market__card--can'
+            ? 'You can pay this'
             : afford.viaDiscount
-              ? ' market__card--discount'
-              : ' market__card--short';
+              ? `${needed(afford.short)} — Volunteers can cover it`
+              : needed(afford.short);
+        const drawn = (
+          <VoterCard
+            voters={card.voters}
+            cost={card.cost}
+            state={state}
+            ribbon={ribbon}
+            index={index}
+            footer={buy === undefined ? undefined : (open ? 'Buying…' : 'Buy')}
+          />
+        );
         return (
-          <li key={card.id} className={`market__card${open ? ' market__card--open' : ''}${state}`}>
-            <p className="market__yield">
-              <strong>{card.voters}</strong>
-              <span>voter{card.voters === 1 ? '' : 's'}</span>
-            </p>
-            <div className="market__price">
-              <span className="market__price-label">Price</span>
-              <CostIcons cost={card.cost} />
-            </div>
-            {afford === null || !buy?.can ? null : (
-              <p className={`market__afford${afford.can ? ' market__afford--ok' : ' market__afford--short'}`}>
-                {afford.short === null
-                  ? 'You can pay this'
-                  : afford.viaDiscount
-                    ? `${needed(afford.short)} — Volunteers can cover it`
-                    : needed(afford.short)}
-              </p>
-            )}
-            {buy === undefined ? null : (
+          <li key={card.id} className="card-market__item">
+            {buy === undefined ? drawn : (
               <button
                 type="button"
-                className={`button ${open ? 'button--primary' : ''}`}
+                className="card-market__buy"
                 disabled={buy.busy || !buy.can}
                 aria-pressed={open}
                 aria-describedby={buy.can || buy.reasonId === undefined ? undefined : buy.reasonId}
                 onClick={() => buy.onBuy(card.id)}
               >
-                {open ? 'Buying…' : 'Buy'}
+                {drawn}
               </button>
             )}
           </li>

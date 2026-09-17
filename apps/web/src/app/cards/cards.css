@@ -1,0 +1,1498 @@
+/*
+ * The card library: voter cards, trick cards, policy cards, coins, tokens and tracks.
+ *
+ * Every class here starts with `card-` (or is `.card` itself) so nothing collides with
+ * `app.css`. The look is the application's: a dark navy frame, an amber trim line, a
+ * parchment face made of gradients rather than an image, and a colour band that says
+ * what kind of card this is. Cards keep playing-card proportions, about 5:7, and grow
+ * taller only when their text needs the room.
+ *
+ * Motion is layered so states never fight: the rise-in animates `translate` and opacity,
+ * while hover, press and "open" use `transform`. The single reduced-motion block at the
+ * end removes every non-essential movement without hiding a state.
+ */
+
+:root {
+  --card-parchment: #f8f2e4;
+  --card-parchment-deep: #ede4cf;
+  --card-frame: var(--frame-deep);
+  --card-trim: var(--trim);
+  --card-radius: 10px;
+  --card-index: 0;
+  /* The colour of the card's type band. Overridden per type and per archetype. */
+  --card-archetype: var(--trim);
+}
+
+/* ------------------------------------------------------------- the card box */
+
+.card {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  vertical-align: top;
+  min-width: 0;
+  padding: 3px;
+  border-radius: var(--card-radius);
+  background: var(--card-frame);
+  color: var(--ink);
+  box-shadow: 0 2px 6px #0b122455, 0 1px 0 #ffffff22 inset;
+  text-align: left;
+  font-family: var(--body);
+  font-size: var(--text-body);
+  line-height: 1.35;
+  animation: card-rise 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--card-index, 0) * 55ms);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.card__face {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  /* `clip`, not `hidden`: a scroll container loses its content-based minimum height, and a
+     tall face — three figures over a three-line ribbon — would be cut off instead of growing. */
+  overflow: clip;
+  border-radius: calc(var(--card-radius) - 3px);
+  border: 1px solid var(--card-trim);
+  background:
+    radial-gradient(ellipse at 18% 8%, #ffffffb8, transparent 55%),
+    repeating-linear-gradient(0deg, #1f2a4408 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, #1f2a4405 0 1px, transparent 1px 5px),
+    linear-gradient(165deg, var(--card-parchment), var(--card-parchment-deep));
+}
+
+.card--sm {
+  --card-radius: 8px;
+}
+
+/* The header band. Its colour is the type of card. */
+.card__band {
+  display: grid;
+  gap: 1px;
+  padding: 6px 8px 7px;
+  background: var(--card-frame);
+  color: var(--paper);
+  border-bottom: 2px solid var(--card-archetype);
+}
+
+.card__eyebrow {
+  display: block;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  color: var(--card-trim);
+}
+
+.card__title {
+  display: block;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 15px;
+  font-weight: var(--weight-bold);
+  line-height: 1.15;
+}
+
+.card__footer {
+  display: block;
+  padding: 4px 4px 2px;
+  text-align: center;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 12px;
+  font-weight: var(--weight-bold);
+  color: var(--card-trim);
+}
+
+/* A card that is itself the control, or wrapped by one. */
+.card--pressable {
+  cursor: pointer;
+  appearance: none;
+  border: 0;
+  font: inherit;
+}
+
+.card--pressable:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px #0b122466;
+}
+
+.card--pressable:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+.card--pressable:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.4);
+  opacity: 0.75;
+}
+
+/* ------------------------------------------------------------- voter card */
+
+.card--voter {
+  --card-archetype: var(--trim);
+  width: 110px;
+}
+
+.card--voter.card--sm {
+  width: 84px;
+}
+
+.card--voter .card__face {
+  aspect-ratio: 5 / 7;
+}
+
+.card-voter__figures {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 12px 6px 0;
+  flex: 1 1 auto;
+  color: var(--frame);
+}
+
+.card-voter__figures[data-count='1'] .card-figure {
+  transform: scale(1.3);
+  transform-origin: bottom center;
+}
+
+.card-voter__figures[data-count='2'] .card-figure {
+  transform: scale(1.12);
+  transform-origin: bottom center;
+}
+
+.card-figure {
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 32%;
+  height: auto;
+  filter: drop-shadow(0 1px 0 #ffffff);
+}
+
+.card-voter__figures[data-count='1'] .card-figure,
+.card-voter__figures[data-count='2'] .card-figure {
+  max-width: 40%;
+}
+
+.card-voter__count {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 4px;
+  padding: 4px 4px 5px;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: var(--frame);
+}
+
+.card-voter__count strong {
+  font-size: 22px;
+}
+
+.card-voter__count span {
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+}
+
+.card-voter__price {
+  margin-top: auto;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 4px 4px 6px;
+  background: var(--card-frame);
+  color: var(--paper);
+}
+
+.card-voter__price-label {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 9px;
+  color: var(--card-trim);
+}
+
+.card-price {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  max-width: 100%;
+}
+
+.card-price__coin {
+  display: block;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #ffffff55;
+}
+
+/* The affordability, said across the face before the card is opened. It sits in the
+   flow between the count and the price so a long shortfall never covers either. */
+.card-ribbon {
+  position: relative;
+  display: block;
+  margin: 2px -3px 4px;
+  padding: 3px 6px;
+  text-align: center;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: var(--weight-bold);
+  color: #fff;
+  background: #5c6272;
+  box-shadow: 0 1px 3px #0009;
+  transform: rotate(-2deg);
+}
+
+.card-ribbon--ok {
+  background: var(--ok);
+}
+
+.card-ribbon--short {
+  background: #6f665a;
+}
+
+.card-ribbon--discount {
+  background: var(--press);
+}
+
+.card--can {
+  box-shadow: 0 0 0 2px var(--ok), 0 0 16px #2e7d4f66;
+}
+
+.card--short .card-voter__figures,
+.card--short .card-voter__count {
+  opacity: 0.45;
+  filter: saturate(0.3);
+}
+
+.card--short .card__face {
+  background:
+    repeating-linear-gradient(0deg, #1f2a4408 0 1px, transparent 1px 4px),
+    linear-gradient(165deg, #efe9dc, #e2dac7);
+}
+
+.card--open {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 0 0 0 3px var(--card-trim), 0 12px 22px #0b122488;
+  z-index: 1;
+}
+
+/* ------------------------------------------------------------- the market */
+
+.card-market {
+  list-style: none;
+  margin: 8px 0 4px;
+  padding: 4px 2px 10px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(104px, 1fr);
+  gap: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+.card-market__item {
+  display: grid;
+  justify-items: center;
+  scroll-snap-align: start;
+  min-width: 0;
+}
+
+.card-market__item .card {
+  width: 100%;
+  max-width: 160px;
+}
+
+.card-market__buy {
+  appearance: none;
+  display: block;
+  width: 100%;
+  max-width: 160px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: var(--card-radius);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.card-market__buy:hover:not(:disabled) .card {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px #0b122466;
+}
+
+.card-market__buy:hover:not(:disabled) .card--can {
+  box-shadow: 0 0 0 2px var(--ok), 0 8px 18px #0b122466;
+}
+
+.card-market__buy:hover:not(:disabled) .card--open {
+  transform: translateY(-4px) scale(1.03);
+}
+
+.card-market__buy:active:not(:disabled) .card {
+  transform: translateY(0) scale(0.97);
+}
+
+.card-market__buy:disabled {
+  cursor: not-allowed;
+}
+
+.card-market__buy:disabled .card {
+  filter: saturate(0.35);
+  opacity: 0.7;
+}
+
+/* The focus ring goes on the button, and the card inside it must not clip it. */
+.card-market__buy:focus-visible {
+  outline: 3px solid var(--trim);
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------ effect cards */
+
+.card--effect {
+  width: 168px;
+}
+
+.card--effect.card--sm {
+  width: 118px;
+}
+
+.card--effect .card__face {
+  min-height: 220px;
+}
+
+.card--effect.card--sm .card__face {
+  min-height: 154px;
+}
+
+.card--news {
+  --card-archetype: var(--press);
+}
+
+.card--trick {
+  --card-archetype: #a83a4c;
+}
+
+.card-effect__rules {
+  display: grid;
+  gap: 4px;
+  padding: 8px 9px 6px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.card--sm .card-effect__rules {
+  font-size: 10px;
+  padding: 6px;
+}
+
+.card-effect__line,
+.card-effect__or {
+  display: block;
+}
+
+.card-effect__or {
+  text-align: center;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: var(--weight-bold);
+  color: var(--card-archetype);
+}
+
+.card-effect__flavor {
+  display: block;
+  margin-top: auto;
+  padding: 6px 9px 8px;
+  border-top: 1px solid #1f2a4422;
+  font-size: 10.5px;
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--ink-soft);
+}
+
+.card-source {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 12px;
+}
+
+.card-source__explanation {
+  margin: 0;
+  flex: 1 1 auto;
+}
+
+.composer__selected-card {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 12px;
+}
+/* ------------------------------------------------------------- trick card */
+
+.card--trick {
+  --card-archetype: #a83a4c;
+  width: 168px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  perspective: 1000px;
+}
+
+.card--trick.card--sm {
+  width: 118px;
+}
+
+.card-trick__flipper {
+  position: relative;
+  display: block;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 560ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.card--down .card-trick__flipper {
+  transform: rotateY(180deg);
+}
+
+.card-trick__front,
+.card-trick__back {
+  box-sizing: border-box;
+  border: 3px solid var(--card-frame);
+  border-radius: var(--card-radius);
+  box-shadow: 0 2px 6px #0b122455;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.card-trick__front {
+  aspect-ratio: 5 / 7;
+  width: 100%;
+}
+
+.card-trick__back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  border-color: var(--card-frame);
+  background: var(--card-frame);
+  transform: rotateY(180deg);
+  overflow: hidden;
+}
+
+.card-trick__rules {
+  display: grid;
+  gap: 4px;
+  padding: 8px 9px 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.card--sm .card-trick__rules {
+  font-size: 10px;
+  padding: 6px;
+}
+
+.card-trick__line {
+  display: block;
+}
+
+.card-trick__or {
+  display: block;
+  text-align: center;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  color: var(--card-archetype);
+}
+
+.card-trick__or::before,
+.card-trick__or::after {
+  content: '—';
+  margin: 0 6px;
+  color: #1f2a4455;
+}
+
+.card-trick__flavor {
+  display: block;
+  margin-top: auto;
+  padding: 6px 9px 8px;
+  border-top: 1px solid #1f2a4422;
+  font-size: 10.5px;
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--ink-soft);
+}
+
+.card--sm .card-trick__flavor {
+  display: none;
+}
+
+/* The back: a navy pattern, an amber emblem, the price in large type. */
+.card-trick__pattern {
+  position: absolute;
+  inset: 5px;
+  border-radius: 5px;
+  border: 1px solid var(--card-trim);
+  background:
+    repeating-linear-gradient(45deg, #ffffff10 0 2px, transparent 2px 10px),
+    repeating-linear-gradient(-45deg, #ffffff10 0 2px, transparent 2px 10px),
+    radial-gradient(circle at 50% 42%, #2b3a63 0, var(--card-frame) 70%);
+}
+
+.card-trick__back-body {
+  position: relative;
+  flex: 1 1 auto;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 4px;
+  padding: 10px;
+  color: var(--card-trim);
+}
+
+.card-trick__emblem {
+  width: 52%;
+  max-width: 84px;
+  height: auto;
+  filter: drop-shadow(0 1px 2px #000a);
+}
+
+.card-trick__back-title {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+}
+
+.card-trick__back-price {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 6px;
+  margin-top: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--card-trim);
+  color: var(--card-frame);
+  line-height: 1;
+}
+
+.card-trick__back-price img {
+  display: block;
+  grid-row: 1 / span 2;
+  border-radius: 50%;
+}
+
+.card-trick__back-price strong {
+  font-family: var(--condensed);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.card-trick__back-price span {
+  grid-column: 2;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 9px;
+  font-weight: var(--weight-bold);
+}
+
+/* ------------------------------------------------------------- the hand */
+
+.card-hand {
+  list-style: none;
+  margin: 8px 0 12px;
+  padding: 2px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px 10px;
+  align-items: start;
+}
+
+.card-hand__item {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.card-hand__item .card {
+  width: 100%;
+}
+
+.card-hand__actions {
+  display: grid;
+  gap: 6px;
+}
+
+.card-hand__actions .button {
+  width: 100%;
+  justify-content: center;
+  padding: 8px 8px;
+  min-height: 44px;
+  font-size: var(--text-small);
+}
+
+.card-hand__actions .field-problem,
+.card-hand__actions .small {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+/* ------------------------------------------------------------- policy card */
+
+.card--policy {
+  --card-archetype: var(--trim);
+  display: flex;
+  width: 100%;
+  container-type: inline-size;
+}
+
+.card-policy__band {
+  padding: 8px 12px 10px;
+}
+
+.card-policy__question {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #fff;
+}
+
+.card-policy__question--small {
+  display: block;
+  font-size: 12px;
+  font-weight: var(--weight-regular);
+  line-height: 1.3;
+  color: #dfe3ee;
+}
+
+.card-policy__answers {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px;
+}
+
+@container (min-width: 440px) {
+  .card-policy__answers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.card-policy__answer {
+  appearance: none;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  row-gap: 4px;
+  align-items: start;
+  width: 100%;
+  min-height: 72px;
+  padding: 10px 12px 10px 10px;
+  text-align: left;
+  border: 2px solid var(--frame);
+  border-radius: var(--radius);
+  background: var(--paper-bright);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.card-policy__answer:hover:not(:disabled) {
+  border-color: var(--card-trim);
+  box-shadow: 0 6px 14px #0b122433;
+  transform: translateY(-2px);
+}
+
+.card-policy__answer:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 1px 3px #0b122444 inset;
+}
+
+.card-policy__answer:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.card-policy__letter {
+  grid-row: 1 / span 2;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--card-frame);
+  color: var(--card-trim);
+  font-family: var(--condensed);
+  font-size: 17px;
+  font-weight: var(--weight-bold);
+  box-shadow: 0 0 0 2px var(--card-trim) inset;
+}
+
+.card-policy__text {
+  display: block;
+  font-size: var(--text-body);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.card-policy__cta {
+  display: block;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  color: var(--ink-soft);
+}
+
+.card-policy__answer:hover:not(:disabled) .card-policy__cta {
+  color: var(--frame);
+}
+
+.card-policy__note {
+  margin: 0;
+  padding: 0 12px 10px;
+  font-size: var(--text-small);
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+/* A kept card: the archetype colours the band, the chosen answer is the body. */
+.card--committed {
+  --card-radius: 8px;
+}
+
+.card-policy__band--archetype {
+  border-bottom-width: 4px;
+  padding: 6px 10px 7px;
+}
+
+.card-policy__band--archetype .card__eyebrow {
+  color: var(--card-archetype);
+  filter: brightness(1.5);
+}
+
+.card-policy__chosen {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px 10px;
+}
+
+.card-policy__chosen .card__eyebrow {
+  color: var(--ink-soft);
+}
+
+.card-policy__chosen .card-policy__letter {
+  grid-row: auto;
+  background: var(--card-archetype);
+  color: #fff;
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------- coins and chips */
+
+.card-chip {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px #0b122444, 0 0 0 1px #ffffff99 inset;
+  vertical-align: middle;
+}
+
+.card-chip img {
+  display: block;
+  border-radius: 50%;
+}
+
+.card-chip--hollow {
+  border: 2px dashed #1f2a4466;
+  background: #1f2a440a;
+  box-shadow: none;
+}
+
+.card-chip__count {
+  position: absolute;
+  right: -7px;
+  bottom: -5px;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border-radius: 10px;
+  border: 1.5px solid var(--card-trim);
+  background: var(--card-frame);
+  color: #fff;
+  font-family: var(--condensed);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  animation: card-bump 380ms ease-out;
+}
+
+.card-chip--sm .card-chip__count {
+  right: -6px;
+  bottom: -5px;
+  min-width: 16px;
+  height: 16px;
+  font-size: 10px;
+  line-height: 13px;
+  padding: 0 4px;
+}
+
+.card-stack {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 6px 4px 2px;
+}
+
+.card-stack__item {
+  display: inline-flex;
+}
+
+.card-stack__item--none {
+  opacity: 0.4;
+  filter: saturate(0.4);
+}
+
+.card-coins {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+}
+
+.card-coins__slot {
+  display: inline-flex;
+  border-radius: 50%;
+}
+
+.card-coins__slot--filled {
+  animation: card-drop 320ms cubic-bezier(0.2, 1.3, 0.5, 1) both;
+  animation-delay: 0ms;
+}
+
+.card-coins__slot--over {
+  outline: 2px solid var(--problem);
+  outline-offset: 1px;
+}
+
+/* ------------------------------------------------------------- the picker */
+
+.card-picker {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.card-picker > legend {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 12px;
+  font-weight: var(--weight-bold);
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+.card-picker__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+
+.card-picker__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--paper-edge);
+}
+
+.card-picker__row:last-child {
+  border-bottom: 0;
+}
+
+.card-picker__row--problem {
+  box-shadow: -3px 0 0 var(--problem);
+  padding-left: 8px;
+}
+
+.card-picker__label {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.card-picker__name {
+  font-weight: var(--weight-bold);
+}
+
+.card-picker__note {
+  font-size: var(--text-small);
+  color: var(--ink-soft);
+}
+
+.card-picker__problem {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.card-picker__stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.card-picker__step {
+  appearance: none;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--frame);
+  background: var(--paper-bright);
+  color: var(--frame);
+  font-family: var(--condensed);
+  font-size: 22px;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 100ms ease, background 100ms ease;
+}
+
+.card-picker__step:hover:not(:disabled) {
+  background: var(--card-trim);
+  border-color: var(--card-trim);
+  color: var(--frame-deep);
+}
+
+.card-picker__step:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.card-picker__step:disabled {
+  color: #9aa2b8;
+  border-color: #1f2a4433;
+  background: var(--paper-sunk);
+  cursor: not-allowed;
+}
+
+.card-picker__amount {
+  display: inline-block;
+  min-width: 2.2rem;
+  text-align: center;
+  font-family: var(--condensed);
+  font-size: 22px;
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+  animation: card-bump 380ms ease-out;
+}
+
+.card-picker__footer {
+  margin: 8px 0 0;
+  font-size: var(--text-small);
+  color: var(--ink-soft);
+}
+
+/* ------------------------------------------------------------- prompts */
+
+.card-prompt__lede {
+  margin: 0;
+}
+
+.card-prompt__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.card-prompt__row .card__eyebrow {
+  color: var(--ink-soft);
+  letter-spacing: 0.12em;
+}
+
+.card-prompt__figure {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--paper-bright);
+  border: 1px solid var(--paper-edge);
+}
+
+.card-vote {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 2px;
+}
+
+/* ------------------------------------------------------------- seat card */
+
+.card--seat {
+  width: 124px;
+  --card-archetype: var(--party);
+}
+
+.card--seat .card__face {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 3px;
+  padding: 12px 8px 10px;
+  border-top: 6px solid var(--party);
+}
+
+.card-seat__emblem {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--party);
+  box-shadow: 0 0 0 3px var(--card-parchment), 0 0 0 5px var(--party);
+  margin-bottom: 4px;
+}
+
+.card-seat__emblem img {
+  display: block;
+  border-radius: 50%;
+}
+
+.card-seat__name {
+  font-size: var(--text-body);
+  font-weight: var(--weight-bold);
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.card-seat__party {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 10px;
+  color: var(--ink-soft);
+}
+
+.card-seat__note {
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.card-seat__cta {
+  margin-top: 6px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: var(--card-trim);
+  color: var(--card-frame);
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: var(--weight-bold);
+}
+
+/* ------------------------------------------------------------- voter token */
+
+.card-token {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--party);
+  box-shadow: 0 0 0 2px var(--frame-deep), 0 1px 2px #0006;
+  vertical-align: middle;
+}
+
+.card-token img {
+  display: block;
+  border-radius: 50%;
+}
+
+/* ------------------------------------------------------------- archetype track */
+
+.card-tracks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.card-track {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px 6px;
+  border-radius: var(--radius);
+  border-left: 5px solid var(--card-archetype);
+  background: var(--paper-bright);
+  border-top: 1px solid var(--paper-edge);
+  border-right: 1px solid var(--paper-edge);
+  border-bottom: 1px solid var(--paper-edge);
+}
+
+.card-track__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-track__name {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--text-body);
+  font-weight: var(--weight-bold);
+}
+
+.card-track__count {
+  margin-left: auto;
+  font-family: var(--condensed);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.card-track__count strong {
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.card-track__pips {
+  position: relative;
+  list-style: none;
+  margin: 6px 4px 22px;
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-track__pips::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 50%;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 2px;
+  background: #1f2a4422;
+}
+
+.card-track__pip {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.card-track__dot {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #1f2a4455;
+  background: var(--paper-bright);
+  font-family: var(--condensed);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  color: transparent;
+  transition: background 200ms ease, border-color 200ms ease, transform 200ms ease;
+}
+
+.card-track__pip--marker .card-track__dot {
+  width: 24px;
+  height: 24px;
+  color: #1f2a4488;
+  border-color: #1f2a4488;
+}
+
+.card-track__pip--filled .card-track__dot {
+  background: var(--card-archetype);
+  border-color: var(--card-archetype);
+  color: #fff;
+}
+
+.card-track__pip--new .card-track__dot {
+  animation: card-pip 320ms cubic-bezier(0.2, 1.3, 0.5, 1) both;
+}
+
+.card-track__pip--borrowed .card-track__dot {
+  background:
+    repeating-linear-gradient(45deg, #ffffff66 0 3px, transparent 3px 6px),
+    var(--card-archetype);
+}
+
+.card-track__pip--unlocked .card-track__dot {
+  box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--card-archetype);
+}
+
+.card-track__marker {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px;
+  white-space: nowrap;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  color: var(--ink-soft);
+}
+
+.card-track__pip:last-child .card-track__marker {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.card-track__pip--unlocked .card-track__marker {
+  color: var(--card-archetype);
+}
+
+.card-track__pays {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--ink-soft);
+}
+
+.card-track__pays strong {
+  color: var(--ink);
+  font-size: var(--text-body);
+}
+
+.card-track--income-raised .card-track__pays {
+  animation: card-bump 420ms ease-out;
+  color: var(--card-archetype);
+}
+
+.card-track--power-unlocked {
+  animation: card-unlock 700ms ease-out;
+}
+
+/* ------------------------------------------------------------- power stamps */
+
+.card-powers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.card-power {
+  border: 1px solid var(--paper-edge);
+  border-left: 5px solid var(--card-archetype);
+  border-radius: var(--radius);
+  background: var(--paper-bright);
+}
+
+.card-power--locked {
+  --card-archetype: #1f2a4433;
+  color: var(--ink-soft);
+}
+
+.card-power--borrowed {
+  --card-archetype: var(--faith);
+}
+
+.card-power--lendable {
+  --card-archetype: var(--press);
+}
+
+.card-power summary {
+  list-style: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1px 10px;
+  align-items: center;
+  padding: 7px 10px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.card-power summary::-webkit-details-marker {
+  display: none;
+}
+
+.card-power__name {
+  font-weight: var(--weight-bold);
+}
+
+.card-power__meta {
+  grid-column: 1;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.card-power details > p,
+.card-power > details > .card-power__body {
+  margin: 0 10px 8px;
+}
+
+.card-power__body p {
+  margin: 0 0 4px;
+}
+
+/* The state as a stamp: a bordered word, tilted when it is good news. */
+.card-stamp {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  justify-self: end;
+  padding: 3px 7px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 10px;
+  font-weight: var(--weight-bold);
+  line-height: 1.2;
+  color: var(--card-archetype);
+  transform: rotate(-4deg);
+  white-space: nowrap;
+}
+
+.card-stamp--locked {
+  color: #8a90a2;
+  border-style: dashed;
+  transform: none;
+}
+
+/* ------------------------------------------------------------- motion */
+
+@keyframes card-rise {
+  0% { opacity: 0; translate: 0 10px; }
+  100% { opacity: 1; translate: 0 0; }
+}
+
+@keyframes card-bump {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+@keyframes card-drop {
+  0% { transform: scale(1.6); opacity: 0; }
+  60% { transform: scale(0.94); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes card-unlock {
+  0% { box-shadow: 0 0 0 0 transparent; }
+  35% { box-shadow: 0 0 0 5px var(--card-archetype); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+@keyframes card-pip {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card-chip__count,
+  .card-picker__amount,
+  .card-coins__slot--filled,
+  .card-track__pip--filled .card-track__dot {
+    animation: none;
+  }
+
+  .card,
+  .card-trick__flipper,
+  .card-policy__answer,
+  .card-picker__step,
+  .card-track__dot {
+    transition: none;
+  }
+
+  .card--pressable:hover:not(:disabled),
+  .card-market__buy:hover:not(:disabled) .card,
+  .card-policy__answer:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .card--open,
+  .card-market__buy:hover:not(:disabled) .card--open {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------- a price in a sentence */
+
+.card-cost {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  vertical-align: middle;
+}
+
+.card-cost__text {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* ---------------------------------------------------------- committed policy list */
+
+/* The seat's kept policy cards, one committed card per answer, in a wrapping row. */
+.card-committed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* The face-down top of the Dirty Trick pile inside the purchase composer. */
+.composer__pile {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0 10px;
+}

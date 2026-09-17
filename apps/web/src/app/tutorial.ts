@@ -79,9 +79,8 @@ export function tutorialSetupDraft(): SetupDraft {
 /**
  * Everything a lesson is allowed to read, derived from one seat's own projection.
  *
- * Counts rather than identifiers: a lesson asks whether the player holds a zone, not
- * which. Anything a lesson would need an identifier for belongs on the board or in the
- * seat's own column, both of which are already on screen.
+ * Counts rather than identifiers: lessons point to the board or action sheet already on
+ * screen instead of duplicating either surface.
  */
 export interface TutorialFacts {
   /** The seat the person holds. */
@@ -208,20 +207,20 @@ export const TUTORIAL_LESSONS: readonly Lesson[] = [
   },
   {
     id: 'firstPlayer',
-    title: 'Vote for who goes first',
+    title: 'How the opening vote works',
     body: [
       'Every match opens with a vote. Pick any other player; nobody may vote for themselves, '
       + 'and a tie is voted again.',
       'Going first is not the advantage it looks like. Seats later in the order take more '
       + 'starting resources, one more for each seat, so the last seat starts richest.',
     ],
-    task: 'Choose a player in the prompt.',
+    task: 'Choose another player in the action sheet.',
     when: (facts) => facts.promptKind === 'firstPlayerVote',
     done: (facts) => !facts.setup,
   },
   {
     id: 'startingResources',
-    title: 'Take your starting resources',
+    title: 'How resources buy cards',
     body: [
       'There are four resources, and each belongs to one political archetype: Cash to '
       + 'Corporate, Influence to Nationalist, Press to Populist, Faith to Reformer.',
@@ -229,7 +228,7 @@ export const TUTORIAL_LESSONS: readonly Lesson[] = [
       + 'a spread of types buys more cards than a pile of one. You may hold at most 12 '
       + 'resources at a time.',
     ],
-    task: 'Choose your resources in the prompt.',
+    task: 'Choose the mix in the action sheet, then take it.',
     when: (facts) => facts.promptKind === 'startingResources',
     done: (facts) => !facts.setup,
   },
@@ -248,7 +247,7 @@ export const TUTORIAL_LESSONS: readonly Lesson[] = [
   },
   {
     id: 'policyAnswer',
-    title: 'Answer the policy question',
+    title: 'What your answer builds',
     body: [
       'Every turn opens with a question and two answers. Take the one you agree with — '
       + 'there is no wrong answer, and you cannot see what an answer pays before you commit '
@@ -257,7 +256,7 @@ export const TUTORIAL_LESSONS: readonly Lesson[] = [
       + 'the resources printed on it. To draw a different question instead, pay any four '
       + 'resources; you can do that as often as you can pay.',
     ],
-    task: 'Choose an answer.',
+    task: 'Choose either answer on the policy card.',
     when: (facts) => facts.promptKind === 'policyAnswer',
     done: (facts) => facts.policyCards >= 1,
   },
@@ -271,7 +270,7 @@ export const TUTORIAL_LESSONS: readonly Lesson[] = [
       'Buy as many cards as you can afford in one turn. Resources you keep are worth nothing '
       + 'at the end, so spending is usually right.',
     ],
-    task: 'Open "What you can do" in your column and buy a voter card you can afford.',
+    task: 'Choose an affordable voter card in the action sheet market.',
     when: (facts) => facts.actionPhase
       && facts.canBuyVoters
       && facts.votersToPlace === 0
@@ -320,16 +319,16 @@ export const TUTORIAL_LESSONS: readonly Lesson[] = [
   },
   {
     id: 'endTurn',
-    title: 'End your turn',
+    title: 'When to end your turn',
     body: [
-      'When you have spent what you want to spend and placed every voter, end your turn with '
-      + 'the button in the bar at the top.',
+      'When you have spent what you want to spend and placed every voter, use End turn in '
+      + 'the action-sheet header.',
       'Ending the turn resolves any Breaking News waiting on you, then passes play to the '
       + 'next seat. Anything you left unplaced is lost at that moment.',
       'A turn where nothing in the market is within reach is an ordinary turn. End it: your '
       + 'archetypes pay you again when your next one begins.',
     ],
-    task: 'Select "End turn" in the bar at the top when you are done.',
+    task: 'Use End turn in the sheet header when you are done.',
     when: (facts) => facts.actionPhase && facts.votersToPlace === 0,
   },
   {
@@ -342,7 +341,7 @@ export const TUTORIAL_LESSONS: readonly Lesson[] = [
       'Three cards in one archetype unlock that archetype’s first power, and five unlock '
       + 'its second. Your mat lists all eight powers and what each one needs.',
     ],
-    task: 'Open "Player mat" in your column to see where you are.',
+    task: 'Open the Player mat drawer near the bottom of the action sheet.',
     when: (facts) => facts.actionPhase && facts.policyCards >= 2,
   },
   {

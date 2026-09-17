@@ -27,7 +27,7 @@ import { Glyph } from './Glyph';
 import { PageFrame } from './PageFrame';
 import { ROUTES, navigate } from './routes';
 import { toGameConfig } from './setup';
-import { isTutorialMatchId, newTutorialMatchId, tutorialSetupDraft, TUTORIAL_LESSONS } from './tutorial';
+import { isTutorialMatchId, newTutorialMatchId, tutorialSetupDraft } from './tutorial';
 import { describeError } from './useLocalStore';
 
 export function TutorialStart({
@@ -103,29 +103,11 @@ export function TutorialStart({
       )}
 
       <section className="panel" aria-labelledby="tutorial-heading">
-        <h2 id="tutorial-heading">What you are about to play</h2>
+        <h2 id="tutorial-heading">Learn by playing a real match</h2>
         <p className="panel__lede">
-          Nothing here is a simulation. The tutorial is a real match on the real board, with the
-          same cards and the same rules as every other match, so everything you learn carries
-          over to a table of your own.
+          You play one seat against two Easy computers. A coach explains each rule exactly
+          when you need it, without changing the game or taking a turn for you.
         </p>
-        <ul className="facts-list">
-          <li>
-            <strong>Three seats.</strong> You take one; two computers at Easy take the others.
-          </li>
-          <li>
-            <strong>{TUTORIAL_LESSONS.length} lessons.</strong> Each one appears when the rule it
-            teaches comes up, and goes away once you have used it.
-          </li>
-          <li>
-            <strong>Your own pace.</strong> The coach never takes a turn for you and never blocks
-            a control. Fold it away at any point, or start the lessons again.
-          </li>
-          <li>
-            <strong>Saved as you go.</strong> The match is stored in this browser, so you can
-            leave it and come back to it from the title screen.
-          </li>
-        </ul>
 
         <div className="cta-row">
           {unfinished === undefined ? null : (
@@ -137,7 +119,7 @@ export function TutorialStart({
               <Glyph name="resume" size={26} />
               <span className="cta__text">
                 <span className="cta__label">Continue</span>
-                <span className="cta__sub">Your tutorial match, at revision {unfinished.revision}</span>
+                <span className="cta__sub">Resume where you stopped</span>
               </span>
             </button>
           )}
@@ -150,18 +132,28 @@ export function TutorialStart({
             <Glyph name="play" size={26} />
             <span className="cta__text">
               <span className="cta__label">
-                {unfinished === undefined ? 'Start the tutorial' : 'Start a new one'}
+                {unfinished === undefined ? 'Start learning' : 'Start a new tutorial'}
               </span>
               <span className="cta__sub">
-                {starting ? 'Dealing the cards…' : 'You and two computers, coached from the first turn'}
+                {starting ? 'Dealing the cards…' : 'You and two computer opponents'}
               </span>
             </span>
           </button>
         </div>
-        <p className="hint">
-          Starting a new tutorial leaves any earlier one in your saved matches. Delete it from the
-          title screen when you are done with it.
-        </p>
+
+        <details className="settings">
+          <summary>How the tutorial works</summary>
+          <ul className="facts-list">
+            <li>It uses the real board, cards, rules, and saves.</li>
+            <li>The coach never blocks a control and can be folded away.</li>
+            <li>You can leave at any time and continue from this browser.</li>
+          </ul>
+          {unfinished === undefined ? null : (
+            <p className="hint">
+              Starting a new tutorial keeps the earlier save. You can delete it from the title screen.
+            </p>
+          )}
+        </details>
       </section>
     </PageFrame>
   );

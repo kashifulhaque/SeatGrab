@@ -54,8 +54,7 @@ import type { DrawableViewResult } from '../transport';
 import { PageFrame } from './PageFrame';
 import { PartyMark } from './PartyMark';
 import { ResultsSurface } from './ResultsSurface';
-import { SeatSurface } from './SeatSurface';
-import { StatusBar } from './StatusBar';
+import { seatSheet } from './SeatSurface';
 import { TableSurface } from './TableSurface';
 import { ROUTES, navigate } from './routes';
 import {
@@ -299,20 +298,9 @@ function ConnectedRoom({ seat, seats }: { seat: StoredSeat; seats: OpenSeatStore
       back={{ href: ROUTES.online, label: 'Online rooms' }}
       wide
       compact
-      footer={<SeatCredentialPanel seat={seat} seats={seats} />}
+      // Once the table is dealt the credential panel moves into the match menu.
+      footer={started ? undefined : <SeatCredentialPanel seat={seat} seats={seats} />}
     >
-      {started && drawable !== null ? (
-        <StatusBar
-          view={drawable.view}
-          me={me}
-          endTurn={{
-            ...endTurnAvailability(drawable.view, seat.playerId),
-            busy: busy || banner.stale,
-            onEndTurn: () => submit({ type: 'RequestEndTurn' }),
-          }}
-        />
-      ) : null}
-
       <ConnectionPanel
         banner={banner}
         onRetry={() => setGeneration((count) => count + 1)}
@@ -321,41 +309,44 @@ function ConnectedRoom({ seat, seats }: { seat: StoredSeat; seats: OpenSeatStore
       />
 
       {outcome === null || outcome.kind === 'accepted' ? null : (
-        <p className={`alert ${outcome.kind === 'unheard' ? 'alert--error' : 'alert--error'}`} role="alert">
+        <p className="alert alert--error" role="alert">
           {outcome.message}
         </p>
       )}
 
       {started && drawable !== null ? (
-        <>
-          {finished ? (
-            <ResultsSurface view={drawable.view} again={<PlayAgainOnline />} />
-          ) : null}
-
-          <TableSurface
-            view={drawable.view}
-            targeting={targeting}
-            attention={!finished && (
-              (drawable.view.pendingDecision?.responsiblePlayerIds.includes(seat.playerId) ?? false)
-              || (drawable.view.pendingDecision === undefined && drawable.view.activePlayerId === seat.playerId)
-            )}
-            onPickSlot={(slotId) =>
-              dispatchDraft({ type: 'pick', slotId, voterId: voterAt(drawable.view, slotId) })}
-            aside={
-              <SeatSurface
-                result={drawable}
-                seatId={seat.playerId}
-                draft={draft}
-                dispatch={dispatchDraft}
-                targeting={targeting}
-                submit={submit}
-                busy={busy || banner.stale}
-                failure={outcome?.kind === 'ruling' ? outcome.message : null}
-                finished={finished === true}
-              />
-            }
-          />
-        </>
+        <TableSurface
+          view={drawable.view}
+          me={me}
+          targeting={targeting}
+          attention={!finished && (
+            (drawable.view.pendingDecision?.responsiblePlayerIds.includes(seat.playerId) ?? false)
+            || (drawable.view.pendingDecision === undefined && drawable.view.activePlayerId === seat.playerId)
+          )}
+          endTurn={{
+            ...endTurnAvailability(drawable.view, seat.playerId),
+            busy: busy || banner.stale,
+            onEndTurn: () => submit({ type: 'RequestEndTurn' }),
+          }}
+          onPickSlot={(slotId) =>
+            dispatchDraft({ type: 'pick', slotId, voterId: voterAt(drawable.view, slotId) })}
+          seat={seatSheet({
+            result: drawable,
+            seatId: seat.playerId,
+            draft,
+            dispatch: dispatchDraft,
+            targeting,
+            submit,
+            busy: busy || banner.stale,
+            failure: outcome?.kind === 'ruling' ? outcome.message : null,
+            finished: finished === true,
+          })}
+          menu={{
+            extras: <SeatCredentialPanel seat={seat} seats={seats} />,
+            home: { href: ROUTES.online, label: 'Online rooms' },
+          }}
+          notices={finished ? <ResultsSurface view={drawable.view} again={<PlayAgainOnline />} /> : undefined}
+        />
       ) : (
         <>
           {/*

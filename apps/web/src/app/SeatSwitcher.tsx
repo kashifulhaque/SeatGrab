@@ -1,22 +1,30 @@
 /**
- * Who needs the device, as one control.
+ * Who holds the device, as a short list of controls inside the match menu.
  *
- * The first playtest showed a row of identical "Pass to" buttons with nothing to say which
- * seat the match was waiting on. This answers that question with one primary action —
- * pass to the seat that must act — and keeps every other seat and the table view behind a
- * menu. The revealed seat sees "Hide my cards" as its way back.
+ * The seat the match is waiting on has its own primary control in the action sheet's
+ * header — "Pass the device to Bikram" — so this list is the rest: hide the revealed
+ * seat's cards, go back to the table view, or pass to any other person at the table. It
+ * dispatches the same four actions to `handoffReducer` that the first button row did,
+ * and nothing else. The state machine in `handoff.ts` is unchanged: passing always lands
+ * on the cover, revealing takes an explicit click on that cover, and concealing goes back
+ * to the cover rather than to the table.
  *
- * It dispatches the same four actions to `handoffReducer` that the button row did, and
- * nothing else. The state machine in `handoff.ts` is unchanged: passing always lands on
- * the cover, revealing takes an explicit click on that cover, and concealing goes back to
- * the cover rather than to the table.
+ * A computer seat never holds the device, so it is not somewhere the device can be
+ * passed. A table with one person has nobody to pass to, so this renders nothing at all,
+ * and the menu draws no section for it: `match-shell.test.tsx` asserts that no passing
+ * words appear on a solo table.
  */
-import { useRef, type RefObject } from 'react';
+import type { RefObject } from 'react';
 
 import type { PublicPlayerView } from '@gerrymander/protocol';
 
 import { PartyMark } from './PartyMark';
 import { revealedSeatId, type HandoffAction, type HandoffState } from './handoff';
+
+/** True when the table has more than one person, so passing means something. */
+export function hasSeatsToPass(seats: readonly PublicPlayerView[]): boolean {
+  return seats.filter((seat) => seat.controller !== 'computer').length > 1;
+}
 
 export function SeatSwitcher({
   seats,
@@ -34,68 +42,52 @@ export function SeatSwitcher({
   /** The table-view control, so the cover can give focus back to it. */
   sharedButtonRef: RefObject<HTMLButtonElement | null>;
 }) {
-  const menu = useRef<HTMLDetailsElement>(null);
   const revealed = revealedSeatId(handoff);
-  // A computer seat never holds the device, so it is not somewhere the device can be
-  // passed. The reducer stays generic; the filtering is the shell's, and it is here.
   const passable = seats.filter((seat) => seat.controller !== 'computer');
-  // A table with one person has nobody to pass to, so the passing controls are not drawn
-  // at all rather than drawn with one entry that does nothing useful.
-  const soloTable = passable.length <= 1;
-  const choose = (action: HandoffAction) => () => {
-    if (menu.current !== null) menu.current.open = false;
-    dispatch(action);
-  };
+  if (passable.length <= 1) return null;
 
   return (
-    <div className="switcher">
-      {revealed === null || soloTable ? null : (
-        <button type="button" className="button button--primary" onClick={choose({ type: 'conceal' })}>
+    <div className="ms-switch">
+      {revealed === null ? null : (
+        <button
+          type="button"
+          className="button button--primary ms-switch__hide"
+          onClick={() => dispatch({ type: 'conceal' })}
+        >
           Hide my cards
         </button>
       )}
-      {mustAct === null || mustAct.id === revealed || mustAct.controller === 'computer' ? null : (
-        <button
-          type="button"
-          className={`button ${revealed === null ? 'button--primary' : ''}`}
-          onClick={choose({ type: 'passTo', seatId: mustAct.id })}
-        >
-          <PartyMark partyId={mustAct.partyId} size={20} />
-          Pass to {mustAct.displayName}
-        </button>
-      )}
-      {soloTable ? null : (
-      <details ref={menu} className="menu">
-        <summary className="button button--quiet">Pass the device</summary>
-        <ul className="menu__list">
-          <li>
+      <ul className="ms-switch__list">
+        <li>
+          <button
+            ref={sharedButtonRef}
+            type="button"
+            className="button button--quiet"
+            aria-pressed={handoff.kind === 'shared'}
+            onClick={() => dispatch({ type: 'showShared' })}
+          >
+            Table view
+          </button>
+        </li>
+        {passable.map((seat) => (
+          <li key={seat.id}>
             <button
-              ref={sharedButtonRef}
               type="button"
               className="button button--quiet"
-              aria-pressed={handoff.kind === 'shared'}
-              onClick={choose({ type: 'showShared' })}
+              aria-pressed={handoff.kind !== 'shared' && handoff.seatId === seat.id}
+              onClick={() => dispatch({ type: 'passTo', seatId: seat.id })}
             >
-              Table view
+              <PartyMark partyId={seat.partyId} size={20} />
+              Pass to {seat.displayName}
+              {seat.id === revealed ? (
+                <span className="small"> · showing</span>
+              ) : seat.id === mustAct?.id ? (
+                <span className="small"> · to act</span>
+              ) : null}
             </button>
           </li>
-          {passable.map((seat) => (
-            <li key={seat.id}>
-              <button
-                type="button"
-                className="button button--quiet"
-                aria-pressed={handoff.kind !== 'shared' && handoff.seatId === seat.id}
-                onClick={choose({ type: 'passTo', seatId: seat.id })}
-              >
-                <PartyMark partyId={seat.partyId} size={20} />
-                Pass to {seat.displayName}
-                {seat.id === revealed ? <span className="small"> · showing</span> : null}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </details>
-      )}
+        ))}
+      </ul>
     </div>
   );
 }

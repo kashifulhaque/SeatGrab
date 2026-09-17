@@ -1,0 +1,49 @@
+/*
+ * Title-screen overrides that the shared stylesheet doesn't carry.
+ *
+ * `.title-menu` in app.css lays the tiles out four across, two on a phone, for the four
+ * tiles it used to hold. With three, a four-column grid leaves a hole and a two-column
+ * one leaves a tile alone on its own row, so the grid becomes one row of three at every
+ * width. The development-only route list replaces the footer that used to hold the
+ * edition facts; it's small, low-contrast and absent from both production builds.
+ */
+
+.title-menu.home-menu {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.home-dev {
+  position: relative;
+  width: 100%;
+  max-width: 62rem;
+  font-size: 12px;
+}
+
+.home-dev ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.home-dev a {
+  color: #808cab;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.home-dev a:hover,
+.home-dev a:focus-visible {
+  color: var(--trim);
+}
+
+@media (max-width: 360px) {
+  .title-screen .title-card__name {
+    max-width: 100%;
+    font-size: clamp(40px, 14vw, 48px);
+    letter-spacing: 0;
+  }
+}

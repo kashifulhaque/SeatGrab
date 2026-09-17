@@ -1,13 +1,12 @@
 /**
  * One seat's own surface: what it is being asked, what it may do, and what it holds.
  *
- * This was the `PrivateSurface` inside `MatchShell` until Session 15 gave the same seat a
- * second screen to appear on. It is one component rather than two because the contents
- * are not a property of the transport: a seat's prompt, its mat, its committed policy
- * cards, its hand and its evicted voters are the same things whether the state is in this
- * browser or on a server, and they are drawn from a projection either way. Two copies
- * would be two places for the privacy rules to drift apart, in the part of the
- * application where drift is least affordable.
+ * It is one component rather than two because the contents are not a property of the
+ * transport: a seat's prompt, its mat, its committed policy cards, its hand and its
+ * evicted voters are the same things whether the state is in this browser or on a
+ * server, and they are drawn from a projection either way. Two copies would be two
+ * places for the privacy rules to drift apart, in the part of the application where
+ * drift is least affordable.
  *
  * What *is* a property of the transport is who may see this, and that stays outside:
  *
@@ -16,40 +15,30 @@
  * - Online, one device holds one credential and the server never sends it another seat's
  *   private data at all. There is nothing to cover and nothing to pass.
  *
- * The column is built around one question — what should this player do now? — and
- * answers it once, at the top, in the **Now** card. The card carries `guidance` from
- * `actions.ts` as its title, and its body is whichever of these applies: the prompt the
- * match is waiting on, the action being composed, or nothing when the seat is free to
- * choose. Under it, **What you can do** lists the market cards, the trick purchase,
- * the gerrymander and the unlocked powers; it is folded shut while a prompt blocks them,
- * so a first-time player is not offered a market they cannot use before a question they
- * must answer. Trades, the mat, the hand and the rules are collapsed drawers below.
- * Nothing draws a heading over an empty state.
+ * The surface is the body of the action sheet. The sheet's header carries the one line
+ * that says what to do — `guidance(view, seatId, draft).news` — and End turn, so this
+ * body never repeats the heading: it goes straight to the thing. The body is whichever
+ * of these applies: the prompt the match is waiting on, the action being composed, or,
+ * when the seat is free to choose, the market with the other actions under it. Trades,
+ * the mat and the hand are collapsed drawers below. Nothing draws a heading over an empty
+ * state, and nothing here explains a control the composer already explains.
+ *
+ * `seatSheet` builds what the layout needs from the same props: the headline, the tray of
+ * waiting voters, the body and a subject key. Both shells call it, so the two screens
+ * cannot compose the seat differently.
  *
  * Every rule below comes from `actions.ts`, and the engine re-checks all of it. Nothing
  * here decides what is legal, and nothing here rewords a refusal.
- *
- * Two things this column does about *where the player is looking*, both from a playtest
- * where a purchase opened off the top of the column and the player went looking for it:
- *
- * - When the Now card becomes a new thing — a prompt arrives, an action opens — the card
- *   is scrolled into view, takes focus and flashes once. The column is its own scrolling
- *   box under a pinned bar, so an action opening above the scroll position was silent.
- * - While an action is open, **What you can do** folds shut. The open action is then the
- *   only thing in the column, which is the point: one thing is being done, and the list
- *   the player just chose from is not competing with it. Cancelling opens the list again.
  */
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { CORE_CONTENT } from '@gerrymander/engine';
 import type { GameCommand } from '@gerrymander/protocol';
 
-import { PARTY_BY_ID } from '../assets/manifest';
 import type { DrawableViewResult } from '../transport';
 
-import { HowToPlay } from './HowToPlay';
 import { Market } from './Market';
-import { PartyMark } from './PartyMark';
+import { PolicyCardCommitted } from './cards';
 import {
   NO_PAYMENT,
   NO_RESOURCES,
@@ -76,16 +65,18 @@ import {
   TurnDraftComposer,
   isTurnDraft,
 } from './composers/TurnComposer';
+import { VoterTray } from './match/VoterTray';
+import type { SeatSheet } from './TableSurface';
 
 const POLICY_CARDS = new Map(CORE_CONTENT.policyCards.map((card) => [card.id, card]));
 
 /**
- * A name for whatever the Now card is currently about.
+ * A name for whatever the sheet is currently about.
  *
- * It changes exactly when the card's contents become a different thing to do, which is
- * when the card is worth pointing the player at. It is deliberately not the draft object:
- * editing a payment inside an open purchase is the same action, and must not re-scroll
- * the column out from under the stepper being pressed.
+ * It changes exactly when the body becomes a different thing to do, which is when the
+ * sheet is worth opening for the player. It is deliberately not the draft object: editing
+ * a payment inside an open purchase is the same action, and must not re-scroll the sheet
+ * out from under the stepper being pressed.
  */
 function nowSubject(draft: ActionDraft, promptKey: string | null): string {
   if (promptKey !== null) return `prompt:${promptKey}`;
@@ -106,10 +97,9 @@ function nowSubject(draft: ActionDraft, promptKey: string | null): string {
 /**
  * `Your turn`, said once, over the table.
  *
- * A turn arriving used to be a quiet change of wording in a pinned bar. This is the
- * announcement: it shows for a moment when the turn becomes this seat's and then leaves
- * on its own. It covers nothing — it is not a dialog, takes no focus and has no control —
- * so a player who is already acting is never interrupted by it.
+ * This is the announcement: it shows for a moment when the turn becomes this seat's and
+ * then leaves on its own. It covers nothing — it is not a dialog, takes no focus and has
+ * no control — so a player who is already acting is never interrupted by it.
  */
 function TurnFanfare({ on, label }: { on: boolean; label: string }) {
   const [shown, setShown] = useState(0);
@@ -131,17 +121,7 @@ function TurnFanfare({ on, label }: { on: boolean; label: string }) {
   );
 }
 
-export function SeatSurface({
-  result,
-  seatId,
-  draft,
-  dispatch,
-  targeting,
-  submit,
-  busy,
-  failure,
-  finished,
-}: {
+export interface SeatSurfaceProps {
   result: DrawableViewResult;
   seatId: string;
   draft: ActionDraft;
@@ -153,7 +133,41 @@ export function SeatSurface({
   failure: string | null;
   /** True once the match is over. No composer is drawn; the seat may still read. */
   finished: boolean;
-}) {
+}
+
+function promptKeyOf(result: DrawableViewResult): string | null {
+  if (!result.ok) return 'refusal';
+  const prompt = result.view.prompt;
+  return prompt === undefined ? null : `${prompt.kind}:${prompt.interactionId}`;
+}
+
+/** What the layout needs from a revealed seat, built once from the same props. */
+export function seatSheet(props: SeatSurfaceProps): SeatSheet {
+  const { result, seatId, draft, dispatch, busy, finished } = props;
+  const guide = guidance(result.view, seatId, draft);
+  const subject = finished ? 'finished' : nowSubject(draft, promptKeyOf(result));
+  return {
+    seatId,
+    news: guide.news,
+    subject,
+    ...(finished || !result.ok
+      ? {}
+      : { tray: <VoterTray view={result.view} seatId={seatId} draft={draft} dispatch={dispatch} busy={busy} /> }),
+    body: <SeatSurface key={seatId} {...props} />,
+  };
+}
+
+export function SeatSurface({
+  result,
+  seatId,
+  draft,
+  dispatch,
+  targeting,
+  submit,
+  busy,
+  failure,
+  finished,
+}: SeatSurfaceProps) {
   const view = result.view;
   const me = view.players.find((player) => player.id === seatId);
   const prompt = result.ok ? view.prompt : undefined;
@@ -166,21 +180,19 @@ export function SeatSurface({
   const openCardId = draft.kind === 'influence' ? draft.cardId : null;
   const held = me?.resources ?? NO_RESOURCES;
   const guide = guidance(view, seatId, draft);
-  const partyColor = me === undefined ? undefined : PARTY_BY_ID.get(me.partyId)?.color;
   const campaignWaiting = result.ok && campaignAttention(view, seatId, draft);
 
   const nowKind = hasPrompt ? 'prompt' : composing ? 'composing' : 'free';
 
-  // Scroll the Now card back under the player's eye whenever it becomes a new thing, and
-  // flash it once so the change is seen rather than merely present. `scrollIntoView` is
-  // guarded because jsdom, which the render tests use, does not implement it.
+  // Scroll the current thing back under the player's eye whenever it becomes a new thing,
+  // and flash it once so the change is seen rather than merely present. `scrollIntoView`
+  // is guarded because jsdom, which the render tests use, does not implement it.
   const nowRef = useRef<HTMLElement>(null);
-  const subject = nowSubject(
-    draft,
-    hasPrompt ? (prompt === undefined ? 'refusal' : `${prompt.kind}:${prompt.interactionId}`) : null,
-  );
+  const subject = nowSubject(draft, promptKeyOf(result));
   const [arrivals, setArrivals] = useState(0);
   const lastSubject = useRef(subject);
+  const reducedMotion = typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
   useEffect(() => {
     if (lastSubject.current === subject) return;
     lastSubject.current = subject;
@@ -188,150 +200,111 @@ export function SeatSurface({
     const card = nowRef.current;
     if (card === null) return;
     card.focus?.({ preventScroll: true });
-    card.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    card.scrollIntoView?.({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' });
     setArrivals((count) => count + 1);
-  }, [finished, subject]);
-
-  // "What you can do" folds away while an action is open, so the open action is the only
-  // thing in the column. Reopening it by hand while composing is allowed and sticks.
-  const [optionsOpen, setOptionsOpen] = useState(acting.can);
-  const optionsState = useRef({ can: acting.can, composing });
-  useEffect(() => {
-    const was = optionsState.current;
-    if (was.can === acting.can && was.composing === composing) return;
-    optionsState.current = { can: acting.can, composing };
-    setOptionsOpen(acting.can && !composing);
-  }, [acting.can, composing]);
+  }, [finished, reducedMotion, subject]);
 
   const myTurn = !finished && !hasPrompt && view.activePlayerId === seatId;
 
   return (
-    <div
-      className="seat-surface"
-      style={partyColor === undefined ? undefined : ({ '--party': partyColor } as CSSProperties)}
-    >
+    <div className="ms-seat" data-seat-surface={seatId}>
       <TurnFanfare on={myTurn} label="Your turn" />
-      <section className="panel private action-column" aria-labelledby="private-heading">
-        <header className="seat-head">
-          <PartyMark partyId={me?.partyId ?? ''} size={36} />
-          <h2 id="private-heading" className="seat-head__name">{me?.displayName ?? seatId}</h2>
-          <span className="seat-head__you">Your cards</span>
-        </header>
 
-        {failure === null ? null : (
-          <p className="alert alert--error" role="alert">
-            {failure}
-          </p>
-        )}
+      {failure === null ? null : (
+        <p className="alert alert--error ms-seat__failure" role="alert">
+          {failure}
+        </p>
+      )}
 
-        {finished ? (
-          <p>
-            The match is over, so nothing is waiting on you and no action is offered. Your
-            cards and your mat are below as they finished; the results are above.
-          </p>
-        ) : (
-          <>
-            {/* The one thing to do now, and the control that does it, in one card. */}
+      {finished ? (
+        <p className="ms-seat__finished">
+          The match is over, so nothing is waiting on you and no action is offered. Your
+          cards and your mat are below as they finished; the results are above.
+        </p>
+      ) : (
+        <>
+          {nowKind === 'prompt' ? (
             <section
               ref={nowRef}
               tabIndex={-1}
-              className={`now now--${nowKind}`}
-              aria-labelledby="now-heading"
+              className="ms-now ms-now--prompt"
+              aria-label="Your prompt"
+              data-coach-anchor="prompt"
             >
-              {arrivals === 0 ? null : (
-                <span key={arrivals} className="now__flash" aria-hidden="true" />
-              )}
-              <p className="now__eyebrow">
-                {nowKind === 'prompt' ? 'Your prompt' : nowKind === 'composing' ? 'Your action' : 'Now'}
-              </p>
-              <div className="now__head">
-                <h3 id="now-heading" className="now__news">{guide.news}</h3>
-                {nowKind === 'composing' ? (
-                  <button
-                    type="button"
-                    className="button button--quiet"
-                    onClick={() => dispatch({ type: 'close' })}
-                  >
-                    Cancel
-                  </button>
-                ) : null}
-              </div>
-              {nowKind === 'composing' ? null : <p className="now__detail">{guide.detail}</p>}
+              {arrivals === 0 ? null : <span key={arrivals} className="ms-now__flash" aria-hidden="true" />}
+              <PromptComposer
+                key={prompt === undefined ? 'refusal' : `${prompt.kind}:${prompt.interactionId}`}
+                result={result}
+                seatId={seatId}
+                draft={draft}
+                dispatch={dispatch}
+                submit={submit}
+                busy={busy}
+              />
+            </section>
+          ) : null}
 
-              {nowKind === 'free' && result.ok ? (
-                <PendingVoters
+          {nowKind === 'composing' ? (
+            <section
+              ref={nowRef}
+              tabIndex={-1}
+              className="ms-now ms-now--composing"
+              aria-label="Your action"
+              data-coach-anchor="composer"
+            >
+              {arrivals === 0 ? null : <span key={arrivals} className="ms-now__flash" aria-hidden="true" />}
+              <div className="ms-now__bar">
+                <span className="ms-now__eyebrow">Your action</span>
+                <button
+                  type="button"
+                  className="button button--quiet ms-now__cancel"
+                  onClick={() => dispatch({ type: 'close' })}
+                >
+                  Cancel
+                </button>
+              </div>
+              {isTurnDraft(draft) ? (
+                <TurnDraftComposer
                   view={view}
                   seatId={seatId}
                   draft={draft}
                   dispatch={dispatch}
+                  targeting={targeting}
                   submit={submit}
                   busy={busy}
                 />
-              ) : null}
-
-              {nowKind === 'prompt' ? (
-                <div className="now__body">
-                  <PromptComposer
-                    key={prompt === undefined ? 'refusal' : `${prompt.kind}:${prompt.interactionId}`}
-                    result={result}
-                    seatId={seatId}
-                    draft={draft}
-                    dispatch={dispatch}
-                    submit={submit}
-                    busy={busy}
-                  />
-                </div>
-              ) : null}
-
-              {nowKind === 'composing' ? (
-                <div className="now__body">
-                  {isTurnDraft(draft) ? (
-                    <TurnDraftComposer
-                      view={view}
-                      seatId={seatId}
-                      draft={draft}
-                      dispatch={dispatch}
-                      targeting={targeting}
-                      submit={submit}
-                      busy={busy}
-                    />
-                  ) : (
-                    <CampaignDraftComposer
-                      view={view}
-                      seatId={seatId}
-                      draft={draft}
-                      dispatch={dispatch}
-                      targeting={targeting}
-                      submit={submit}
-                      busy={busy}
-                    />
-                  )}
-                </div>
-              ) : null}
+              ) : (
+                <CampaignDraftComposer
+                  view={view}
+                  seatId={seatId}
+                  draft={draft}
+                  dispatch={dispatch}
+                  targeting={targeting}
+                  submit={submit}
+                  busy={busy}
+                />
+              )}
             </section>
+          ) : null}
 
-            {result.ok ? (
-              <details
-                className="drawer drawer--options"
-                open={optionsOpen}
-                onToggle={(event) => setOptionsOpen(event.currentTarget.open)}
-              >
-                <summary>
-                  <h3>What you can do</h3>
-                  {composing ? (
-                    <span className="small">Paused — finish or cancel above</span>
-                  ) : acting.can ? (
-                    <span className="small">Voter cards, a trick, powers</span>
-                  ) : (
-                    <span className="small">Not right now</span>
-                  )}
-                </summary>
+          {nowKind === 'free' && result.ok ? (
+            <>
+              <p className="ms-seat__detail">{guide.detail}</p>
+              <PendingVoters
+                view={view}
+                seatId={seatId}
+                draft={draft}
+                dispatch={dispatch}
+                submit={submit}
+                busy={busy}
+              />
+              <section className="ms-market" aria-labelledby="market-heading" data-coach-anchor="market">
+                <h3 id="market-heading" className="ms-seat__label">Voter market</h3>
                 {acting.can ? null : (
-                  <p id="actions-reason" className="action-block__note" role="status">
+                  <p id="actions-reason" className="ms-seat__note" role="status">
                     {acting.reason}
                   </p>
                 )}
-                <h4 className="options__label">Voter market</h4>
                 <Market
                   view={view}
                   buy={{
@@ -355,104 +328,107 @@ export function SeatSurface({
                     },
                   }}
                 />
-                {acting.can ? (
-                  <>
-                    <h4 className="options__label">Other actions</h4>
-                    <TurnComposer
-                      view={view}
-                      seatId={seatId}
-                      draft={draft}
-                      dispatch={dispatch}
-                      targeting={targeting}
-                      submit={submit}
-                      busy={busy}
-                    />
-                  </>
-                ) : null}
-              </details>
-            ) : null}
+              </section>
+              {acting.can ? (
+                <details className="drawer ms-drawer" data-coach-anchor="other-actions">
+                  <summary>
+                    <h3>Other actions</h3>
+                    <span className="small">A trick, redistricting, powers</span>
+                  </summary>
+                  <TurnComposer
+                    view={view}
+                    seatId={seatId}
+                    draft={draft}
+                    dispatch={dispatch}
+                    targeting={targeting}
+                    submit={submit}
+                    busy={busy}
+                  />
+                </details>
+              ) : null}
+            </>
+          ) : null}
 
-            {result.ok ? (
-              <details className="drawer" open={campaignWaiting}>
-                <summary>
-                  <h3>Trades, reactions, and debts</h3>
-                  {campaignWaiting ? <span className="drawer__flag">Waiting on you</span> : null}
-                </summary>
-                <CampaignComposer
-                  view={view}
-                  seatId={seatId}
-                  draft={draft}
-                  dispatch={dispatch}
-                  targeting={targeting}
-                  submit={submit}
-                  busy={busy}
-                />
-              </details>
-            ) : null}
-          </>
-        )}
-      </section>
+          {result.ok ? (
+            <details className="drawer ms-drawer" open={campaignWaiting} data-coach-anchor="trades">
+              <summary>
+                <h3>Trades, reactions, and debts</h3>
+                {campaignWaiting ? <span className="drawer__flag">Waiting on you</span> : null}
+              </summary>
+              <CampaignComposer
+                view={view}
+                seatId={seatId}
+                draft={draft}
+                dispatch={dispatch}
+                targeting={targeting}
+                submit={submit}
+                busy={busy}
+              />
+            </details>
+          ) : null}
+        </>
+      )}
 
-      <section className="panel private private-drawer" aria-label="Your mat and cards">
-        <details className="drawer">
-          <summary>
-            <h3>Player mat</h3>
-            <span className="small">Four archetypes · eight powers</span>
-          </summary>
-          <PlayerMat view={view} seatId={seatId} showUsage={view.activePlayerId === seatId} />
-        </details>
+      <details className="drawer ms-drawer" data-coach-anchor="mat">
+        <summary>
+          <h3>Player mat</h3>
+          <span className="small">Four archetypes · eight powers</span>
+        </summary>
+        <PlayerMat view={view} seatId={seatId} showUsage={view.activePlayerId === seatId} />
+      </details>
 
-        <details className="drawer">
-          <summary>
-            <h3>Hand</h3>
-            <span className="small">
-              {hand} conspirac{hand === 1 ? 'y' : 'ies'} · {policy} policy card{policy === 1 ? '' : 's'}
-            </span>
-          </summary>
-          <h4>Trick cards</h4>
-          <TrickHand view={view} seatId={seatId} submit={submit} busy={busy} readOnly={finished || !result.ok} />
-          <h4>Committed policy cards</h4>
-          {policy === 0 ? (
-            <p className="small">None yet. Opponents only ever see your per-archetype counts.</p>
-          ) : (
-            <ul className="private__cards">
-              {(view.privatePolicyCards ?? []).map((card, index) => {
-                const definition = POLICY_CARDS.get(card.cardId);
-                return (
-                  <li key={`${card.cardId}-${index}`}>
+      <details className="drawer ms-drawer" data-coach-anchor="hand">
+        <summary>
+          <h3>Hand</h3>
+          <span className="small">
+            {hand} trick card{hand === 1 ? '' : 's'} · {policy} policy card{policy === 1 ? '' : 's'}
+          </span>
+        </summary>
+        <h4>Trick cards</h4>
+        <TrickHand view={view} seatId={seatId} submit={submit} busy={busy} readOnly={finished || !result.ok} />
+        <h4>Committed policy cards</h4>
+        {policy === 0 ? (
+          <p className="small">None yet. Opponents only ever see your per-archetype counts.</p>
+        ) : (
+          <ul className="card-committed-list">
+            {(view.privatePolicyCards ?? []).map((card, index) => {
+              const definition = POLICY_CARDS.get(card.cardId);
+              return (
+                <li key={`${card.cardId}-${index}`}>
+                  {definition === undefined ? (
                     <strong>{card.archetype}</strong>
-                    {definition === undefined ? null : (
-                      <>
-                        <span>{definition.question}</span>
-                        <span className="small">You answered: {definition.answers[card.answerIndex].text}</span>
-                      </>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </details>
-
-        {evicted === 0 ? null : (
-          <details className="drawer">
-            <summary>
-              <h3>Evicted voters</h3>
-              <span className="small">{evicted} waiting to return to your mat</span>
-            </summary>
-            <ul className="private__cards">
-              {(view.privateEvictedVoters ?? []).map((voter) => (
-                <li key={voter.id}>
-                  Returns on turn {voter.availableOnTurnOrdinal}
-                  {voter.availableOnTurnOrdinal <= view.turnOrdinal ? ' — due now' : ''}.
+                  ) : (
+                    <PolicyCardCommitted
+                      question={definition.question}
+                      answers={definition.answers}
+                      archetype={card.archetype}
+                      answerIndex={card.answerIndex}
+                      index={index}
+                    />
+                  )}
                 </li>
-              ))}
-            </ul>
-          </details>
+              );
+            })}
+          </ul>
         )}
+      </details>
 
-        <HowToPlay />
-      </section>
+      {evicted === 0 ? null : (
+        <details className="drawer ms-drawer">
+          <summary>
+            <h3>Evicted voters</h3>
+            <span className="small">{evicted} waiting to return to your mat</span>
+          </summary>
+          <ul className="private__cards">
+            {(view.privateEvictedVoters ?? []).map((voter) => (
+              <li key={voter.id}>
+                Returns on turn {voter.availableOnTurnOrdinal}
+                {voter.availableOnTurnOrdinal <= view.turnOrdinal ? ' — due now' : ''}.
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
     </div>
   );
 }

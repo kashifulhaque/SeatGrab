@@ -29,6 +29,8 @@
  * That is not politeness: `PlayTrick` is the seat's action, and an A18 refusal — five
  * voters it cannot reach, a rights zone it does not hold — arrives after the click.
  */
+import { useEffect, useRef, useState } from 'react';
+import { TRICK_CARDS } from '@gerrymander/content';
 import type { PlayerView, TradeOfferView } from '@gerrymander/protocol';
 
 import {
@@ -50,8 +52,17 @@ import {
   type Targeting,
 } from '../actions';
 
+import { TrickCard } from '../cards/TrickCard';
+
 import { ResourcePicker } from './ResourcePicker';
 import type { ComposerSubmit } from './PromptComposer';
+
+import '../cards/cards.css';
+
+/** The printed card behind each hand entry, for the flavour line the hand shape omits. */
+const TRICK_BY_ID = Object.fromEntries(
+  TRICK_CARDS.map((card) => [card.id, card]),
+) as Readonly<Record<string, (typeof TRICK_CARDS)[number]>>;
 
 export interface CampaignComposerProps extends ComposerSubmit {
   view: PlayerView;
@@ -337,18 +348,48 @@ export function TrickHand({
   readOnly = false,
 }: { view: PlayerView; seatId: string; readOnly?: boolean } & ComposerSubmit) {
   const hand = handCards(view, seatId);
+  const reducedMotion = typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+  const previousIds = useRef<ReadonlySet<string> | null>(null);
+  const [revealing, setRevealing] = useState<ReadonlySet<string>>(new Set());
+  const handKey = hand.map((card) => card.cardId).join(':');
+  const added = previousIds.current === null || reducedMotion
+    ? new Set<string>()
+    : new Set(hand.filter((card) => !previousIds.current?.has(card.cardId)).map((card) => card.cardId));
+  useEffect(() => {
+    const before = previousIds.current;
+    const current = new Set(hand.map((card) => card.cardId));
+    previousIds.current = current;
+    if (before === null || reducedMotion) return;
+    const fresh = new Set([...current].filter((cardId) => !before.has(cardId)));
+    if (fresh.size === 0) return;
+    setRevealing(fresh);
+    let secondFrame = 0;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => setRevealing(new Set()));
+    });
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      if (secondFrame !== 0) cancelAnimationFrame(secondFrame);
+    };
+  }, [handKey, reducedMotion]);
   if (hand.length === 0) {
     return <p className="small">No trick cards. Others see how many you hold, never which.</p>;
   }
   return (
     <>
-      <ul className="hand">
-        {hand.map((card) => (
-          <li key={card.cardId} className="hand__card">
-            <h5>{card.title}</h5>
-            <p className="small">{card.rulesText}</p>
+      <ul className="card-hand" aria-label="Your trick cards">
+        {hand.map((card, index) => (
+          <li key={card.cardId} className="card-hand__item">
+            <TrickCard
+              title={card.title}
+              rulesText={card.rulesText}
+              flavorText={TRICK_BY_ID[card.cardId]?.flavorText}
+              face={added.has(card.cardId) || revealing.has(card.cardId) ? 'down' : 'up'}
+              index={index}
+            />
             {readOnly ? null : (
-              <div className="actions">
+              <div className="card-hand__actions">
                 {/*
                   * The two branches are reported separately, because they are blocked
                   * separately: a reserve too short for ordinary Cornerstone says nothing

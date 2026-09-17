@@ -1,17 +1,17 @@
 /**
- * The title screen of section 13.2.
+ * The title screen.
  *
- * It offers the entry points the section names — learn the game in the guided tutorial,
- * start a local match, create a private online room, join a room, resume a save, and read
- * the rules and edition — and it is honest about which of them this build can carry out.
- * Session 15 made the two online ones real in the online build; in the pass-and-play build
- * they stay present and disabled with the reason, rather than absent or pretending to work.
+ * It offers the entry points a player came here for: learn the game in the guided
+ * tutorial, start a local match, play against the computer, open or join an online room,
+ * and resume a save. It's honest about which of them this build can carry out. The online
+ * entries are real in the online build; in the pass-and-play build they stay present and
+ * disabled with the reason, rather than absent or pretending to work.
  *
- * It is laid out as a game's title screen rather than as a document: the wordmark and the
+ * It's laid out as a game's title screen rather than as a document: the wordmark and the
  * one or two things a player came here to press sit in the middle of the screen, and
- * everything else — the rules, saved matches, the online room, the edition facts — is a
- * tile under them that opens its own drawer in place. Only one drawer is open at a time,
- * so the screen never becomes the stack of panels it used to be.
+ * everything else — the rules, saved matches, the online room — is a tile under them that
+ * either leaves the screen or opens its own drawer in place. Only one drawer is open at a
+ * time, so the screen never becomes a stack of panels.
  *
  * Whether the online entries work is `onlineAvailable`, which the shell reads from the
  * online route module itself rather than from a flag. The module and the flag are set by
@@ -21,11 +21,13 @@
  * Saved matches are listed from the adapter, which re-checks each save against the
  * versions this build ships. A save written by another content pack is listed, named and
  * deletable, but cannot be resumed.
+ *
+ * Development-only routes, when the build has any, are listed in small type at the very
+ * bottom. Both production builds pass an empty list, and nothing is drawn for it.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 
 import {
-  LOCAL_MODE_NOTICE,
   deleteLocalMatch,
   importLocalMatch,
   listLocalMatches,
@@ -42,12 +44,14 @@ import { ROUTES, navigate } from './routes';
 import { marksComputer } from './table';
 import { describeError } from './useLocalStore';
 
+import './home.css';
+
 const ONLINE_UNAVAILABLE =
   'This is the pass-and-play build. It carries no network code, so a room cannot be created or '
   + 'joined from it. The online build of this same application can, against a room server.';
 
 /** Which tile's drawer is open. Only one is, so the title screen stays one screen. */
-type Drawer = 'saves' | 'online' | 'set' | null;
+type Drawer = 'saves' | 'online' | null;
 
 function savedAtLabel(savedAt: string): string {
   const when = new Date(savedAt);
@@ -286,7 +290,7 @@ export function Home({
           </button>
         </div>
 
-        <nav className="title-menu" aria-label="More">
+        <nav className="title-menu home-menu" aria-label="More">
           <MenuTile glyph="book" label="How to play" note="Rules and house rules" href={ROUTES.rules} />
           <MenuTile
             glyph="archive"
@@ -302,13 +306,6 @@ export function Home({
             note={onlineAvailable ? 'Play on separate devices' : 'Not in this build'}
             open={drawer === 'online'}
             onClick={() => toggle('online')}
-          />
-          <MenuTile
-            glyph="gear"
-            label="This set"
-            note="Decks, board and versions"
-            open={drawer === 'set'}
-            onClick={() => toggle('set')}
           />
         </nav>
 
@@ -454,78 +451,19 @@ export function Home({
             </p>
           </section>
         )}
-
-        {drawer !== 'set' ? null : (
-          <section className="drawer-panel" aria-labelledby="set-heading">
-            <h2 id="set-heading">This set</h2>
-            <dl className="facts">
-              <div>
-                <dt>Set</dt>
-                <dd>{INSTALLED_CAMPAIGN.displayName}</dd>
-              </div>
-              <div>
-                <dt>Players</dt>
-                <dd>
-                  {MIN_SEATS}–{MAX_SEATS}
-                </dd>
-              </div>
-              <div>
-                <dt>Zones</dt>
-                <dd>{DECK_SIZES.zones}</dd>
-              </div>
-              <div>
-                <dt>Voter areas</dt>
-                <dd>{DECK_SIZES.slots}</dd>
-              </div>
-              <div>
-                <dt>Policy cards</dt>
-                <dd>{DECK_SIZES.policy}</dd>
-              </div>
-              <div>
-                <dt>Breaking News</dt>
-                <dd>{DECK_SIZES.news}</dd>
-              </div>
-              <div>
-                <dt>Dirty Tricks</dt>
-                <dd>{DECK_SIZES.trick}</dd>
-              </div>
-              <div>
-                <dt>Content</dt>
-                <dd>
-                  {INSTALLED_CAMPAIGN.contentPackId} {INSTALLED_CAMPAIGN.contentVersion}
-                </dd>
-              </div>
-              <div>
-                <dt>Board</dt>
-                <dd>
-                  {INSTALLED_CAMPAIGN.boardId} {INSTALLED_CAMPAIGN.boardVersion}
-                </dd>
-              </div>
-            </dl>
-            <p className="small">{LOCAL_MODE_NOTICE}</p>
-            <p>
-              <a href={ROUTES.rules}>Read the rules, the house rules and what this build cannot do</a>
-            </p>
-            {devRoutes.length === 0 ? null : (
-              <ul className="seat-chips">
-                {devRoutes.map((route) => (
-                  <li key={route.href}>
-                    <a href={route.href}>{route.label}</a>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
       </main>
 
-      <footer className="title-screen__foot">
-        <span>
-          content {INSTALLED_CAMPAIGN.contentPackId} {INSTALLED_CAMPAIGN.contentVersion} · board{' '}
-          {INSTALLED_CAMPAIGN.boardId} {INSTALLED_CAMPAIGN.boardVersion}
-        </span>
-        <a href={ROUTES.rules}>Rules and house rules</a>
-      </footer>
+      {devRoutes.length === 0 ? null : (
+        <nav className="home-dev" aria-label="Development">
+          <ul>
+            {devRoutes.map((route) => (
+              <li key={route.href}>
+                <a href={route.href}>{route.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
     </div>
   );
 }

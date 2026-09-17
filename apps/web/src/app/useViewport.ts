@@ -1,10 +1,12 @@
 /**
- * Which of the three layouts of section 13.10 the viewport is in.
+ * Which of the three layouts the match screen is in.
  *
- * The match screen changes structure between widths, not only style: on a phone the
- * table becomes four tabs, and on a tablet the action column becomes a drawer. Both need
- * a state a stylesheet cannot hold, so the breakpoint is read here once and handed to
- * the component. The two widths are the ones `app.css` already breaks at.
+ * The screen changes structure between widths, not only style: on a phone the action
+ * sheet is pinned to the bottom with three heights and no zoom buttons, on a tablet it is
+ * a panel beside the board with the seats above, and on a desktop the seats get a column
+ * of their own. Those need a state a stylesheet cannot hold, so the breakpoint is read
+ * here once and written as a class on the layout. The two widths are the ones `app.css`
+ * already breaks at.
  *
  * Under jsdom `matchMedia` is absent, and the answer is `desktop`: the render tests
  * assert which control exists, and the desktop layout draws every one of them.

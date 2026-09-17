@@ -262,16 +262,6 @@ a {
   color: var(--paper);
 }
 
-.page__edition {
-  margin: 0;
-  font-size: 12px;
-  color: var(--trim);
-  text-align: right;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
 .page__back {
   margin: 0 0 12px;
 }
@@ -282,11 +272,6 @@ a {
  */
 .page--compact {
   padding: 10px 12px 48px;
-}
-
-/* The board panel gives its width to the map. */
-.table-grid__board {
-  padding: 12px;
 }
 
 .page__header--compact {
@@ -728,105 +713,6 @@ a {
   margin: 0 0 8px;
 }
 
-.prompt__answers {
-  margin: 0;
-  padding-left: 1.4em;
-  display: grid;
-  gap: 6px;
-}
-
-/* ------------------------------------------------------------- the table */
-
-/*
- * Section 13.4: the board is the dominant surface. On a desktop the grid is three
- * columns — seats, board, actions — and the board fills the centre one. The two side
- * columns are pinned under the status bar and scroll on their own, so the seats and the
- * actions stay in reach while a tall board scrolls past. The grid is at least a viewport
- * tall so the first screen is the table and nothing else.
- *
- * The side columns span both rows, and the row under the board — the cards in play and
- * the log — sits in the centre column only. A sticky item travels the whole height of
- * the grid, so a bottom row that spanned all three columns ended up underneath the side
- * columns as soon as the page scrolled.
- */
-.table-grid {
-  display: grid;
-  grid-template-columns: minmax(216px, 224px) minmax(0, 1fr) minmax(316px, 336px);
-  grid-template-rows: auto 1fr;
-  gap: var(--gap);
-  align-items: start;
-  min-height: calc(100vh - var(--bar-h) - 3 * var(--gap));
-}
-
-.table-grid__seats {
-  grid-column: 1;
-  grid-row: 1 / span 2;
-}
-
-.table-grid__board {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.table-grid__aside {
-  grid-column: 3;
-  grid-row: 1 / span 2;
-}
-
-.table-grid__below {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.table-grid__seats,
-.table-grid__aside {
-  position: sticky;
-  top: calc(var(--bar-h) + 8px);
-  max-height: calc(100vh - var(--bar-h) - 16px);
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-}
-
-.table-grid__aside {
-  display: grid;
-  gap: var(--gap);
-  align-content: start;
-}
-
-.table-grid__aside-close {
-  display: none;
-}
-
-.table-grid__below {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
-  gap: var(--gap);
-  align-items: start;
-}
-
-.table-tabs,
-.table-tools {
-  display: none;
-}
-
-.board-head {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-
-.board-head h2 {
-  margin: 0;
-}
-
-.board-head__tabs {
-  display: flex;
-  gap: 6px;
-}
-
 /*
  * The frame hugs the map. Letting the frame simply fill the column would put a dark
  * margin around a drawing of a different shape, so the frame takes the map's own aspect
@@ -884,12 +770,6 @@ a {
   width: 100%;
   height: 100%;
   max-height: none;
-}
-
-.board-caption {
-  margin: 10px 0 0;
-  font-weight: 600;
-  min-height: 2em;
 }
 
 /* ------------------------------------------------------- live board marks */
@@ -986,7 +866,6 @@ a {
 
 .seat-cards,
 .zone-list,
-.market,
 .effects,
 .history,
 .spoken-zones {
@@ -995,108 +874,6 @@ a {
   padding: 0;
   display: grid;
   gap: 12px;
-}
-
-.seat-rows {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-/* One compact row per seat; the full card opens under it. The stripe is the party. */
-.seat-row {
-  background: var(--paper-bright);
-  border: 1px solid var(--paper-edge);
-  border-left: 5px solid var(--party);
-  border-radius: var(--radius);
-}
-
-.seat-row--active {
-  box-shadow: 0 0 0 2px var(--frame);
-}
-
-/* The deciding seat is marked by a thick edge and by the word, never by colour alone. */
-.seat-row--deciding {
-  box-shadow: 0 0 0 2px var(--influence);
-}
-
-.seat-row summary {
-  list-style: none;
-  cursor: pointer;
-  padding: 8px 10px;
-  display: grid;
-  gap: 6px;
-  min-height: 44px;
-}
-
-.seat-row summary::-webkit-details-marker {
-  display: none;
-}
-
-.seat-row details[open] summary {
-  border-bottom: 1px solid var(--paper-edge);
-}
-
-.seat-row details > :not(summary) {
-  margin-inline: 10px;
-}
-
-.seat-row details > :last-child {
-  margin-bottom: 10px;
-}
-
-.seat-row__who {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.seat-row__name {
-  font-family: var(--condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: var(--weight-bold);
-}
-
-.seat-row__badge {
-  font-family: var(--condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 11px;
-  font-weight: var(--weight-bold);
-  background: var(--frame);
-  color: var(--paper);
-  border-radius: 999px;
-  padding: 1px 8px;
-}
-
-.seat-row__badge--deciding {
-  background: var(--influence);
-  color: #fff;
-}
-
-.seat-card__resources {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  font-variant-numeric: tabular-nums;
-}
-
-.seat-card__resources li {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.seat-card__cap {
-  color: var(--ink-soft);
-  font-size: var(--text-small);
 }
 
 /* --------------------------------------------------------------- zone list */
@@ -1155,108 +932,6 @@ a {
   color: var(--ink-soft);
 }
 
-/* ------------------------------------------------ market, effects, history */
-
-.market {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 8px;
-}
-
-/* A voter card: the yield large, the price as icons, then whether you can pay it. */
-.market__card {
-  background: var(--paper-bright);
-  border: 1px solid var(--paper-edge);
-  border-top: 5px solid var(--trim);
-  border-radius: var(--radius);
-  padding: 10px 8px 8px;
-  display: grid;
-  gap: 6px;
-  align-content: start;
-}
-
-.market__card--open {
-  background: var(--paper-sunk);
-  border-color: var(--frame);
-  box-shadow: 0 0 0 2px var(--frame);
-}
-
-.market__card--can {
-  border-top-color: var(--ok);
-}
-
-.market__card--short {
-  border-top-color: #b9a58d;
-}
-
-.market__yield {
-  margin: 0;
-  font-family: var(--condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  line-height: 1;
-}
-
-.market__yield strong {
-  font-size: 30px;
-}
-
-.market__yield span {
-  font-size: 12px;
-  color: var(--ink-soft);
-}
-
-.market__price {
-  display: grid;
-  gap: 2px;
-}
-
-.market__price-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--ink-soft);
-}
-
-.market__card .cost {
-  gap: 2px;
-}
-
-.market__card .cost__text {
-  display: block;
-  margin-left: 0;
-  font-size: 11px;
-  line-height: 1.3;
-}
-
-/* Whether the seat can pay for a market card, said before the card is opened. */
-.market__afford {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.3;
-  font-weight: var(--weight-bold);
-}
-
-.market__afford--ok {
-  color: var(--ok);
-}
-
-.market__afford--short {
-  color: var(--problem);
-  font-weight: var(--weight-regular);
-}
-
-.market--buyable .button {
-  width: 100%;
-  justify-content: center;
-  min-height: 40px;
-  padding: 6px 10px;
-  margin-top: 2px;
-}
-
 .effects li,
 .history li {
   display: grid;
@@ -1285,26 +960,6 @@ a {
   letter-spacing: 0.05em;
   font-size: 12px;
   color: var(--ink-soft);
-}
-
-/* The trick hand, in the private drawer. */
-.hand {
-  list-style: none;
-  margin: 8px 0 12px;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.hand__card {
-  background: #fff;
-  border: 1px solid var(--trim);
-  border-radius: var(--radius);
-  padding: 10px 12px;
-}
-
-.hand__card h5 {
-  margin: 0 0 4px;
 }
 
 /* Available to a screen reader, absent from the visual layout. */
@@ -1346,8 +1001,7 @@ a {
 }
 
 .composer__group h4,
-.composer__body h4,
-.mat h4 {
+.composer__body h4 {
   margin: 0 0 8px;
 }
 
@@ -1407,59 +1061,6 @@ a {
   color: var(--ink-soft);
 }
 
-.picker {
-  border: 1px solid #1f2a4433;
-  border-radius: var(--radius);
-  padding: 8px 12px 12px;
-  margin: 0;
-}
-
-.picker legend {
-  font-family: var(--condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 12px;
-  padding: 0 4px;
-}
-
-.picker__rows {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 6px;
-}
-
-.picker__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px 12px;
-  flex-wrap: wrap;
-}
-
-.picker__row--problem {
-  border-left: 3px solid #8f2618;
-  padding-left: 8px;
-}
-
-.picker__problem {
-  flex-basis: 100%;
-  margin: 0;
-}
-
-.picker__footer {
-  margin: 8px 0 0;
-  font-size: var(--text-small);
-  color: var(--ink-soft);
-}
-
-.picker__label {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .picker__stepper {
   display: inline-flex;
   align-items: center;
@@ -1498,44 +1099,6 @@ a {
   padding: 4px 4px 4px 10px;
 }
 
-/*
- * The banner over the board while an action is highlighting its targets. It sits above
- * the map rather than under it because it is an instruction about the map, and it carries
- * the same ring the areas do so the sentence and the board read as one control.
- */
-.board-legend {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 8px;
-  padding: 9px 12px;
-  font-weight: 600;
-  background: #7b4fbf14;
-  border: 1px solid #7b4fbf55;
-  border-left: 4px solid var(--faith);
-  border-radius: var(--radius);
-}
-
-.board-legend--none {
-  background: #b3261e12;
-  border-color: #b3261e55;
-  border-left-color: var(--problem);
-}
-
-.board-legend__pin {
-  flex: none;
-  width: 16px;
-  height: 16px;
-  border: 3px solid var(--faith);
-  border-radius: 50%;
-  animation: pin-bob 1.6s ease-in-out infinite;
-}
-
-.board-legend--none .board-legend__pin {
-  border-color: var(--problem);
-  animation: none;
-}
-
 /* A square control whose whole label is one glyph. */
 .button--icon {
   padding: 8px 12px;
@@ -1544,228 +1107,21 @@ a {
   line-height: 1;
 }
 
-.mat {
-  display: grid;
-  gap: 12px;
-}
-
-.mat__columns {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 8px;
-}
-
-.mat-column {
-  background: var(--paper-sunk);
-  border-radius: var(--radius);
-  padding: 10px;
-}
-
-.mat-column h4 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.mat-column__count {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.mat-powers {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 6px;
-}
-
-.mat-power {
-  border: 1px solid var(--paper-edge);
-  border-left-width: 5px;
-  border-radius: var(--radius);
-}
-
-.mat-power summary {
-  list-style: none;
-  cursor: pointer;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 10px;
-  padding: 8px 10px;
-  min-height: 44px;
-}
-
-.mat-power summary::-webkit-details-marker {
-  display: none;
-}
-
-.mat-power details > p {
-  margin: 0 10px 8px;
-}
-
-.mat-power__name {
-  font-weight: var(--weight-bold);
-}
-
 /* State is a word first. The stripe repeats it; it never carries it alone. */
-.mat-power__state {
-  font-family: var(--condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 11px;
-}
-
-.mat-power--unlocked {
-  border-left-color: var(--cash);
-}
-
-.mat-power--borrowed {
-  border-left-color: var(--faith);
-}
-
-.mat-power--lendable {
-  border-left-color: var(--press);
-}
-
-.mat-power--locked {
-  border-left-color: #1f2a4433;
-  color: var(--ink-soft);
-}
-
-/*
- * Tablet: the seats become a strip above the board, and the action column becomes a
- * drawer over the board's right edge, opened from the tools row. The status bar stays
- * pinned above both.
- */
-@media (max-width: 1100px) {
-  .table-grid {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: none;
-    min-height: 0;
-  }
-
-  .table-grid__seats,
-  .table-grid__board,
-  .table-grid__aside,
-  .table-grid__below {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
-  .table-tools {
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .table-grid__seats {
-    position: static;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .seat-rows {
-    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-  }
-
-  .table-grid__aside {
-    position: fixed;
-    top: var(--bar-h);
-    right: 0;
-    bottom: 0;
-    width: min(400px, 94vw);
-    max-height: none;
-    z-index: 30;
-    padding: 8px;
-    background: #141c30f2;
-    box-shadow: -4px 0 12px #00000066;
-    display: none;
-  }
-
-  .table-grid--drawer-open .table-grid__aside {
-    display: grid;
-  }
-
-  .table-grid__aside-close {
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .table-grid__below {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 
 /*
  * Phone: four tabs under the status bar. Every region stays in the document — a tab
  * switch must not throw away a half-composed action — and the stylesheet shows one.
  */
 @media (max-width: 760px) {
-  .table-tools {
-    display: none;
-  }
 
-  .table-tabs {
-    display: flex;
-    gap: 6px;
-    position: sticky;
-    top: var(--bar-h);
-    z-index: 20;
-    background: var(--frame-deep);
-    padding: 6px 0;
-  }
+  
 
-  .table-tabs .tab {
-    flex: 1;
-    justify-content: center;
-    padding-inline: 6px;
-  }
+  
 
-  .table-grid {
-    display: block;
-  }
+  
 
-  .table-grid > * {
-    display: none;
-  }
-
-  .table-grid[data-tab="board"] > .table-grid__board,
-  .table-grid[data-tab="seats"] > .table-grid__seats,
-  .table-grid[data-tab="log"] > .table-grid__below {
-    display: block;
-  }
-
-  /* Tabs win over the tablet drawer: the aside shows only on its own tab. */
-  .table-grid.table-grid--phone > .table-grid__aside {
-    display: none;
-    position: static;
-    width: auto;
-    padding: 0;
-    background: none;
-    box-shadow: none;
-  }
-
-  .table-grid.table-grid--phone[data-tab="act"] > .table-grid__aside {
-    display: grid;
-  }
-
-  .table-grid__aside-close {
-    display: none;
-  }
-
-  .table-grid__below {
-    display: grid;
-    gap: var(--gap);
-  }
-
-  .seat-rows {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  
 
   .history li {
     grid-template-columns: minmax(0, 1fr);
@@ -1777,10 +1133,7 @@ a {
     gap: 4px;
   }
 
-  .market {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
+  
 
   .page__header--compact .page__titles {
     gap: 8px;
@@ -2075,27 +1428,9 @@ a {
   background: #ce574622;
 }
 
-
 .tag--advisory {
   color: #97281a;
   background: #fff;
-}
-
-.cost {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  flex-wrap: wrap;
-}
-
-.cost__icon {
-  display: block;
-}
-
-.cost__text {
-  margin-left: 6px;
-  font-size: 12px;
-  color: var(--ink-soft);
 }
 
 .asset-swatch {
@@ -2153,10 +1488,6 @@ a {
 
   .page__header {
     align-items: flex-start;
-  }
-
-  .page__edition {
-    text-align: left;
   }
 
   .seat {
@@ -2428,91 +1759,6 @@ a {
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
 }
 
-/* --------------------------------------------------------- seat switcher */
-
-.switcher {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.switcher .button {
-  white-space: nowrap;
-}
-
-/* A native disclosure used as a menu: no script, keyboard reachable, closes on choice. */
-.menu {
-  position: relative;
-}
-
-.menu > summary {
-  list-style: none;
-  color: var(--paper);
-  border-color: var(--trim);
-}
-
-.menu > summary::-webkit-details-marker {
-  display: none;
-}
-
-.menu__list {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 6px);
-  z-index: 50;
-  list-style: none;
-  margin: 0;
-  padding: 6px;
-  min-width: 15rem;
-  display: grid;
-  gap: 4px;
-  background: var(--paper);
-  color: var(--ink);
-  border: 1px solid var(--trim);
-  border-radius: var(--radius);
-  box-shadow: 0 8px 24px #00000066;
-}
-
-.menu__list .button {
-  width: 100%;
-  justify-content: flex-start;
-}
-
-.menu__list .button[aria-pressed="true"] {
-  background: var(--paper-sunk);
-  border-color: var(--frame);
-}
-
-/* --------------------------------------------------------- action column */
-
-.seat-surface {
-  display: grid;
-  gap: var(--gap);
-}
-
-/* One block per step of a turn: prompt, compose, actions. */
-.action-block {
-  border: 1px solid var(--paper-edge);
-  border-radius: var(--radius);
-  padding: 10px 12px 12px;
-  margin-top: 10px;
-  background: #fff;
-}
-
-.action-block h3 {
-  margin: 0 0 8px;
-  color: var(--ink-soft);
-  font-size: var(--text-small);
-  letter-spacing: 0.1em;
-}
-
-.action-block__note {
-  margin: 10px 0 0;
-  color: var(--ink-soft);
-}
-
 /* Collapsible sections: the campaign panel and the private drawer. */
 .drawer {
   border-top: 1px solid var(--paper-edge);
@@ -2560,19 +1806,6 @@ a {
   padding: 1px 8px;
 }
 
-.private-drawer {
-  padding-top: 6px;
-}
-
-.private-drawer .drawer:first-child {
-  border-top: 0;
-  margin-top: 0;
-}
-
-.private-drawer .drawer > :not(summary) {
-  margin-bottom: 12px;
-}
-
 /* ------------------------------------------------------ guidance and help */
 
 /* What the marks on the board mean, under the map. */
@@ -2615,533 +1848,12 @@ a {
   color: var(--ink-soft);
 }
 
-.help {
-  display: grid;
-  gap: 10px;
-  font-size: var(--text-small);
-  padding-bottom: 8px;
-}
-
-.help h4 {
-  margin: 0 0 2px;
-  font-size: 12px;
-  color: var(--ink-soft);
-}
-
-.help p,
-.help ol {
-  margin: 0;
-}
-
-.help ol {
-  padding-left: 1.2em;
-  display: grid;
-  gap: 4px;
-}
-
-.help__resources {
-  list-style: none;
-  margin: 0 0 6px;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-}
-
-.help__resources li {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-/* ============================================================ redesign, 2026-09 */
-
-/*
- * Everything from here down is the guided-turn redesign. It comes last on purpose: a
- * rule here wins over an earlier rule of equal specificity, media block or not, so the
- * base rules above can stay as the fallback they are.
- */
-
-/* ------------------------------------------------------------ status bar */
-
-/*
- * Pinned for the whole match, and read as a HUD rather than as a panel: a dark strip on
- * the dark frame, gold rule beneath, two rows. Row one answers which turn, who must act
- * and what they are doing, what you hold, and carries End turn and the seat controls.
- * Row two is the turn as steps.
- */
-.status-bar {
-  position: sticky;
-  top: 0;
-  z-index: 35;
-  display: grid;
-  gap: 0;
-  background: linear-gradient(180deg, #4a3441, var(--frame));
-  color: var(--paper);
-  border: 1px solid var(--trim);
-  border-radius: var(--radius);
-  box-shadow: 0 6px 18px #00000080;
-}
-
-.status-bar__row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  padding: 10px 14px;
-}
-
-.status-bar--waiting .status-bar__row {
-  /* A decision is pending: the whole row leans on the party that owes it. */
-  border-left: 6px solid var(--party);
-  border-radius: var(--radius) 0 0 0;
-}
-
-.status-bar__turn {
-  margin: 0;
-  font-family: var(--condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: var(--text-small);
-  font-weight: var(--weight-bold);
-  color: var(--frame-deep);
-  background: var(--trim);
-  border-radius: 999px;
-  padding: 4px 12px;
-  white-space: nowrap;
-}
-
-.status-bar__decision {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex: 1 1 18rem;
-}
-
-/* The acting party's mark, ringed in its own colour so the eye finds it first. */
-.status-bar__mark {
-  display: inline-flex;
-  flex: none;
-  padding: 3px;
-  border-radius: 999px;
-  background: var(--frame-deep);
-  box-shadow: 0 0 0 3px var(--party);
-}
-
-.status-bar__words {
-  min-width: 0;
-}
-
-.status-bar__news {
-  margin: 0;
-  font-family: var(--condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 20px;
-  font-weight: var(--weight-bold);
-  line-height: 1.15;
-}
-
-.status-bar__interrupt {
-  font-size: var(--text-small);
-  letter-spacing: 0.05em;
-  color: var(--trim);
-}
-
-.status-bar__detail {
-  margin: 2px 0 0;
-  font-size: var(--text-body);
-  color: #eee4d0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.status-bar__resources {
-  list-style: none;
-  margin: 0;
-  padding: 6px 12px;
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-  gap: 10px;
-  background: var(--frame-deep);
-  border: 1px solid var(--trim);
-  border-radius: 999px;
-  font-variant-numeric: tabular-nums;
-}
-
-.status-bar__resources li {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.status-bar__count {
-  font-weight: var(--weight-bold);
-  font-size: 16px;
-}
-
-.status-bar__cap {
-  font-size: var(--text-body);
-  font-weight: var(--weight-bold);
-  color: var(--paper);
-  padding-left: 8px;
-  border-left: 1px solid var(--trim);
-}
-
-.status-bar__cap-of {
-  font-weight: var(--weight-regular);
-  color: var(--trim);
-}
-
-.status-bar__end {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.status-bar__reason {
-  font-size: 11px;
-  line-height: 1.25;
-  color: #eee4d0;
-  max-width: 17ch;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-}
-
-.status-bar .button:disabled {
-  background: var(--frame-deep);
-  color: #d8cfd3;
-  border-color: var(--trim);
-}
-
-/* The turn as steps. */
-.status-bar__steps {
-  padding: 4px 14px 6px;
-  border-top: 1px solid #f4b94255;
-  background: #141c3066;
-  border-radius: 0 0 var(--radius) var(--radius);
-}
-
-.steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 4px;
-}
-
-.step {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-family: var(--condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: var(--text-small);
-  color: #c9bcc3;
-  padding: 3px 10px 3px 4px;
-  border-radius: 999px;
-}
-
-/* A rule joins the pills, so they read as a sequence rather than as three tags. */
-.step + .step::before {
-  content: '';
-  display: inline-block;
-  width: 18px;
-  height: 1px;
-  background: #f4b94288;
-  margin-right: 6px;
-}
-
-.step__num {
-  display: inline-grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  border: 1.5px solid #f4b94288;
-  font-size: 12px;
-  font-weight: var(--weight-bold);
-  font-variant-numeric: tabular-nums;
-}
-
-.step--done {
-  color: var(--trim);
-}
-
-.step--done .step__num {
-  background: var(--trim);
-  border-color: var(--trim);
-  color: var(--frame-deep);
-}
-
-.step--current {
-  background: var(--paper);
-  color: var(--frame-deep);
-  font-weight: var(--weight-bold);
-}
-
-.step--current .step__num {
-  background: var(--frame-deep);
-  border-color: var(--frame-deep);
-  color: var(--paper);
-}
-
-/* The one-line form of the steps; the stylesheet shows it only on a phone. */
-.steps__line {
-  display: none;
-  margin: 0;
-  font-family: var(--condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 12px;
-  color: var(--trim);
-}
-
-/* ---------------------------------------------------------- seat switcher */
-
-.switcher .button--primary {
-  box-shadow: 0 0 0 2px #f4b94255;
-}
-
-/* ---------------------------------------------------------- action column */
-
-/* The revealed seat's name, with its party underlining the whole column. */
-.seat-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: -16px -16px 12px;
-  padding: 10px 16px;
-  border-bottom: 3px solid var(--party);
-  background: var(--paper-bright);
-  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
-}
-
-.seat-head__name {
-  margin: 0;
-  font-size: 20px;
-  flex: 1 1 auto;
-}
-
-.seat-head__you {
-  font-family: var(--condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 11px;
-  color: var(--ink-soft);
-  border: 1px solid var(--paper-edge);
-  border-radius: 999px;
-  padding: 2px 8px;
-}
-
-/*
- * The Now card: the one thing to do, and the control that does it. It is the loudest
- * thing in the column, and its colour says what kind of thing it is: red for a prompt
- * the match is blocked on, gold for an action being built, the party for a free turn.
- */
-.now {
-  position: relative;
-  border: 2px solid var(--party);
-  border-radius: var(--radius);
-  background: var(--paper-bright);
-  padding: 10px 12px 12px;
-  margin-bottom: 12px;
-}
-
-.now--prompt {
-  border-color: var(--influence);
-  background: #fbf1ee;
-}
-
-.now--composing {
-  border-color: var(--trim);
-  background: var(--paper-sunk);
-}
-
-.now__eyebrow {
-  margin: 0 0 2px;
-  font-family: var(--condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 11px;
-  font-weight: var(--weight-bold);
-  color: var(--ink-soft);
-}
-
-.now--prompt .now__eyebrow {
-  color: var(--problem);
-}
-
-.now__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.now__news {
-  margin: 0;
-  font-size: 19px;
-  line-height: 1.15;
-}
-
-.now__news--seat {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.now__detail {
-  margin: 4px 0 0;
-  font-size: var(--text-body);
-  color: var(--ink-soft);
-}
-
-.now__body {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--paper-edge);
-}
-
-.now__body--actions {
-  display: grid;
-}
-
-.now__body--actions .button {
-  justify-content: center;
-}
-
-/* Inside the Now card the composers lose their own boxes: the card is the box. */
-.now .composer {
-  margin: 0;
-}
-
-.now .prompt__question {
-  font-size: 17px;
-  line-height: 1.3;
-}
-
-.now .prompt__answers li {
-  display: grid;
-  gap: 6px;
-  background: var(--paper-bright);
-  border: 1px solid var(--paper-edge);
-  border-radius: var(--radius);
-  padding: 10px 12px;
-  margin-left: -1.4em;
-  list-style-position: inside;
-}
-
-.now .prompt__answers .button {
-  justify-self: start;
-}
-
-/* Section labels inside "What you can do". */
-.options__label {
-  margin: 12px 0 6px;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  color: var(--ink-soft);
-}
-
-.drawer--options > summary h3 {
-  font-size: var(--text-body);
-}
-
 .drawer > summary {
   border-radius: var(--radius-small);
 }
 
 .drawer > summary:hover {
   background: #1f2a4408;
-}
-
-/* The seats panel's one-line key under the rows. */
-.seats__key {
-  margin: 10px 0 0;
-}
-
-/* ----------------------------------------------------------- seat rows */
-
-.seat-row summary {
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 4px 10px;
-}
-
-.seat-row__who {
-  grid-column: 1 / -1;
-}
-
-.seat-row__name {
-  font-size: var(--text-body);
-}
-
-.seat-row__badge {
-  background: var(--frame);
-}
-
-.seat-row__score {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  font-variant-numeric: tabular-nums;
-}
-
-.seat-row__score strong {
-  font-family: var(--condensed);
-  font-size: 26px;
-  line-height: 1;
-}
-
-.seat-row__score span {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-soft);
-}
-
-.seat-row__line {
-  grid-column: 1 / -1;
-  font-size: var(--text-small);
-  color: var(--ink-soft);
-}
-
-.seat-row__resources {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  font-size: var(--text-small);
-  font-variant-numeric: tabular-nums;
-}
-
-.seat-row__resources > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.seat-row__cap {
-  color: var(--ink-soft);
-  padding-left: 6px;
-  border-left: 1px solid var(--paper-edge);
-}
-
-/* ----------------------------------------------------------------- board */
-
-.disclosure--key summary {
-  font-size: var(--text-small);
-  min-height: 36px;
-  color: var(--ink-soft);
 }
 
 .board-frame {
@@ -3262,15 +1974,9 @@ a {
 /* --------------------------------------------------------- tablet, phone */
 
 @media (max-width: 1100px) {
-  .status-bar__decision {
-    flex: 1 1 16rem;
-  }
+  
 
-  .status-bar__end {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+  
 
   .lobby-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -3294,126 +2000,14 @@ a {
 }
 
 @media (max-width: 760px) {
-  /*
-   * The bar is three short rows: the turn chip beside the resources, who must act, and
-   * End turn beside the seat controls. The steps collapse to one line under them.
-   */
-  .status-bar__row {
-    padding: 6px 8px 8px;
-    gap: 5px 6px;
-  }
 
-  .status-bar--waiting .status-bar__row {
-    border-left-width: 5px;
-  }
+  
 
-  .status-bar__turn {
-    order: 1;
-    font-size: 11px;
-    padding: 3px 9px;
-  }
+  
 
-  .status-bar__resources {
-    order: 2;
-    margin-left: auto;
-    gap: 6px;
-    padding: 3px 9px;
-    font-size: var(--text-small);
-  }
+  
 
-  .status-bar__count {
-    font-size: var(--text-small);
-  }
-
-  .status-bar__cap {
-    font-size: var(--text-small);
-  }
-
-  .status-bar__decision {
-    order: 3;
-    flex: 1 1 100%;
-    gap: 8px;
-  }
-
-  .status-bar__mark {
-    box-shadow: 0 0 0 2px var(--party);
-  }
-
-  .status-bar__mark .party-mark {
-    width: 26px;
-    height: 26px;
-  }
-
-  .status-bar__news {
-    font-size: var(--text-body);
-  }
-
-  .status-bar__detail {
-    white-space: normal;
-    font-size: 12px;
-    line-height: 1.3;
-  }
-
-  .status-bar__end {
-    order: 4;
-    flex: 0 0 auto;
-  }
-
-  .status-bar__reason {
-    display: none;
-  }
-
-  /*
-   * The switcher's buttons join the bar's own row, so they pack beside End turn where
-   * they fit and wrap only where they must. Kept as nested boxes they stacked one per line.
-   */
-  .status-bar__switcher,
-  .switcher {
-    display: contents;
-  }
-
-  .switcher > .button,
-  .switcher > .menu {
-    order: 6;
-    flex: 1 1 auto;
-  }
-
-  .status-bar .button {
-    white-space: nowrap;
-    padding: 6px 8px;
-    min-height: 40px;
-    font-size: 11px;
-    letter-spacing: 0.03em;
-  }
-
-  .menu > summary {
-    width: 100%;
-    justify-content: center;
-  }
-
-  /* The menu spans the bar on a phone, so it cannot run off the screen. */
-  .menu {
-    position: static;
-  }
-
-  .menu__list {
-    left: 8px;
-    right: 8px;
-    top: auto;
-    min-width: 0;
-  }
-
-  .status-bar__steps {
-    padding: 5px 10px 6px;
-  }
-
-  .steps {
-    display: none;
-  }
-
-  .steps__line {
-    display: block;
-  }
+  
 
   /*
    * The four tabs move to the bottom of the screen, where a thumb reaches them, and stay
@@ -3423,61 +2017,19 @@ a {
     padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
 
-  .table-tabs {
-    position: fixed;
-    top: auto;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 30;
-    display: flex;
-    gap: 4px;
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
-    background: var(--frame-deep);
-    border-top: 1px solid var(--trim);
-    box-shadow: 0 -6px 18px #00000080;
-  }
+  
 
-  .table-tabs .tab {
-    position: relative;
-    flex: 1;
-    justify-content: center;
-    padding: 8px 4px;
-    min-height: 48px;
-    font-size: 12px;
-    letter-spacing: 0.08em;
-    background: transparent;
-    border-color: transparent;
-    color: var(--paper);
-  }
+  
 
-  .table-tabs .tab--active {
-    background: var(--trim);
-    color: var(--frame-deep);
-  }
+  
 
-  .tab__dot {
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-    background: var(--influence);
-    box-shadow: 0 0 0 2px var(--frame-deep);
-  }
+  
 
-  .table-tabs .tab--active .tab__dot {
-    display: none;
-  }
+  
 
-  .seat-head {
-    margin: -16px -16px 10px;
-  }
+  
 
-  .now__news {
-    font-size: 17px;
-  }
+  
 
   .seat {
     grid-template-columns: 1fr 1fr;
@@ -3502,12 +2054,12 @@ a {
  * A player arriving at a game looks for the thing to press, and a player looking up a
  * rule mid-match wants one rule, not the whole rulebook. So the title screen puts the
  * wordmark and the calls to action in the middle of the viewport with everything else as
- * a tile beneath them, and the rulebook cuts its text into chapters behind a tab strip.
+ * a tile beneath them, and the rulebook reads as one guided story with a jump bar.
  *
  * This block comes last, so a rule here wins over an earlier rule of equal specificity.
  */
 
-/* The line glyphs on tiles, calls to action and chapter tabs. They inherit `color`. */
+/* The line glyphs on tiles and calls to action. They inherit `color`. */
 .glyph {
   fill: none;
   stroke: currentColor;
@@ -3565,26 +2117,6 @@ a {
 
 .title-screen__main:focus-visible {
   outline-offset: 12px;
-}
-
-.title-screen__foot {
-  position: relative;
-  width: 100%;
-  max-width: 62rem;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px 16px;
-  font-size: 12px;
-  color: #b9c2d8;
-}
-
-.title-screen__foot a {
-  color: var(--trim);
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
 }
 
 /* ------------------------------------------------------------- the wordmark */
@@ -3902,256 +2434,10 @@ a {
 /* ============================================================ the rulebook */
 
 /*
- * The chapter strip. Each chapter is a card, not a word: the label says what it covers
- * and the line under it says what is inside, so a player picks a chapter without opening
- * two to find out which one has redistricting in it.
+ * The rulebook's own styles live in `app/rules/rulebook.css`, and the match screen's
+ * one-minute cheat sheet in `app/rules/cheatsheet.css`. Nothing of the old tab-strip
+ * rulebook is drawn any more.
  */
-/*
- * Six chapters across one row, three by two, then two by three. The counts are fixed
- * rather than left to `auto-fit`, because 6 into an automatic track count lands on five
- * and one — a ragged row with a single card orphaned under it at most window widths.
- */
-.chapter-strip {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-@media (max-width: 1020px) {
-  .chapter-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.chapter-tab {
-  font: inherit;
-  display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: 4px;
-  text-align: center;
-  padding: 12px 10px;
-  min-height: 104px;
-  border-radius: 10px;
-  border: 1px solid #ffffff26;
-  background: #141c30b3;
-  color: var(--paper);
-  cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
-}
-
-.chapter-tab:hover {
-  background: #1f2a44e6;
-  border-color: var(--trim);
-}
-
-.chapter-tab .glyph {
-  color: var(--trim);
-}
-
-.chapter-tab--active {
-  background: var(--trim);
-  border-color: #ffdf9a;
-  color: var(--frame-deep);
-  box-shadow: 0 3px 0 #9d6f10;
-}
-
-.chapter-tab--active .glyph {
-  color: var(--frame-deep);
-}
-
-.chapter-tab__label {
-  font-family: var(--condensed);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  font-size: var(--text-body);
-  font-weight: var(--weight-bold);
-}
-
-.chapter-tab__blurb {
-  font-size: 11.5px;
-  line-height: 1.3;
-  color: #b7c1d9;
-}
-
-.chapter-tab--active .chapter-tab__blurb {
-  color: #5c4108;
-}
-
-.chapter:focus-visible {
-  outline-offset: 4px;
-}
-
-.chapter__subhead {
-  margin: 22px 0 6px;
-  padding-top: 14px;
-  border-top: 1px solid #1f2a4426;
-  font-size: var(--text-body);
-  color: var(--ink);
-}
-
-/* ----------------------------------------------------------- rule cards */
-
-/*
- * A chapter is a set of cards, one idea each, rather than a run of paragraphs. The lead
- * card spans the row on a wide screen because it is the sentence the rest qualify.
- */
-.rule-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: 10px;
-}
-
-.rule-card {
-  background: var(--paper-bright);
-  border: 1px solid var(--paper-edge);
-  border-left: 4px solid var(--trim);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-}
-
-.rule-card--lead {
-  grid-column: 1 / -1;
-  background: var(--paper-sunk);
-}
-
-.rule-card h3 {
-  margin: 0 0 4px;
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  color: var(--ink-soft);
-}
-
-.rule-card p {
-  margin: 0;
-}
-
-.rule-card p + p {
-  margin-top: 8px;
-}
-
-/* The four steps of a turn: numbered plaques rather than an ordered list. */
-.step-cards {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 10px;
-}
-
-.step-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  background: var(--paper-bright);
-  border: 1px solid var(--paper-edge);
-  border-radius: var(--radius);
-  padding: 13px 15px;
-}
-
-.step-card__number {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  background: var(--frame);
-  color: var(--trim);
-  border: 2px solid var(--trim);
-  font-family: var(--condensed);
-  font-size: 19px;
-  font-weight: var(--weight-bold);
-}
-
-.step-card h3 {
-  margin: 0 0 3px;
-  font-size: var(--text-body);
-  letter-spacing: 0.08em;
-  color: var(--ink);
-}
-
-.step-card p {
-  margin: 0;
-  color: var(--ink-soft);
-}
-
-/* The resource key, drawn as chips so the glyph and its archetype read as one thing. */
-.resource-keys {
-  list-style: none;
-  margin: 0 0 10px;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 8px;
-}
-
-.resource-keys li {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  background: var(--paper-bright);
-  border: 1px solid var(--paper-edge);
-  border-radius: var(--radius);
-  padding: 7px 10px;
-}
-
-.resource-keys strong {
-  display: block;
-  line-height: 1.2;
-}
-
-/*
- * The house rules were a three-column table, which on a phone became a column of
- * hyphenated fragments. Each ruling is now its own block: the ID and the issue on one
- * line, the ruling under it at full measure.
- */
-.ruling-list {
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.ruling {
-  background: var(--paper-bright);
-  border: 1px solid var(--paper-edge);
-  border-left: 4px solid var(--frame);
-  border-radius: var(--radius);
-  padding: 10px 13px;
-}
-
-.ruling__head {
-  margin: 0 0 3px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 10px;
-}
-
-.ruling__id {
-  font-family: var(--condensed);
-  letter-spacing: 0.1em;
-  font-size: 12px;
-  font-weight: var(--weight-bold);
-  color: var(--frame-deep);
-  background: var(--trim);
-  border-radius: var(--radius-small);
-  padding: 1px 7px;
-}
-
-.ruling__issue {
-  font-weight: 600;
-}
-
-.ruling__body {
-  margin: 0;
-  font-size: var(--text-small);
-  color: var(--ink-soft);
-}
 
 /* ------------------------------------------------ title screen, small screens */
 
@@ -4173,6 +2459,52 @@ a {
   padding: 12px 14px 14px;
   margin: 0 0 12px;
   box-shadow: 0 1px 0 #ffffff66 inset, 0 3px 0 #14090f, 0 10px 24px #00000040;
+}
+
+.coach__lesson > summary,
+.coach__quiet-controls > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.coach__lesson > summary::-webkit-details-marker,
+.coach__quiet-controls > summary::-webkit-details-marker {
+  display: none;
+}
+
+.coach__lesson > summary::after,
+.coach__quiet-controls > summary::after {
+  content: 'Show';
+  float: right;
+  margin-left: 12px;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.coach__lesson[open] > summary::after,
+.coach__quiet-controls[open] > summary::after {
+  content: 'Hide';
+}
+
+.coach__content {
+  padding-top: 8px;
+}
+
+.coach__quiet-controls > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: var(--weight-bold);
+}
+
+.coach__quiet-controls > summary::after {
+  margin-left: auto;
 }
 
 .coach--quiet {
@@ -4203,7 +2535,8 @@ a {
 }
 
 .coach__title {
-  margin: 0 0 8px;
+  display: block;
+  margin: 0;
   font-size: 19px;
   line-height: 1.15;
 }
@@ -4265,33 +2598,14 @@ a {
     text-shadow: 0 2px 0 #0b1020;
   }
 
-  /* Two tiles per row on a phone: four across gives each one two words on three lines. */
-  .title-menu {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .tile {
     min-height: 96px;
-  }
-
-  .chapter-strip {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .chapter-tab {
-    min-height: 96px;
-  }
-
-  .step-card {
-    gap: 10px;
-    padding: 11px 12px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cta,
-  .tile,
-  .chapter-tab {
+  .tile {
     transition: none;
   }
 
@@ -4328,6 +2642,17 @@ a {
   100% { stroke-dashoffset: 0; opacity: 1; }
 }
 
+@keyframes token-remove {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.35); opacity: 0; }
+}
+
+@keyframes token-convert {
+  0% { transform: scale(1); filter: brightness(1); }
+  45% { transform: scale(0.72); filter: brightness(2); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
 @keyframes target-pulse {
   0%, 100% { opacity: 1; stroke-width: 4; }
   50% { opacity: 0.45; stroke-width: 7; }
@@ -4358,21 +2683,36 @@ a {
 /* --------------------------------------------------------- the board, moving */
 
 /*
- * A voter arriving. The group is keyed on the voter in `TableBoard`, so it is a fresh
- * node every time one lands or changes hands, and this plays exactly then. `fill-box`
- * scales it about its own centre rather than about the SVG's origin.
+ * Token changes are classified from consecutive projections in `TableBoard`. A loaded
+ * board receives no modifier and therefore no event animation.
  */
 .board__voter {
   transform-box: fill-box;
   transform-origin: center;
-  animation: token-land 320ms cubic-bezier(0.2, 1.3, 0.5, 1) both;
 }
 
-.board__majority {
+.board__voter--land {
+  animation: token-land 320ms 120ms cubic-bezier(0.2, 1.3, 0.5, 1) both;
+}
+
+.board__voter--move {
+  filter: drop-shadow(0 4px 3px #0008);
+}
+
+.board__voter--remove {
+  pointer-events: none;
+  animation: token-remove 520ms ease-in forwards;
+}
+
+.board__voter--convert {
+  animation: token-convert 520ms ease-out both;
+}
+
+.board__majority--new {
   animation: rise-in 260ms ease-out both;
 }
 
-.board__majority-ring {
+.board__majority--new .board__majority-ring {
   stroke-dasharray: 120;
   animation: majority-mark 420ms ease-out both;
 }
@@ -4415,43 +2755,6 @@ a {
 .button:active:not(:disabled) {
   transform: translateY(1px);
   box-shadow: none;
-}
-
-.market__card {
-  transition: transform 140ms ease, box-shadow 140ms ease;
-}
-
-.market--buyable .market__card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 14px #1f2a441f;
-}
-
-.market__card--open {
-  animation: rise-in 200ms ease-out;
-}
-
-/* ------------------------------------------------------ pointing at the Now card */
-
-/*
- * The flash. `SeatSurface` remounts this on a new key each time the Now card becomes a
- * new thing, which is what replays the animation; it is a sibling overlay rather than an
- * animation on the card so that restarting it never disturbs what is inside the card.
- */
-.now {
-  animation: rise-in 220ms ease-out;
-}
-
-.now:focus {
-  outline: none;
-}
-
-.now__flash {
-  position: absolute;
-  inset: -3px;
-  border-radius: calc(var(--radius) + 3px);
-  background: var(--trim);
-  pointer-events: none;
-  animation: card-flash 900ms ease-out forwards;
 }
 
 /*
@@ -4594,8 +2897,7 @@ a {
  */
 @media (prefers-reduced-motion: reduce) {
   .board__legal-ring,
-  .board-legend__pin,
-  .target__pin {
+.target__pin {
     animation: none;
   }
 
@@ -4604,14 +2906,11 @@ a {
   }
 
   .button:hover:not(:disabled),
-  .button:active:not(:disabled),
-  .market--buyable .market__card:hover {
+  .button:active:not(:disabled) {
     transform: none;
   }
 
-  .now__flash {
-    display: none;
-  }
+  
 }
 
 /* ------------------------------------------------------ placing, zone first */
@@ -4691,11 +2990,6 @@ a {
   0% { transform: scale(1); }
   35% { transform: scale(1.35); }
   100% { transform: scale(1); }
-}
-
-.status-bar__count {
-  display: inline-block;
-  animation: count-bump 380ms ease-out;
 }
 
 .board__plaque-count {

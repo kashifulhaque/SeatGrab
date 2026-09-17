@@ -39,6 +39,7 @@ import { ARCHETYPES, type Cost, type Archetype, type ResourceType } from '@gerry
 import type { PlayerView, ResourceVectorDto } from '@gerrymander/protocol';
 
 import { CostIcons } from '../CostIcons';
+import { TrickCard, VoterCard } from '../cards';
 import {
   NO_PAYMENT,
   NO_RESOURCES,
@@ -70,8 +71,6 @@ import {
   type PowerId,
   type Targeting,
 } from '../actions';
-
-import { useViewport } from '../useViewport';
 
 import { ResourcePicker, type PickerRow } from './ResourcePicker';
 import type { ComposerSubmit } from './PromptComposer';
@@ -207,11 +206,10 @@ function BoardTarget({
   // earlier draft of this drew both in red.
   const done = progress !== undefined && progress.done >= progress.total;
   const stuck = count === 0 && !done;
-  // On a phone the board is a different tab, so the map is a trip away rather than a
-  // glance away: the sentence says which tab, and the list opens where the player is
-  // standing instead of asking to be unfolded.
-  const phone = useViewport() === 'phone';
-  const where = phone ? 'on the Board tab' : 'on the board';
+  // The board is on the same screen at every width now, above the sheet this sits in, so
+  // the sentence points up at it rather than at a tab. The list stays folded: the map is
+  // the control, and the list is the alternative for anyone who would rather read.
+  const where = 'on the board above';
   return (
     <div className="target">
       <p
@@ -261,7 +259,7 @@ function BoardTarget({
           ))}
         </ul>
       )}
-      <details className="target__list" open={phone && !done}>
+      <details className="target__list">
         <summary>Rather pick from a list?</summary>
         <TargetSelect
           view={view}
@@ -412,6 +410,16 @@ function BuyTrick({
   return (
     <div className="composer__body">
       <h4>Buy a trick</h4>
+      <div className="composer__pile">
+        <TrickCard
+          face="down"
+          title=""
+          rulesText=""
+          backCost={market.printed}
+          size="sm"
+          backLabel={`Dirty Trick, top of the pile, price ${market.printed.generic}`}
+        />
+      </div>
       <p>
         The back shows <CostIcons cost={market.printed} />, payable with any mix of resources
         {surcharge > 0
@@ -475,7 +483,14 @@ function Influence({
 
   return (
     <div className="composer__body">
-      <h4>Buy {card.voters} voter{card.voters === 1 ? '' : 's'}</h4>
+      <div className="composer__selected-card">
+        <VoterCard
+          voters={card.voters}
+          cost={card.cost}
+          state="open"
+          footer="Selected"
+        />
+      </div>
       <p>
         <CostIcons cost={card.cost} />
         {surcharged ? ' plus one more for an effect on you.' : ''}
@@ -567,16 +582,12 @@ function Placement({
 
       {zoneId === null ? (
         <>
-          <p className="small">
-            {group.sameZone
-              ? `All ${group.count} go in one zone. Choose it first; the board then rings that zone’s`
-                + ' free areas and nothing else.'
-              : 'Choose a zone to place in. You may come back and choose another for the rest.'}
-          </p>
           <p className="target__call">
             <span className="target__pin" aria-hidden="true" />
             <span>
-              Tap any ringed area on the board in the zone you want, or choose a zone here.
+              {group.sameZone && group.count > 1
+                ? `All ${group.count} go in one zone. Tap a ringed area on the board in the zone you want, or choose it here.`
+                : 'Tap a ringed area on the board, or choose a zone here.'}
             </span>
           </p>
           {choices.length === 0 ? (
@@ -1055,15 +1066,14 @@ export function TurnDraftComposer({
 /**
  * The voter groups this seat must place before its turn can end.
  *
- * It is exported because `SeatSurface` draws it inside the Now card whenever the seat is
- * free: a group that is due *is* the one thing to do, and a button for it at the foot of
- * a folded list was one a player did not find.
+ * The visual tray in the action-sheet header is the single placement entry point and is
+ * already a keyboard-reachable button. This body control is intentionally only the
+ * explicit discard escape hatch; repeating a Place button here made two controls compete
+ * for the same required action.
  */
 export function PendingVoters({
   view,
   seatId,
-  draft,
-  dispatch,
   submit,
   busy,
 }: Omit<TurnComposerProps, 'targeting'>) {
@@ -1071,32 +1081,19 @@ export function PendingVoters({
   if (pending.length === 0) return null;
   const due = dueGroupIds(view, seatId);
   return (
-    <section className="composer__group composer__group--urgent">
-      <h4>Voters waiting to be placed</h4>
-      <p className="hint">The turn cannot end while a group is due.</p>
+    <section className="composer__group composer__group--urgent" aria-label="Voters waiting to be placed">
+      <p className="hint">
+        Use the voter tray in the sheet header to place the waiting group on the board.
+        Unplaced voters are lost if you discard them.
+      </p>
       <div className="actions">
-        {pending.map((group) => (
-          <button
-            key={group.id}
-            type="button"
-            className="button button--primary"
-            disabled={busy}
-            aria-pressed={draft.kind === 'place' && draft.groupId === group.id}
-            onClick={() => dispatch({
-              type: 'open',
-              draft: { kind: 'place', groupId: group.id, slotIds: [], zoneId: null },
-            })}
-          >
-            Place {group.count} voter{group.count === 1 ? '' : 's'}
-          </button>
-        ))}
         <button
           type="button"
-          className="button"
+          className="button button--quiet"
           disabled={busy || due.length === 0}
           onClick={() => submit({ type: 'ConfirmPendingVoterDiscard', groupIds: [...due] })}
         >
-          Discard all
+          Discard all waiting voters
         </button>
       </div>
     </section>

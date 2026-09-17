@@ -1,16 +1,12 @@
 /**
- * The one bar that stays put for the whole match.
+ * The slim bar that stays put for the whole match.
  *
- * Section 13.4 asks for the turn, the phase and the decision owner to be conspicuous and
- * for End Turn to sit in a stable place that explains why it is disabled. This bar is
- * pinned to the viewport and answers three questions in a fixed order, left to right:
- * which turn, who must act and what they are doing, and what the revealed seat holds. It
- * then carries End turn and whatever the mode uses to change seats.
- *
- * Under that row is the turn as steps — answer, buy and place, end — with the current
- * one marked. A first-time player who does not know the engine's phase names can still
- * see where in the turn the table is, and that the question comes before the market.
- * `turnSteps` in `table.ts` decides the steps; this bar only draws them.
+ * It answers two questions and holds two controls, left to right: which turn it is, who
+ * must act and what they are doing, the revealed seat's resources, and the menu. That is
+ * all. The earlier bar also carried End turn, the seat controls, the computer pace and a
+ * row of turn steps, and a first-time player read it as the busiest thing on the screen.
+ * End turn and the step now live in the action sheet's header, beside the thing they are
+ * about; everything else is behind **Menu**.
  *
  * Two privacy rules hold here and are asserted by `match-shell.test.tsx`:
  *
@@ -18,88 +14,48 @@
  *   reads `pendingDecision.summary`, which the engine writes about what a player must do
  *   and never about what only that player may see.
  * - The resources are drawn only for `me`, which the caller sets to the revealed seat and
- *   to nothing on the shared surface. Resource counts are public — the seat list shows
- *   every seat's — but this bar says "your", so it must never name another seat's.
+ *   to nothing on the shared surface. Resource counts are public, but this bar says
+ *   "your", so it must never name another seat's.
  *
- * The bar measures itself into `--bar-h` so the sticky side columns below can sit under
- * it whatever it wraps to. Nothing reads the measurement for a rule.
+ * The bar measures itself into `--bar-h` so the sheet and the docked columns below can
+ * sit under it whatever it wraps to. Nothing reads the measurement for a rule.
  */
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 
 import type { PlayerView, PublicPlayerView } from '@gerrymander/protocol';
 
-import { PARTY_BY_ID, RESOURCE_ASSETS } from '../assets/manifest';
+import { PARTY_BY_ID } from '../assets/manifest';
 
 import { PartyMark } from './PartyMark';
-import type { Availability } from './actions';
-import {
-  describeDecision,
-  describeDecisionFor,
-  seatLabel,
-  describeStep,
-  turnSteps,
-} from './table';
+import { ResourceCoins } from './match/ResourceCoins';
+import { describeDecision, describeDecisionFor, seatLabel } from './table';
 
-const RESOURCE_ORDER = ['cash', 'influence', 'press', 'faith'] as const;
-
-/** `Turn 4`, `Setup` or `Final`. The step row says which part of the turn it is. */
-function turnLabel(view: PlayerView): string {
+/** `Turn 4`, `Setup` or `Final`. */
+export function turnLabel(view: PlayerView): string {
   if (view.status === 'finished') return 'Final';
   if (view.status === 'setup' || view.turnOrdinal === 0) return 'Setup';
   return `Turn ${view.turnOrdinal}`;
 }
 
-/** The turn as steps. Pills on a wide screen; one line on a phone, by stylesheet. */
-export function TurnSteps({ view }: { view: PlayerView }) {
-  const steps = turnSteps(view);
-  return (
-    <>
-      <ol className="steps" aria-label="Where this turn is">
-        {steps.map((step, index) => (
-          <li
-            key={step.id}
-            className={`step step--${step.state}`}
-            aria-current={step.state === 'current' ? 'step' : undefined}
-          >
-            <span className="step__num" aria-hidden="true">
-              {step.state === 'done' ? '✓' : index + 1}
-            </span>
-            <span className="step__label">{step.label}</span>
-            <span className="visually-hidden">
-              {step.state === 'done' ? ', done' : step.state === 'current' ? ', now' : ', next'}
-            </span>
-          </li>
-        ))}
-      </ol>
-      <p className="steps__line" aria-hidden="true">{describeStep(view)}</p>
-    </>
-  );
-}
-
 export function StatusBar({
   view,
   me,
-  endTurn,
-  switcher,
   thinking = null,
-  settings,
+  menu,
 }: {
   view: PlayerView;
   /** The revealed seat, whose resources are drawn. `null` draws none. */
   me: PublicPlayerView | null;
-  endTurn: Availability & { onEndTurn: () => void; busy: boolean };
-  /** The mode's control for changing seats. Absent online, where there is one seat. */
-  switcher?: ReactNode;
   /**
    * The computer seat about to act, or `null`.
    *
    * It replaces the decision line while it is set, because "Devi (computer) is thinking…"
-   * is the one thing a person watching wants to know and the banner underneath would
+   * is the one thing a person watching wants to know, and the line underneath would
    * otherwise read as though the table were waiting on them.
    */
   thinking?: PublicPlayerView | null;
-  /** The mode's own settings, folded into the bar. Absent online. */
-  settings?: ReactNode;
+  /** The menu control and its drawer. */
+  menu?: ReactNode;
 }) {
   const bar = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -119,93 +75,56 @@ export function StatusBar({
 
   // The revealed seat reads the bar as "you"; the shared surface names every seat.
   const decision = me === null ? describeDecision(view) : describeDecisionFor(view, me.id);
-  const total = me === null
-    ? 0
-    : me.resources.cash + me.resources.influence + me.resources.press + me.resources.faith;
-  const actor = decision.waitingOn[0]
+  const actor = thinking
+    ?? decision.waitingOn[0]
     ?? view.players.find((player) => player.id === view.activePlayerId);
-  const activeName = view.players.find((player) => player.id === view.activePlayerId)?.displayName;
   const partyColor = actor === undefined ? undefined : PARTY_BY_ID.get(actor.partyId)?.color;
   const waitingOnMe = me !== null && decision.waitingOn.some((player) => player.id === me.id);
+  const news = thinking !== null
+    ? `${seatLabel(thinking)} is thinking…`
+    : view.status === 'finished'
+      ? 'Match finished'
+      : decision.waitingOn.length > 0
+        ? waitingOnMe ? 'Your move' : actor === undefined ? 'Waiting for a player' : `${seatLabel(actor)} must act`
+        : actor === undefined ? 'Between turns' : `${seatLabel(actor)} is acting`;
 
   return (
     <div
       ref={bar}
       className={[
         'status-bar',
-        decision.waitingOn.length > 0 ? 'status-bar--waiting' : '',
-        waitingOnMe ? 'status-bar--mine' : '',
+        'ms-bar',
+        decision.waitingOn.length > 0 ? 'ms-bar--waiting' : '',
+        waitingOnMe ? 'ms-bar--mine' : '',
+        thinking == null ? '' : 'ms-bar--thinking',
       ].filter(Boolean).join(' ')}
       role="region"
       aria-label="Match status"
+      data-coach-anchor="top-bar"
       style={partyColor === undefined ? undefined : ({ '--party': partyColor } as CSSProperties)}
     >
-      <div className="status-bar__row">
-        <p className="status-bar__turn">{turnLabel(view)}</p>
+      <p className="ms-bar__turn">{turnLabel(view)}</p>
 
-        <div className="status-bar__decision">
-          {actor === undefined ? null : (
-            <span className="status-bar__mark">
-              <PartyMark partyId={actor.partyId} size={34} />
-            </span>
-          )}
-          <div className="status-bar__words">
-            <p className="status-bar__news">
-              {thinking == null ? decision.news : `${seatLabel(thinking)} is thinking…`}
-              {decision.awayFromActiveSeat && activeName !== undefined ? (
-                <span className="status-bar__interrupt"> · still {activeName}’s turn</span>
-              ) : null}
-            </p>
-            <p className="status-bar__detail" role="status" aria-live="polite">
-              {decision.detail}
-            </p>
-          </div>
-        </div>
-
-        {me === null ? null : (
-          <ul className="status-bar__resources" aria-label={`${me.displayName}’s resources`}>
-            {RESOURCE_ORDER.map((resource) => (
-              <li key={resource}>
-                <img src={RESOURCE_ASSETS[resource].url} alt="" aria-hidden="true" width={22} height={22} />
-                <span className="visually-hidden">{RESOURCE_ASSETS[resource].label} </span>
-                {/* Keyed on the figure, so a count that changes mounts a fresh node and
-                    the stylesheet's bump plays. Paying for something should be visible in
-                    the bar that says what you hold. */}
-                <span key={me.resources[resource]} className="status-bar__count">
-                  {me.resources[resource]}
-                </span>
-              </li>
-            ))}
-            <li className="status-bar__cap" title="Resources held, of the most you may hold">
-              {total}<span className="status-bar__cap-of">/{me.resourceCap}</span>
-            </li>
-          </ul>
+      <div className="ms-bar__who">
+        {actor === undefined ? null : (
+          <span className="ms-bar__mark">
+            <PartyMark partyId={actor.partyId} size={28} />
+          </span>
         )}
-
-        <div className="status-bar__end">
-          <button
-            type="button"
-            className="button button--primary"
-            disabled={!endTurn.can || endTurn.busy}
-            aria-describedby={endTurn.reason === null ? undefined : 'end-turn-reason'}
-            onClick={endTurn.onEndTurn}
-          >
-            End turn
-          </button>
-          {endTurn.reason === null ? null : (
-            <span id="end-turn-reason" className="status-bar__reason" title={endTurn.reason}>
-              {endTurn.reason}
+        {/* Keyed on the text, so a change crossfades rather than cutting. */}
+        <p key={news} className="ms-bar__news" role="status" aria-live="polite">
+          <span className="ms-bar__news-text">{news}</span>
+          {thinking == null ? null : (
+            <span className="ms-dots" aria-hidden="true">
+              <i /><i /><i />
             </span>
           )}
-        </div>
-
-        {switcher === undefined ? null : <div className="status-bar__switcher">{switcher}</div>}
-        {settings === undefined ? null : <div className="status-bar__settings">{settings}</div>}
+        </p>
       </div>
 
-      <div className="status-bar__steps">
-        <TurnSteps view={view} />
-      </div>
+      {me === null ? null : <ResourceCoins me={me} />}
+
+      {menu === undefined ? null : <div className="ms-bar__menu">{menu}</div>}
     </div>
   );
 }
