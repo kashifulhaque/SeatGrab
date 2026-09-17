@@ -19,7 +19,7 @@ declare module 'virtual:gerrymander-transport-check' {
 }
 
 /**
- * The `#/online` route family, or `null` in the pass-and-play build.
+ * The `/online` route family, or `null` in the pass-and-play build.
  *
  * `vite.config.ts` resolves this to the real screens only when the Vite mode is `online`,
  * which is the same decision that sets `__LOCAL_MODE__`. It is the single module the

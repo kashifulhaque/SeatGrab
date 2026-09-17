@@ -86,6 +86,11 @@ first: a static browser build in `apps/web/dist`, and a Node process,
    for any `.map` request. If your deployment copies `dist/` itself, exclude the `.map`
    files by hand.
 
+   Configure the host to answer an unknown path with `index.html`. Every screen has its
+   own path — `/rules`, `/match/<id>`, `/online/join/<code>` — and a host that answers
+   `404` instead serves only `/`, so bookmarks, shared links and reloads break.
+   `apps/web/nginx.conf` answers it with `try_files`.
+
 4. Start the room server with at least these settings:
 
    ```sh

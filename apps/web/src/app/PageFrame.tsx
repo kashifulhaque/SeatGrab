@@ -7,10 +7,10 @@
  * repaint. The link is the first focusable thing on every screen and is visible only
  * while it holds focus.
  *
- * It moves focus itself rather than letting the browser follow the fragment, because
- * this application routes on the hash: navigating to `#page-main` would be read as a
- * route and would land the player on the home screen instead of the content they asked
- * to skip to. The `href` stays so the control is a link to anyone reading the markup.
+ * It moves focus itself rather than letting the browser follow the fragment, so that
+ * skipping the header leaves no `#page-main` in the address bar and no history entry to
+ * walk back through. The `href` stays so the control is a link to anyone reading the
+ * markup.
  *
  * `compact` is the match screens' header: one line holding the wordmark, the title and
  * the back link, so the status bar and the table start within the first viewport. The

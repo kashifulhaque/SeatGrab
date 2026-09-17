@@ -369,7 +369,11 @@ procedure has a caveat, the caveat is one that was observed rather than inferred
 The application is two independent pieces, and a pass-and-play deployment needs only the
 first:
 
-- **A static browser build**, in `apps/web/dist`. Any static host serves it.
+- **A static browser build**, in `apps/web/dist`. Any static host serves it, as long as
+  it answers an unknown path with `index.html`. The screens are addressed by path
+  rather than by fragment, so a host that answers `404` instead serves only `/`, and
+  every bookmark, shared room link and reload of a match breaks. `apps/web/nginx.conf`
+  does it with `try_files`, and the Vite dev server does it by default.
 - **A Node process**, `apps/server/dist/index.js`, with a durable store behind it. It's the
   authority for online rooms, and nothing else writes to that store.
 
@@ -393,7 +397,7 @@ time:
 | Command | Build marker | What it contains |
 |---|---|---|
 | `pnpm build` | `local-play` | Pass-and-play only. No network code: no module from `src/remote/`, no `Online*` screen, and no `new WebSocket`. |
-| `pnpm build:online` | `online` | Pass-and-play and the `#/online` family, which needs the room server. |
+| `pnpm build:online` | `online` | Pass-and-play and the `/online` family, which needs the room server. |
 
 Each build stamps its marker into the emitted HTML as `<meta name="gerrymander-build">`.
 To read which build a directory holds, run `pnpm check:build`.

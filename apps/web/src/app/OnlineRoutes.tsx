@@ -1,5 +1,5 @@
 /**
- * The whole `#/online` family, behind one module.
+ * The whole `/online` family, behind one module.
  *
  * This is the only file the rest of the application imports the online screens through,
  * and that is deliberate: `vite.config.ts` resolves it to `export default null` in the

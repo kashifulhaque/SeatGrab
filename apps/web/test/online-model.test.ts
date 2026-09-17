@@ -589,13 +589,13 @@ describe('the online routes', () => {
     expect(onlineRouteFrom('/online/room/')).toEqual({ kind: 'home' });
   });
 
-  it('builds the routes it parses, escaping what a hash route would otherwise eat', () => {
-    expect(onlineRouteFrom(ROUTES.onlineRoom('match-1').slice(1)))
+  it('builds the routes it parses, escaping what a path segment would otherwise eat', () => {
+    expect(onlineRouteFrom(ROUTES.onlineRoom('match-1')))
       .toEqual({ kind: 'room', matchId: 'match-1' });
-    expect(onlineRouteFrom(ROUTES.onlineJoin('ABCD2345').slice(1)))
+    expect(onlineRouteFrom(ROUTES.onlineJoin('ABCD2345')))
       .toEqual({ kind: 'join', roomCode: 'ABCD2345' });
-    expect(ROUTES.onlineJoin()).toBe('#/online/join');
-    expect(onlineRouteFrom(ROUTES.onlineRoom('a/b c').slice(1)))
+    expect(ROUTES.onlineJoin()).toBe('/online/join');
+    expect(onlineRouteFrom(ROUTES.onlineRoom('a/b c')))
       .toEqual({ kind: 'room', matchId: 'a/b c' });
   });
 });
