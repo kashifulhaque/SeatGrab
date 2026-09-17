@@ -16,6 +16,31 @@ treat them as historical context, not as a live reference.
 - The pass-and-play build carries no network code; `scripts/check_build_privacy.mjs`
   asserts this from the emitted bundle.
 
+## The map
+
+- The board is an island of nine districts: `central` at the core, `north` and `south`
+  belting it, and the remaining six around the coast. Three tiers are what the ruleset
+  forces, not a style choice. `central` borders only `north` and `south`, and both of
+  those border `west`, `east` and `central`, so the border graph is not outerplanar and
+  no layout can put all nine districts on the coast.
+- The map is unchanged by a half-turn that swaps `northWest` with `southEast`,
+  `northEast` with `southWest`, `west` with `east` and `north` with `south` — which is a
+  symmetry of the border graph too. No seat sits at a shape another seat does not get.
+- Districts are sets of cells on a hex lattice, one voter area per cell, and a district
+  outline is the union of its cells' edges. Two districts that share a border therefore
+  meet exactly; only coastal corners are rounded.
+- `scripts/generate_board.py` asserts what it builds: cell counts, one connected piece
+  per district, one boundary loop each, and drawn borders that match `adjacency` exactly.
+  Legality is still read from `adjacency` and `movementTriples` and never from the
+  artwork, but a map that draws a border the rules do not have is a lie, and the script
+  refuses to emit one.
+- Every district wears the same 124 by 54 plaque, and the map reserves a clear rectangle
+  that size inside each one. A plaque that changed size with the state of play — the
+  earlier one grew when a majority arrived — would cover voter areas. A coastal district
+  is a thin arc, so its plaque may hang over the water; none may cross a border.
+- `apps/web/test/board.test.ts` holds the invariants the rest of the build reads, so a
+  regenerated map that breaks one fails the suite rather than the game.
+
 ## Computer opponents
 
 - A computer seat reads exactly what a person at that seat is shown — its own

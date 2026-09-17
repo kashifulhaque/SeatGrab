@@ -115,10 +115,14 @@ function placeVoter(state: GameState, ownerId: string, slotId: string, majority 
   return voter.id;
 }
 
+// Majorities are built out of ordinary areas. A volatile one would let a card that may
+// not touch volatile areas fail for a reason the test is not about, and which areas are
+// volatile is the map's business, not this fixture's.
 function formMajority(state: GameState, ownerId: string, zoneId: string): string[] {
   const zone = CORE_CONTENT.board.zones.find((candidate) => candidate.id === zoneId);
   if (zone === undefined) throw new Error(`fixture zone ${zoneId} missing`);
-  return slotsIn(zoneId).slice(0, zone.majorityThreshold).map((slotId) => placeVoter(state, ownerId, slotId, true));
+  return slotsIn(zoneId, false).slice(0, zone.majorityThreshold)
+    .map((slotId) => placeVoter(state, ownerId, slotId, true));
 }
 
 function putNewsOnTop(state: GameState, cardIds: string[]): void {

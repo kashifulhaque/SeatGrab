@@ -3,9 +3,9 @@
 export const RULESET_ID = 'seatgrab-base';
 export const RULESET_VERSION = '2.0.0';
 export const CONTENT_PACK_ID = 'core-set';
-export const CONTENT_PACK_VERSION = '2.0.0';
-export const BOARD_ID = 'grid-nine';
-export const BOARD_VERSION = '2.0.0';
+export const CONTENT_PACK_VERSION = '3.0.0';
+export const BOARD_ID = 'isle-nine';
+export const BOARD_VERSION = '1.0.0';
 
 /** A rule the digital game fixes where a table might otherwise argue. */
 export interface HouseRule {

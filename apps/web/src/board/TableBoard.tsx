@@ -1,5 +1,5 @@
 /**
- * The live board: nine zones, 129 voter areas, and whatever is standing on them.
+ * The live board: nine districts, 129 voter areas, and whatever is standing on them.
  *
  * `BoardArtwork` draws the empty board, which is what the lobby
  * preview wants. This component draws a match: it takes the public slices of one
@@ -23,7 +23,7 @@ import { CORE_BOARD } from '@seatgrab/content';
 import type { PublicPlayerView, PublicSlotView, PublicZoneView } from '@seatgrab/protocol';
 
 import { PARTY_BY_ID } from '../assets/manifest';
-import { FRAME } from './BoardArtwork';
+import { FRAME, PLAQUE } from './BoardArtwork';
 import { SLOT_GEOMETRY, SLOT_ORDINALS, describeSlot, type ZoneSummary } from '../app/table';
 
 import {
@@ -54,7 +54,7 @@ export const BOARD_VIEW_RATIO: number = (() => {
   return width !== undefined && height !== undefined && height > 0 ? width / height : 1;
 })();
 
-/** Keeps a long seat name inside the plaque. The zone list always shows it in full. */
+/** Keeps a long name inside the plaque. The zone list always shows it in full. */
 function shortName(displayName: string): string {
   const upper = displayName.toUpperCase();
   return upper.length > 11 ? `${upper.slice(0, 10)}…` : upper;
@@ -251,43 +251,31 @@ export function TableBoard({
           const leaderParty = leader === null ? undefined : PARTY_BY_ID.get(leader.partyId);
           return (
             <g key={zone.id} transform={`translate(${at.x} ${at.y})`}>
-              {/* The plaque holds every line: the printed zone name, how full the zone
-                  is, how many marked voters a majority takes, and who holds it. Drawing
-                  the majority outside the plaque put it over the voter areas, which is
-                  exactly where a label must not be. */}
-              <path
-                className="board__plaque"
-                d={leaderParty === undefined
-                  ? 'M-68-34H68l14 15v56H-82v-56z'
-                  : 'M-68-34H68l14 15v94H-82v-94z'}
-              />
-              <text className="board__plaque-name" y={-16}>
-                {zone.displayName.toUpperCase()}
+              {/* One plaque, one size, whatever the zone. The map reserves exactly this
+                  rectangle inside every district, so a plaque that grew when a majority
+                  arrived would start covering voter areas - which is exactly where a
+                  label must not be. The holder is named in the zone list and in the
+                  roster; here it is the party's own emblem. */}
+              <path className="board__plaque" d={PLAQUE} />
+              <text className="board__plaque-name" y={-7}>
+                {shortName(zone.displayName)}
               </text>
-              <text className="board__plaque-count" y={10}>
+              <text className="board__plaque-count" x={-4} y={17}>
                 {summary === undefined ? '—' : `${summary.filled}/${zone.capacity}`}
               </text>
-              <text className="board__plaque-need" y={30}>
+              <text className="board__plaque-need" x={4} y={17}>
                 NEED {zone.majorityThreshold}
               </text>
               {leaderParty === undefined || leader === null ? null : (
-                <g>
-                  <path className="board__leader-rule" d="M-62 40H62" />
-                  <text className="board__leader-label" y={55}>
-                    MAJORITY
-                  </text>
-                  <image
-                    href={leaderParty.url}
-                    x={-62}
-                    y={62}
-                    width={20}
-                    height={20}
-                    preserveAspectRatio="xMidYMid meet"
-                  />
-                  <text className="board__leader-name" x={-36} y={77}>
-                    {shortName(leader.displayName)}
-                  </text>
-                </g>
+                <image
+                  className="board__plaque-holder"
+                  href={leaderParty.url}
+                  x={-58}
+                  y={-20}
+                  width={16}
+                  height={16}
+                  preserveAspectRatio="xMidYMid meet"
+                />
               )}
             </g>
           );

@@ -1,5 +1,5 @@
 /**
- * The drawn board: a backing panel, nine zone outlines on a grid, and all 129 voter areas.
+ * The drawn board: the sea, nine district outlines and all 129 voter areas.
  *
  * Every coordinate comes from `CORE_BOARD`. The component draws; it decides
  * nothing. Zone legality, capacity and movement stay with the engine, and this file must
@@ -23,6 +23,14 @@ export function toDrawing(x: number, y: number): { x: number; y: number } {
   return { x: x * WIDTH, y: y * HEIGHT };
 }
 
+/**
+ * The plaque every district wears, 124 by 54 drawing units.
+ *
+ * `scripts/generate_board.py` keeps a clear rectangle this size inside each district, so
+ * the size is a fact the map depends on: changing it here means regenerating the board.
+ */
+export const PLAQUE = 'M-62-27H62q6 0 6 6V21q0 6-6 6H-62q-6 0-6-6V-21q0-6 6-6z';
+
 export interface BoardArtworkProps {
   /** Zones drawn as selected. Everything else renders in the resting style. */
   highlightedZones?: readonly BoardZoneId[];
@@ -38,7 +46,7 @@ export function BoardArtwork({
   highlightedZones = [],
   showLabels = true,
   showVolatile = true,
-  title = 'SeatGrab board: nine zones and 129 voter areas',
+  title = 'SeatGrab board: an island of nine districts and 129 voter areas',
 }: BoardArtworkProps) {
   const highlighted = new Set(highlightedZones);
   return (
@@ -88,14 +96,11 @@ export function BoardArtwork({
             const at = toDrawing(zone.label.x, zone.label.y);
             return (
               <g key={zone.id} transform={`translate(${at.x} ${at.y})`}>
-                <path
-                  className="board__plaque"
-                  d="M-50-27H50l12 13v28H-62v-28z"
-                />
-                <text className="board__plaque-name" y={-8}>
+                <path className="board__plaque" d={PLAQUE} />
+                <text className="board__plaque-name" y={-7}>
                   {zone.displayName.toUpperCase()}
                 </text>
-                <text className="board__plaque-threshold" y={15}>
+                <text className="board__plaque-threshold" y={17}>
                   {zone.majorityThreshold}/{zone.capacity}
                 </text>
               </g>

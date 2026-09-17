@@ -204,15 +204,15 @@ a {
   fill: var(--paper);
   font-family: var(--condensed);
   text-anchor: middle;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
 }
 
 .board__plaque-name {
-  font-size: 17px;
+  font-size: 14px;
 }
 
 .board__plaque-threshold {
-  font-size: 30px;
+  font-size: 19px;
   font-weight: 700;
 }
 
@@ -828,17 +828,15 @@ a {
 }
 
 /*
- * The frame hugs the map. The traced board is much taller than it is wide, so a frame
- * that simply filled the column would put a broad dark margin down both sides of it:
- * giving the drawing a height and letting its own aspect ratio set the width keeps the
- * board as large as the row allows without letterboxing it.
+ * The frame hugs the map. Letting the frame simply fill the column would put a dark
+ * margin around a drawing of a different shape, so the frame takes the map's own aspect
+ * ratio and the drawing fills it edge to edge.
  */
 .board-frame {
-  /* `--board-ratio` is the traced map's width over its height, set by the component. */
+  /* `--board-ratio` is the map's width over its height, set by the component. */
   aspect-ratio: var(--board-ratio);
-  /* The board fills its column. It is taller than it is wide, so the page scrolls past
-     it while the side columns stay pinned; a board sized to the viewport height was the
-     postage stamp the first playtest complained about. */
+  /* The board fills its column rather than the viewport height: a board sized to the
+     viewport height was the postage stamp the first playtest complained about. */
   width: 100%;
   margin-inline: auto;
   background: var(--frame);
@@ -905,22 +903,27 @@ a {
   font-size: 14px;
 }
 
+/*
+ * How full the zone is and what a majority takes share one line: the plaque is a fixed
+ * 124 by 54, because the map reserves that rectangle and nothing larger.
+ */
 .board__plaque-count,
 .board__plaque-need {
   fill: var(--paper);
   font-family: var(--condensed);
-  text-anchor: middle;
   letter-spacing: 0.06em;
 }
 
 .board__plaque-count {
-  font-size: 26px;
+  font-size: 19px;
   font-weight: 700;
+  text-anchor: end;
 }
 
 .board__plaque-need {
-  font-size: 13px;
+  font-size: 11px;
   fill: var(--trim);
+  text-anchor: start;
 }
 
 /* A transparent, generous hit target: the printed dots are small and crowded. */
@@ -977,30 +980,6 @@ a {
   stroke: var(--frame-deep);
   stroke-width: 3;
   stroke-dasharray: 5 5;
-}
-
-.board__leader-rule {
-  stroke: var(--trim);
-  stroke-width: 1.5;
-}
-
-.board__leader-label,
-.board__leader-name {
-  font-family: var(--condensed);
-  letter-spacing: 0.08em;
-  text-anchor: middle;
-}
-
-.board__leader-label {
-  fill: var(--trim);
-  font-size: 11px;
-}
-
-.board__leader-name {
-  fill: var(--paper);
-  font-size: 16px;
-  font-weight: 700;
-  text-anchor: start;
 }
 
 /* ----------------------------------------------------------- seat summaries */

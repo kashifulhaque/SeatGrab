@@ -34,6 +34,9 @@ project. The resource icons are [Lucide](https://lucide.dev) icons (ISC licence,
 - **Redistricting.** Strictly the most voters in a zone gives you its redistricting
   rights: once a turn, move one voter into, out of or within that zone. Majority voters
   cannot be moved.
+- **The map.** The nine zones are the districts of one island: Central at its heart,
+  North and South belting it, and the other six around the coast. Two districts are
+  neighbours for redistricting exactly when their borders touch on the map.
 - **Volatile areas.** A voter placed there is fixed for the game and deals its owner a
   Breaking News card that resolves at the end of the turn.
 - **Dirty Tricks.** Bought face down for the price on the back; played on your turn, or
@@ -95,4 +98,11 @@ typed modules:
 pnpm generate:content
 ```
 
-The board layout is produced by `scripts/generate_board.py`.
+The map is produced by `scripts/generate_board.py`, which lays the nine districts out on
+a hex lattice and then refuses to emit a map whose drawn borders disagree with the
+adjacency the ruleset lists. To see the map on its own while you work on it, pass
+`--preview`:
+
+```bash
+python3 scripts/generate_board.py --preview board.svg
+```
