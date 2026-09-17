@@ -10,7 +10,9 @@
  */
 import { useMemo, useState } from 'react';
 
+import { COMPUTER_DIFFICULTIES } from '@seatgrab/computer';
 import { CORE_CONTENT } from '@seatgrab/engine';
+import type { ComputerDifficulty } from '@seatgrab/protocol';
 
 import { BoardArtwork } from '../board/BoardArtwork';
 import { RESOURCE_ASSETS } from '../assets/manifest';
@@ -24,6 +26,9 @@ import { ROUTES, navigate } from './routes';
 import {
   ADVISORY_FILTERS,
   MAX_NAME_LENGTH,
+  defaultComputerDraft,
+  seatTally,
+  setController,
   MAX_SEATS,
   MIN_SEATS,
   addSeat,
@@ -39,12 +44,24 @@ import {
   validateSetup,
   type SetupDraft,
 } from './setup';
+import { marksComputer } from './table';
 import { describeError } from './useLocalStore';
 
 const RESOURCE_ORDER = ['cash', 'influence', 'press', 'faith'] as const;
 
-export function Lobby({ store, storeError }: { store: LocalSnapshotStore | null; storeError: string | null }) {
-  const [draft, setDraft] = useState<SetupDraft>(defaultSetupDraft);
+export function Lobby({
+  store,
+  storeError,
+  againstComputer = false,
+}: {
+  store: LocalSnapshotStore | null;
+  storeError: string | null;
+  /** Opens the lobby on a table of one person and two computers. */
+  againstComputer?: boolean;
+}) {
+  const [draft, setDraft] = useState<SetupDraft>(
+    againstComputer ? defaultComputerDraft : defaultSetupDraft,
+  );
   const [starting, setStarting] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -53,7 +70,8 @@ export function Lobby({ store, storeError }: { store: LocalSnapshotStore | null;
     () => advisoryImpact(CORE_CONTENT, draft.advisories),
     [draft.advisories],
   );
-  const problemsFor = (seatKey: string, field: 'displayName' | 'partyId') =>
+  const tally = seatTally(draft);
+  const problemsFor = (seatKey: string, field: 'displayName' | 'partyId' | 'controller') =>
     problems.filter((problem) => problem.seatKey === seatKey && problem.field === field);
 
   const ready = problems.length === 0 && store !== null && !starting;
@@ -105,6 +123,8 @@ export function Lobby({ store, storeError }: { store: LocalSnapshotStore | null;
             const partyProblems = problemsFor(seat.key, 'partyId');
             const nameId = `${seat.key}-name`;
             const partyId = `${seat.key}-party`;
+            const controlId = `${seat.key}-controller`;
+            const difficultyId = `${seat.key}-difficulty`;
             return (
               <li key={seat.key} className="seat">
                 <p className="seat__ordinal">
@@ -153,6 +173,56 @@ export function Lobby({ store, storeError }: { store: LocalSnapshotStore | null;
                     </p>
                   ))}
                 </div>
+                <div className="seat__field">
+                  <label htmlFor={controlId}>Controlled by</label>
+                  <select
+                    id={controlId}
+                    className="input"
+                    value={seat.controller}
+                    onChange={(event) =>
+                      setDraft(setController(
+                        draft,
+                        seat.key,
+                        event.target.value === 'computer' ? 'computer' : 'human',
+                        seat.difficulty ?? 'medium',
+                      ))}
+                  >
+                    <option value="human">You, on this device</option>
+                    <option value="computer">Computer</option>
+                  </select>
+                </div>
+                {seat.controller === 'computer' ? (
+                  <div className="seat__field">
+                    <label htmlFor={difficultyId}>Difficulty</label>
+                    <select
+                      id={difficultyId}
+                      className="input"
+                      value={seat.difficulty ?? 'medium'}
+                      onChange={(event) =>
+                        setDraft(setController(
+                          draft,
+                          seat.key,
+                          'computer',
+                          event.target.value as ComputerDifficulty,
+                        ))}
+                    >
+                      {COMPUTER_DIFFICULTIES.map((level) => (
+                        <option key={level.id} value={level.id}>
+                          {level.label}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="small">
+                      {COMPUTER_DIFFICULTIES.find((level) => level.id === (seat.difficulty ?? 'medium'))
+                        ?.description}
+                    </p>
+                    {problemsFor(seat.key, 'controller').map((problem) => (
+                      <p key={problem.message} className="field-problem">
+                        {problem.message}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
                 <div className="seat__controls actions">
                   <button
                     type="button"
@@ -362,9 +432,20 @@ export function Lobby({ store, storeError }: { store: LocalSnapshotStore | null;
             <li key={seat.key}>
               <PartyMark partyId={seat.partyId} size={20} />
               {seat.displayName.trim() === '' ? 'Unnamed' : seat.displayName}
+              {marksComputer(seat) ? <span className="small"> · computer</span> : null}
             </li>
           ))}
         </ul>
+        <p className="small">
+          {tally.humans === 1 ? '1 person' : `${tally.humans} people`}
+          {tally.computers === 0
+            ? ' at this table.'
+            : `, ${tally.computers === 1 ? '1 computer' : `${tally.computers} computers`}.`}
+          {' '}
+          {tally.humans === 1
+            ? 'You keep the device the whole match: there is no cover and nothing to pass.'
+            : 'The privacy cover is used between the people at this table.'}
+        </p>
         {problems.length === 0 ? null : (
           <ul className="field-problem" aria-live="polite">
             {problems.map((problem) => (

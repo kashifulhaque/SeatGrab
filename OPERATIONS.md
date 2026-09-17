@@ -94,6 +94,7 @@ Every setting has a default that runs a single-instance development server, so a
 | `SEATGRAB_MAX_BODY_BYTES` | `65536` | Largest accepted request body. |
 | `SEATGRAB_SHUTDOWN_TIMEOUT_SECONDS` | `10` | How long a shutdown waits for in-flight requests. |
 | `SEATGRAB_LOG_LEVEL` | `info` | One of `fatal`, `error`, `warn`, `info`, `debug`, `trace`, `silent`. |
+| `SEATGRAB_COMPUTER_DELAY_MS` | `800` | How long a computer seat waits before it acts. The pause is for the people watching; `0` makes the computers play as fast as the engine allows. |
 
 A setting the server cannot read stops it with exit code 2 and a message naming the
 variable. It does not fall back to a default.
@@ -157,13 +158,26 @@ curl -s http://127.0.0.1:8787/health
 The output is similar to the following:
 
 ```json
-{"status":"ok","database":"ok","uptimeSeconds":1,"schemaVersion":1,
+{"status":"ok","database":"ok","computers":"ok","uptimeSeconds":1,"schemaVersion":1,
  "contentPackId":"core-set","contentVersion":"0.9.0","boardId":"grid-nine"}
 ```
 
 It names no room code, no seat, and no count of who is playing. It is also deliberately
 outside the request budget: a health check that starts failing because the server is busy
 reports the opposite of what it is for.
+
+`computers` reads `degraded` when a computer seat in some match had every move it
+considered refused. The match it happened in is stopped for that seat and nothing retries
+it on a timer, because a retry would produce the same refusals. The rest of the server
+keeps serving, so the status code stays 200 and `status` stays `ok`. Search the log at
+error level for the match ID, the revision and the refusals:
+
+```sh
+journalctl -u seatgrab | grep 'every candidate refused'
+```
+
+That is a defect to report with the match ID, not a condition to wait out: the field
+clears only when the process restarts.
 
 ## Back up and restore
 
@@ -208,6 +222,13 @@ player has to re-enter a room code.
 Resending a command ID that the server already accepted returns the stored response with
 `"duplicate": true` and applies nothing a second time. A client that is unsure whether a
 command landed can safely send it again with the same ID.
+
+Matches with computer seats resume too. After the port is open, the server looks for every
+match that is mid-play and seats a computer, and continues it — a table whose computer was
+due to act when the last process stopped would otherwise sit waiting for a turn that never
+arrives. A computer's command IDs are derived from its seat and the revision rather than
+generated, so a decision the old process had committed is answered from the idempotency
+record instead of being applied twice.
 
 ## Recover a lost seat
 

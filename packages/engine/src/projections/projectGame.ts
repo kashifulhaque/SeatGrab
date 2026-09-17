@@ -164,6 +164,8 @@ export function projectGame(state: GameState, viewer: Viewer, content: GameConte
     for (const card of player.retainedPolicy) {
       policyCounts[card.archetype] += 1;
     }
+    const seat = state.config.players.find((entry) => entry.id === player.id);
+    const controller = seat?.controller ?? 'human';
     const capModifier = state.activeEffects
       .filter((effect) => effect.ownerId === player.id && effect.kind === 'resourceCap')
       .reduce((total, effect) => total + (typeof effect.data.amount === 'number' ? effect.data.amount : 0), 0);
@@ -178,6 +180,10 @@ export function projectGame(state: GameState, viewer: Viewer, content: GameConte
       trickHandCount: player.trickHand.length,
       score: scorePlayer(state, player.id),
       connected: player.connected,
+      controller,
+      ...(controller === 'computer' && seat?.difficulty !== undefined
+        ? { difficulty: seat.difficulty }
+        : {}),
     };
   });
 

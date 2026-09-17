@@ -64,8 +64,16 @@ import {
   SHARED_HANDOFF,
   coveredSeatId,
   handoffReducer,
+  initialHandoff,
   revealedSeatId,
 } from './handoff';
+import {
+  COMPUTER_PACES,
+  readComputerPace,
+  useComputerSeats,
+  writeComputerPace,
+  type ComputerPace,
+} from './useComputerSeats';
 import { describeDecision, mustActSeat } from './table';
 import { describeError } from './useLocalStore';
 import {
@@ -131,6 +139,41 @@ function Cover({
   );
 }
 
+/**
+ * How quickly the computer takes its turn, as a menu beside the seat switcher.
+ *
+ * The pace is a property of this browser rather than of the match: it says how fast the
+ * person watching wants to read what happened, and it is stored under
+ * `seatgrab.computerPace` so the next match starts the way the last one ended.
+ */
+function PaceMenu({ pace, onChoose }: { pace: ComputerPace; onChoose: (pace: ComputerPace) => void }) {
+  const menu = useRef<HTMLDetailsElement>(null);
+  return (
+    <details ref={menu} className="menu">
+      <summary className="button button--quiet">Computer pace</summary>
+      <ul className="menu__list">
+        {COMPUTER_PACES.map((option) => (
+          <li key={option.id}>
+            <button
+              type="button"
+              className="button button--quiet"
+              aria-pressed={pace === option.id}
+              title={option.description}
+              onClick={() => {
+                if (menu.current !== null) menu.current.open = false;
+                onChoose(option.id);
+              }}
+            >
+              {option.label}
+              {pace === option.id ? <span className="small"> · in use</span> : null}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 export function MatchShell({
   matchId,
   store,
@@ -147,7 +190,12 @@ export function MatchShell({
   const [draft, dispatchDraft] = useReducer(actionDraftReducer, NO_DRAFT);
   const [rejection, setRejection] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [, bumpRevision] = useState(0);
+  const [revision, bumpRevision] = useState(0);
+  const [pace, setPace] = useState<ComputerPace>(readComputerPace);
+  const choosePace = useCallback((next: ComputerPace) => {
+    setPace(next);
+    writeComputerPace(next);
+  }, []);
   // The seat switcher's table-view control, so dismissing the cover puts focus back on a
   // control that can raise it again instead of dropping it on the document body. The
   // cover is the one thing on this screen that behaves like a dialog: it takes focus when
@@ -192,6 +240,28 @@ export function MatchShell({
     if (match === null) return;
     return match.subscribe(() => bumpRevision((tick) => tick + 1));
   }, [match]);
+
+  /**
+   * Open the handoff from the match's own view, once the match has loaded.
+   *
+   * A table with one person opens on that person's seat; every other table opens on the
+   * shared projection, which is what `SHARED_HANDOFF` already gave it. `handoffReducer`
+   * is untouched: the solo table reaches its seat through the same `passTo` then `reveal`
+   * a person would click, batched into one render so no cover is ever drawn.
+   */
+  const opened = useRef<string | null>(null);
+  useEffect(() => {
+    if (match === null || opened.current === match.matchId) return;
+    opened.current = match.matchId;
+    const start = initialHandoff(match.viewFor({ kind: 'public' }).view);
+    if (start.kind !== 'revealed') return;
+    dispatch({ type: 'passTo', seatId: start.seatId });
+    dispatch({ type: 'reveal', seatId: start.seatId });
+  }, [match]);
+
+  // The computer seats play themselves, through the same `submit` a person's control
+  // reaches and behind the same `busy` gate, so only one command is ever in flight.
+  const computers = useComputerSeats({ match, revision, pace, busy, setBusy });
 
   /**
    * Send one command for the seat holding the device.
@@ -265,6 +335,9 @@ export function MatchShell({
     const coveredSeat = seats.find((seat) => seat.id === covered);
     const finished = publicResult.view.status === 'finished';
     const mustAct = mustActSeat(publicResult.view);
+    const thinking = computers.thinkingSeatId === null
+      ? null
+      : seats.find((seat) => seat.id === computers.thinkingSeatId) ?? null;
     // The revealed seat's public row: everything the bar prints for "you" comes from it,
     // and the bar prints nothing of the kind when no seat is revealed.
     const me = revealed === null ? null : seats.find((seat) => seat.id === revealed) ?? null;
@@ -309,6 +382,7 @@ export function MatchShell({
               if (revealed !== null) submit(revealed, { type: 'RequestEndTurn' });
             },
           }}
+          thinking={thinking}
           switcher={
             <SeatSwitcher
               seats={seats}
@@ -318,7 +392,28 @@ export function MatchShell({
               sharedButtonRef={sharedButton}
             />
           }
+          {...(seats.some((seat) => seat.controller === 'computer')
+            ? { settings: <PaceMenu pace={pace} onChoose={choosePace} /> }
+            : {})}
         />
+
+        {computers.stuck === null ? null : (
+          <div className="alert alert--error" role="alert">
+            <p>
+              {computers.stuck.some((refusal) => refusal.code === 'NO_PROGRESS')
+                ? 'This match cannot reach an ending: the board has empty areas no seat can '
+                  + 'fill. Export it and report it.'
+                : 'The computer could not find a legal move. Export this match and report it.'}
+            </p>
+            <ul className="small">
+              {computers.stuck.map((refusal, index) => (
+                <li key={`${refusal.command}-${index}`}>
+                  {refusal.command}: {refusal.code} — {refusal.message}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {finished ? (
           <ResultsSurface
@@ -340,7 +435,7 @@ export function MatchShell({
           view={publicResult.view}
           targeting={targeting}
           attention={attention}
-          {...(mustAct === null || finished
+          {...(mustAct === null || finished || mustAct.controller === 'computer'
             ? {}
             : {
               pass: (

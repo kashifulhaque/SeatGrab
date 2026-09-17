@@ -40,6 +40,15 @@ export interface MatchHubOptions {
   rooms: RoomService;
   /** Injected so a failure to project one seat does not silence the rest. */
   onBroadcastError?: (error: unknown, seat: SeatIdentity) => void;
+  /**
+   * Called after a match changes, with the match ID.
+   *
+   * The computer driver subscribes to this: every accepted, non-duplicate command and
+   * every start is a point at which a computer seat may now have something to do. It is
+   * invoked after the broadcast, so the people watching see the human's command land
+   * before a computer answers it.
+   */
+  onChanged?: (matchId: string) => void;
 }
 
 export class MatchHub {
@@ -47,10 +56,22 @@ export class MatchHub {
   readonly #queue = new MatchQueue();
   readonly #connections = new Map<string, Set<MatchConnection>>();
   readonly #onBroadcastError: (error: unknown, seat: SeatIdentity) => void;
+  #onChanged: (matchId: string) => void;
 
   constructor(options: MatchHubOptions) {
     this.#rooms = options.rooms;
     this.#onBroadcastError = options.onBroadcastError ?? (() => undefined);
+    this.#onChanged = options.onChanged ?? (() => undefined);
+  }
+
+  /**
+   * Subscribe to "this match changed", replacing any previous subscriber.
+   *
+   * The driver is built after the hub, because it drives commands through it, so it
+   * cannot be a constructor option in `buildServer`.
+   */
+  onChanged(listener: (matchId: string) => void): void {
+    this.#onChanged = listener;
   }
 
   /** Attach a connection to its match. Returns the function that detaches it. */
@@ -84,6 +105,7 @@ export class MatchHub {
   async start(seat: SeatIdentity): Promise<SeatView> {
     const view = await this.#queue.run(seat.matchId, () => this.#rooms.start(seat));
     this.broadcast(seat.matchId);
+    this.#onChanged(seat.matchId);
     return view;
   }
 
@@ -101,7 +123,10 @@ export class MatchHub {
     const result = await this.#queue.run(seat.matchId, () => this.#rooms.submit(seat, body));
     // A refused command changes no state, so there is nothing to announce. A duplicate
     // replays an answer that was already broadcast when it was first decided.
-    if (result.response.ok && !result.duplicate) this.broadcast(seat.matchId);
+    if (result.response.ok && !result.duplicate) {
+      this.broadcast(seat.matchId);
+      this.#onChanged(seat.matchId);
+    }
     return result;
   }
 

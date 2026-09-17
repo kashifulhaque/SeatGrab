@@ -8,10 +8,13 @@
  */
 import { describe, expect, it } from 'vitest';
 
+import type { PlayerView, PublicPlayerView, SeatController } from '@seatgrab/protocol';
+
 import {
   SHARED_HANDOFF,
   coveredSeatId,
   handoffReducer,
+  initialHandoff,
   revealedSeatId,
   type HandoffAction,
   type HandoffState,
@@ -115,5 +118,48 @@ describe('the pass-and-play privacy cover', () => {
     // 1 shared + 3 covered + 3 revealed states, each with the full alphabet applied.
     expect(seen.size).toBe(1 + SEATS.length * 2);
     expect(transitions).toBe(seen.size * alphabet.length);
+  });
+});
+
+/** Just the part of a view `initialHandoff` reads: who plays each seat. */
+function viewOf(controllers: readonly SeatController[]): PlayerView {
+  const players = controllers.map((controller, index) => ({
+    id: `p${index + 1}`,
+    controller,
+  })) as unknown as readonly PublicPlayerView[];
+  return { players } as unknown as PlayerView;
+}
+
+describe('where the cover starts', () => {
+  it('opens on the shared surface whenever two or more people are at the table', () => {
+    expect(initialHandoff(viewOf(['human', 'human', 'human']))).toEqual(SHARED_HANDOFF);
+    expect(initialHandoff(viewOf(['human', 'human', 'computer']))).toEqual(SHARED_HANDOFF);
+    // A table of computers only cannot be created, but the function is total, and the
+    // safe answer for one is the surface that draws nothing private.
+    expect(initialHandoff(viewOf(['computer', 'computer', 'computer']))).toEqual(SHARED_HANDOFF);
+  });
+
+  it('opens on the one person’s own seat when every other seat is a computer', () => {
+    expect(initialHandoff(viewOf(['human', 'computer', 'computer'])))
+      .toEqual({ kind: 'revealed', seatId: 'p1' });
+    expect(initialHandoff(viewOf(['computer', 'human', 'computer'])))
+      .toEqual({ kind: 'revealed', seatId: 'p2' });
+  });
+
+  it('treats a seat with no controller as a person, so an old save still passes the device', () => {
+    const legacy = {
+      players: [{ id: 'p1' }, { id: 'p2' }, { id: 'p3' }],
+    } as unknown as PlayerView;
+    expect(initialHandoff(legacy)).toEqual(SHARED_HANDOFF);
+  });
+
+  it('reaches the same revealed state the reducer does, so the machine is unchanged', () => {
+    const start = initialHandoff(viewOf(['human', 'computer', 'computer']));
+    expect(start.kind).toBe('revealed');
+    const throughTheReducer = run([
+      { type: 'passTo', seatId: 'p1' },
+      { type: 'reveal', seatId: 'p1' },
+    ]);
+    expect(throughTheReducer).toEqual(start);
   });
 });

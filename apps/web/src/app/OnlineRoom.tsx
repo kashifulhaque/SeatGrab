@@ -33,7 +33,8 @@
  */
 import { useCallback, useEffect, useReducer, useState } from 'react';
 
-import type { GameCommand } from '@seatgrab/protocol';
+import { COMPUTER_DIFFICULTIES } from '@seatgrab/computer';
+import type { ComputerDifficulty, GameCommand } from '@seatgrab/protocol';
 
 import {
   ONLINE_MODE_NOTICE,
@@ -41,6 +42,7 @@ import {
   openRemoteMatch,
   readLobby,
   releaseSeat,
+  seatComputer,
   startMatch,
   type LobbyView,
   type OpenSeatStore,
@@ -119,6 +121,7 @@ function ConnectedRoom({ seat, seats }: { seat: StoredSeat; seats: OpenSeatStore
   const [lobbyFailure, setLobbyFailure] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [releasing, setReleasing] = useState<number | null>(null);
+  const [seating, setSeating] = useState<number | null>(null);
   const [draft, dispatchDraft] = useReducer(actionDraftReducer, NO_DRAFT);
   const [outcome, setOutcome] = useState<SubmitOutcome | null>(null);
   const [busy, setBusy] = useState(false);
@@ -236,6 +239,38 @@ function ConnectedRoom({ seat, seats }: { seat: StoredSeat; seats: OpenSeatStore
     );
   }, [releasing, seat.credential, seat.matchId]);
 
+  /**
+   * The host seats a computer on a free seat.
+   *
+   * The same shape as `release`: the answer is the lobby the server just wrote, which
+   * replaces the polled one rather than waiting for the next read. Seating a computer is
+   * not a change to a match, so nothing is broadcast for it either.
+   */
+  const addComputer = useCallback((seatIndex: number, difficulty: ComputerDifficulty) => {
+    if (seating !== null) return;
+    setSeating(seatIndex);
+    setLobbyFailure(null);
+    void seatComputer({}, {
+      matchId: seat.matchId,
+      seatIndex,
+      difficulty,
+      credential: seat.credential,
+    }).then(
+      (updated) => {
+        setSeating(null);
+        setLobby(updated);
+      },
+      (error: unknown) => {
+        setSeating(null);
+        setLobbyFailure(
+          error instanceof RoomRequestError
+            ? error.message
+            : 'A computer could not be seated there. Read the room again.',
+        );
+      },
+    );
+  }, [seat.credential, seat.matchId, seating]);
+
   const result = match?.viewFor({ kind: 'player', playerId: seat.playerId }) ?? null;
   // `NO_PROJECTION` is the one refusal with nothing to draw at all. Narrowing it away here
   // is why nothing below has to ask whether it has a view.
@@ -337,6 +372,8 @@ function ConnectedRoom({ seat, seats }: { seat: StoredSeat; seats: OpenSeatStore
               onStart={start}
               releasing={releasing}
               onRelease={release}
+              seating={seating}
+              onSeatComputer={addComputer}
             />
           )}
         </>
@@ -386,6 +423,57 @@ function ConnectionPanel({
   );
 }
 
+/**
+ * The host's control for putting a computer on a free seat.
+ *
+ * The difficulty is chosen beside the button rather than after it, because the server
+ * takes the two together and there is nothing to undo between them: seating a computer
+ * fills the seat, and changing its difficulty means freeing it and seating it again.
+ */
+function SeatComputerControl({
+  seatIndex,
+  busy,
+  working,
+  onSeat,
+}: {
+  seatIndex: number;
+  /** True while any seat is being filled, so two requests never race. */
+  busy: boolean;
+  working: boolean;
+  onSeat: (seatIndex: number, difficulty: ComputerDifficulty) => void;
+}) {
+  const [difficulty, setDifficulty] = useState<ComputerDifficulty>('medium');
+  const selectId = `seat-${seatIndex}-difficulty`;
+  return (
+    <div className="seat__controls actions">
+      <label className="visually-hidden" htmlFor={selectId}>
+        Difficulty for seat {seatIndex + 1}
+      </label>
+      <select
+        id={selectId}
+        className="input"
+        value={difficulty}
+        disabled={busy}
+        onChange={(event) => setDifficulty(event.target.value as ComputerDifficulty)}
+      >
+        {COMPUTER_DIFFICULTIES.map((level) => (
+          <option key={level.id} value={level.id}>
+            {level.label} — {level.description}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        className="button button--quiet"
+        disabled={busy}
+        onClick={() => onSeat(seatIndex, difficulty)}
+      >
+        {working ? 'Seating…' : 'Seat a computer'}
+      </button>
+    </div>
+  );
+}
+
 /** The room while it is still filling, and the host's start. */
 function LobbyPanel({
   seat,
@@ -395,6 +483,8 @@ function LobbyPanel({
   onStart,
   releasing,
   onRelease,
+  seating,
+  onSeatComputer,
 }: {
   seat: StoredSeat;
   lobby: LobbyView | null;
@@ -404,6 +494,9 @@ function LobbyPanel({
   /** The seat currently being freed, so its own control reads as busy. */
   releasing: number | null;
   onRelease: (seatIndex: number) => void;
+  /** The seat a computer is being seated on, so its own control reads as busy. */
+  seating: number | null;
+  onSeatComputer: (seatIndex: number, difficulty: ComputerDifficulty) => void;
 }) {
   const start = lobby === null ? null : hostStartState(lobby, seat);
   return (
@@ -450,7 +543,21 @@ function LobbyPanel({
                 <p className="seat__party">
                   {row.party === null ? null : <PartyMark partyId={row.party.partyId} size={24} />}
                   <span>{row.label}</span>
+                  {row.controller === 'computer' ? (
+                    <span className="small">
+                      {' · computer'}
+                      {row.difficulty === undefined ? '' : `, ${row.difficulty}`}
+                    </span>
+                  ) : null}
                 </p>
+                {row.canSeatComputer ? (
+                  <SeatComputerControl
+                    seatIndex={row.seatIndex}
+                    busy={seating !== null}
+                    working={seating === row.seatIndex}
+                    onSeat={onSeatComputer}
+                  />
+                ) : null}
                 {row.release.can ? (
                   <button
                     type="button"
@@ -458,7 +565,11 @@ function LobbyPanel({
                     disabled={releasing !== null}
                     onClick={() => onRelease(row.seatIndex)}
                   >
-                    {releasing === row.seatIndex ? 'Freeing…' : `Free seat ${row.seatIndex + 1}`}
+                    {releasing === row.seatIndex
+                      ? 'Freeing…'
+                      : row.controller === 'computer'
+                        ? `Remove the computer from seat ${row.seatIndex + 1}`
+                        : `Free seat ${row.seatIndex + 1}`}
                   </button>
                 ) : null}
                 {row.release.reason === undefined ? null : (

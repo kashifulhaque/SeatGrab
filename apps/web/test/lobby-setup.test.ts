@@ -18,11 +18,14 @@ import {
   addSeat,
   advisoryImpact,
   assignParty,
+  defaultComputerDraft,
   defaultSetupDraft,
   moveSeat,
   newMatchId,
   removeSeat,
   renameSeat,
+  seatTally,
+  setController,
   toGameConfig,
   toggleAdvisory,
   validateSetup,
@@ -214,4 +217,67 @@ describe('the lobby setup model', () => {
       }
     });
   }
+});
+
+describe('handing a seat to the computer', () => {
+  it('starts every seat as a person, so an unchanged lobby behaves as it always did', () => {
+    const draft = defaultSetupDraft();
+    expect(draft.seats.map((seat) => seat.controller)).toEqual(['human', 'human', 'human']);
+    expect(draft.seats.every((seat) => seat.difficulty === undefined)).toBe(true);
+    expect(seatTally(draft)).toEqual({ humans: 3, computers: 0 });
+    expect(validateSetup(draft)).toEqual([]);
+  });
+
+  it('names a computer seat uniquely and gives it the difficulty asked for', () => {
+    const draft = defaultSetupDraft();
+    const one = setController(draft, draft.seats[1]!.key, 'computer', 'hard');
+    const two = setController(one, one.seats[2]!.key, 'computer', 'easy');
+
+    expect(two.seats.map((seat) => seat.displayName)).toEqual(['Player 1', 'Computer 1', 'Computer 2']);
+    expect(two.seats.map((seat) => seat.difficulty)).toEqual([undefined, 'hard', 'easy']);
+    expect(seatTally(two)).toEqual({ humans: 1, computers: 2 });
+    expect(validateSetup(two)).toEqual([]);
+  });
+
+  it('drops the difficulty when a seat is handed back to a person', () => {
+    const one = defaultSetupDraft();
+    // A key no seat holds changes nothing, and returns the same draft rather than a copy.
+    expect(setController(one, 'seat-does-not-exist', 'computer')).toBe(one);
+
+    const computer = setController(one, one.seats[1]!.key, 'computer', 'hard');
+    const back = setController(computer, computer.seats[1]!.key, 'human');
+    expect(back.seats[1]!.controller).toBe('human');
+    expect('difficulty' in back.seats[1]!).toBe(false);
+  });
+
+  it('refuses a table with nobody at it', () => {
+    let draft = defaultSetupDraft();
+    for (const seat of draft.seats) draft = setController(draft, seat.key, 'computer', 'medium');
+    const problems = validateSetup(draft);
+    expect(problems.map((problem) => problem.message))
+      .toContain('At least one seat has to be played by a person.');
+  });
+
+  it('writes the controller and the difficulty into the config the engine is created with', () => {
+    const draft = defaultSetupDraft();
+    const withComputers = setController(
+      setController(draft, draft.seats[1]!.key, 'computer', 'easy'),
+      draft.seats[2]!.key,
+      'computer',
+      'hard',
+    );
+    const config = toGameConfig(withComputers, 'local-mixed');
+    expect(config.players.map((player) => player.controller)).toEqual(['human', 'computer', 'computer']);
+    expect(config.players.map((player) => player.difficulty)).toEqual([undefined, 'easy', 'hard']);
+    // And the engine accepts it, which is the only thing that makes it real.
+    expect(() => createGame(config, CORE_CONTENT, randomSeed())).not.toThrow();
+  });
+
+  it('opens the "play against the computer" table with one person and two computers', () => {
+    const draft = defaultComputerDraft();
+    expect(seatTally(draft)).toEqual({ humans: 1, computers: 2 });
+    expect(draft.seats[0]!.displayName).toBe('You');
+    expect(draft.seats.map((seat) => seat.difficulty)).toEqual([undefined, 'medium', 'medium']);
+    expect(validateSetup(draft)).toEqual([]);
+  });
 });

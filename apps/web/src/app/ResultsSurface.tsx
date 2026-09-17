@@ -38,6 +38,7 @@ import { PartyMark } from './PartyMark';
 import { ROUTES, navigate } from './routes';
 import { newMatchId } from './setup';
 import { describeWinners, rematchConfig, rematchSeats, summarizeResults } from './results';
+import { marksComputer } from './table';
 import { describeError } from './useLocalStore';
 
 const ARCHETYPES = ['corporate', 'nationalist', 'populist', 'reformer'] as const;
@@ -58,11 +59,14 @@ export function LocalRematch({
   store: LocalSnapshotStore | null;
 }) {
   const seats = useMemo(() => rematchSeats(view), [view]);
+  // A computer seat has nobody to ask, so consent is asked of the people only. The
+  // rematch still carries every seat, computers included, through `rematchConfig`.
+  const asked = useMemo(() => seats.filter((seat) => seat.controller !== 'computer'), [seats]);
   const [consented, setConsented] = useState<readonly string[]>([]);
   const [starting, setStarting] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
-  const all = seats.every((seat) => consented.includes(seat.id));
+  const all = asked.every((seat) => consented.includes(seat.id));
   const ready = all && store !== null && !starting;
 
   const toggle = useCallback((seatId: string) => {
@@ -111,7 +115,7 @@ export function LocalRematch({
 
       <h3 id="consent-heading">Does everyone want another one?</h3>
       <ul className="choices" aria-labelledby="consent-heading">
-        {seats.map((seat) => (
+        {asked.map((seat) => (
           <li key={seat.id}>
             <label className="choice">
               <input
@@ -143,8 +147,8 @@ export function LocalRematch({
         </button>
         <span className="hint" role="status">
           {all
-            ? 'Every seat has agreed.'
-            : `${consented.length} of ${seats.length} seats have agreed. `
+            ? 'Everyone has agreed.'
+            : `${consented.length} of ${asked.length} seats have agreed. `
               + 'A rematch starts only when they all have.'}
           {store === null ? ' Waiting for the save database.' : ''}
         </span>
@@ -223,6 +227,9 @@ export function ResultsSurface({
                   <td>
                     <PartyMark partyId={standing.player.partyId} size={22} />{' '}
                     {standing.player.displayName}
+                    {marksComputer(standing.player)
+                      ? <span className="small"> · computer</span>
+                      : null}
                   </td>
                   <td className="results__score">{standing.score}</td>
                   <td>{standing.boardVoters}</td>
@@ -323,6 +330,9 @@ export function ResultsSurface({
                     <th scope="row">
                       <PartyMark partyId={standing.player.partyId} size={22} />{' '}
                       {standing.player.displayName}
+                    {marksComputer(standing.player)
+                      ? <span className="small"> · computer</span>
+                      : null}
                     </th>
                     {ARCHETYPES.map((archetype) => (
                       <td key={archetype}>{counts[archetype]}</td>

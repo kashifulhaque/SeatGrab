@@ -25,7 +25,13 @@
  * `RoomRequestError` carrying the server's own code and message, and a screen shows that
  * message as written rather than inventing wording of its own.
  */
-import type { ClaimedSeat, LobbySeatView, LobbyView, SeatView } from '@seatgrab/protocol';
+import type {
+  ClaimedSeat,
+  ComputerDifficulty,
+  LobbySeatView,
+  LobbyView,
+  SeatView,
+} from '@seatgrab/protocol';
 
 /**
  * The shapes the room routes answer with, re-exported from the protocol package.
@@ -120,7 +126,7 @@ function readFailure(status: number, body: unknown): RoomRequestError {
 async function request<T>(
   options: RoomClientOptions,
   path: string,
-  init: { method: 'GET' | 'POST' | 'DELETE'; body?: unknown; credential?: string },
+  init: { method: 'GET' | 'POST' | 'PUT' | 'DELETE'; body?: unknown; credential?: string },
 ): Promise<T> {
   const call = options.fetch ?? globalThis.fetch;
   let response: Response;
@@ -265,6 +271,25 @@ export async function releaseSeat(
     options,
     `/api/matches/${encodeURIComponent(input.matchId)}/seats/${input.seatIndex}`,
     { method: 'DELETE', credential: input.credential },
+  );
+}
+
+/**
+ * The host seats a computer on a free seat.
+ *
+ * The body names only the difficulty. The server picks the display name and the party,
+ * because a computer seat mints no credential and so has nobody to correct a clash. The
+ * answer is the lobby, like `releaseSeat`'s, so the host's screen repaints from the same
+ * shape it polls.
+ */
+export async function seatComputer(
+  options: RoomClientOptions,
+  input: { matchId: string; seatIndex: number; difficulty: ComputerDifficulty; credential: string },
+): Promise<LobbyView> {
+  return request<LobbyView>(
+    options,
+    `/api/matches/${encodeURIComponent(input.matchId)}/seats/${input.seatIndex}/computer`,
+    { method: 'PUT', credential: input.credential, body: { difficulty: input.difficulty } },
   );
 }
 

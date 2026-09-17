@@ -39,6 +39,7 @@ import { PartyMark } from './PartyMark';
 import { DECK_SIZES, INSTALLED_CAMPAIGN } from './edition';
 import { MAX_SEATS, MIN_SEATS } from './setup';
 import { ROUTES, navigate } from './routes';
+import { marksComputer } from './table';
 import { describeError } from './useLocalStore';
 
 const ONLINE_UNAVAILABLE =
@@ -255,6 +256,20 @@ export function Home({
               <span className="cta__sub">Pass and play on this device</span>
             </span>
           </button>
+          <button
+            type="button"
+            className="cta cta--primary"
+            disabled={store === null}
+            onClick={() => navigate(ROUTES.lobbyComputer)}
+          >
+            <Glyph name="play" size={30} />
+            <span className="cta__text">
+              <span className="cta__label">Play against the computer</span>
+              <span className="cta__sub">
+                You take one seat. The computer takes the rest. No cover, no passing the device.
+              </span>
+            </span>
+          </button>
         </div>
 
         <nav className="title-menu" aria-label="More">
@@ -310,6 +325,9 @@ export function Home({
                         <li key={player.id}>
                           <PartyMark partyId={player.partyId} size={20} />
                           {player.displayName}
+                          {marksComputer(player)
+                            ? <span className="small"> · computer</span>
+                            : null}
                         </li>
                       ))}
                     </ul>

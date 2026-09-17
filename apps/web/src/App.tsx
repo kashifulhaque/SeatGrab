@@ -41,6 +41,11 @@ export function App() {
   if (route === '/transport' && TransportCheck) return <TransportCheck />;
   if (route === '/rules') return <RulesInfo />;
   if (route === '/new') return <Lobby store={store} storeError={error} />;
+  // The same lobby, opened on a table the person shares with the computer. Keyed so
+  // moving between the two addresses re-seeds the draft rather than keeping the old one.
+  if (route === '/new/computer') {
+    return <Lobby key="computer" store={store} storeError={error} againstComputer />;
+  }
 
   // The whole online family resolves to `null` in the pass-and-play build, so an
   // `#/online/...` address there falls through to the home screen, which says why.

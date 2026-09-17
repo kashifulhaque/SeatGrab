@@ -249,11 +249,40 @@ function nameList(names: readonly string[]): string {
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]!}`;
 }
 
+/**
+ * A seat's name as every list and banner prints it.
+ *
+ * A computer seat is marked in words rather than only by an icon, because who is playing
+ * a seat changes how a person reads everything else on the screen. The mark is public:
+ * `PublicPlayerView.controller` is projected for every viewer.
+ *
+ * A name that already says it — the default `Computer 2`, or anything a person typed with
+ * the word in it — is left alone, because "Computer 2 (computer)" tells a reader nothing
+ * the name did not.
+ */
+export function seatLabel(player: { displayName: string; controller?: string }): string {
+  return marksComputer(player) ? `${player.displayName} (computer)` : player.displayName;
+}
+
+/**
+ * Whether a seat needs a visible "computer" mark beside its name.
+ *
+ * False for a person, and false for a computer whose name already says so — the default
+ * `Computer 2`, or anything a person typed with the word in it. Every list that draws the
+ * mark as its own element asks this, so one rule decides it everywhere.
+ */
+export function marksComputer(player: { displayName: string; controller?: string }): boolean {
+  return player.controller === 'computer' && !/computer/iu.test(player.displayName);
+}
+
 export function describeDecision(view: PlayerView): DecisionBanner {
   const decision: PendingDecisionView | undefined = view.pendingDecision;
+  const active = view.activePlayerId === undefined
+    ? undefined
+    : view.players.find((player) => player.id === view.activePlayerId);
   const activeName = view.activePlayerId === undefined
     ? null
-    : view.players.find((player) => player.id === view.activePlayerId)?.displayName ?? view.activePlayerId;
+    : active === undefined ? view.activePlayerId : seatLabel(active);
 
   if (decision === undefined) {
     return {
@@ -271,7 +300,7 @@ export function describeDecision(view: PlayerView): DecisionBanner {
     const player = view.players.find((candidate) => candidate.id === playerId);
     return player === undefined ? [] : [player];
   });
-  const names = waitingOn.map((player) => player.displayName);
+  const names = waitingOn.map(seatLabel);
   const awayFromActiveSeat = view.activePlayerId !== undefined
     && !decision.responsiblePlayerIds.includes(view.activePlayerId);
   return {
@@ -297,7 +326,7 @@ export function describeDecisionFor(view: PlayerView, seatId: string): DecisionB
   if (banner.waitingOn.some((player) => player.id === seatId)) {
     const others = banner.waitingOn
       .filter((player) => player.id !== seatId)
-      .map((player) => player.displayName);
+      .map(seatLabel);
     return {
       ...banner,
       news: others.length === 0 ? 'Waiting on you' : `Waiting on you, ${nameList(others)}`,

@@ -36,6 +36,12 @@ export function SeatSwitcher({
 }) {
   const menu = useRef<HTMLDetailsElement>(null);
   const revealed = revealedSeatId(handoff);
+  // A computer seat never holds the device, so it is not somewhere the device can be
+  // passed. The reducer stays generic; the filtering is the shell's, and it is here.
+  const passable = seats.filter((seat) => seat.controller !== 'computer');
+  // A table with one person has nobody to pass to, so the passing controls are not drawn
+  // at all rather than drawn with one entry that does nothing useful.
+  const soloTable = passable.length <= 1;
   const choose = (action: HandoffAction) => () => {
     if (menu.current !== null) menu.current.open = false;
     dispatch(action);
@@ -43,12 +49,12 @@ export function SeatSwitcher({
 
   return (
     <div className="switcher">
-      {revealed === null ? null : (
+      {revealed === null || soloTable ? null : (
         <button type="button" className="button button--primary" onClick={choose({ type: 'conceal' })}>
           Hide my cards
         </button>
       )}
-      {mustAct === null || mustAct.id === revealed ? null : (
+      {mustAct === null || mustAct.id === revealed || mustAct.controller === 'computer' ? null : (
         <button
           type="button"
           className={`button ${revealed === null ? 'button--primary' : ''}`}
@@ -58,6 +64,7 @@ export function SeatSwitcher({
           Pass to {mustAct.displayName}
         </button>
       )}
+      {soloTable ? null : (
       <details ref={menu} className="menu">
         <summary className="button button--quiet">Pass the device</summary>
         <ul className="menu__list">
@@ -72,7 +79,7 @@ export function SeatSwitcher({
               Table view
             </button>
           </li>
-          {seats.map((seat) => (
+          {passable.map((seat) => (
             <li key={seat.id}>
               <button
                 type="button"
@@ -88,6 +95,7 @@ export function SeatSwitcher({
           ))}
         </ul>
       </details>
+      )}
     </div>
   );
 }

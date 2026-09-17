@@ -23,7 +23,7 @@ import {
   ROOM_CODE_LENGTH,
 } from '../src/credentials';
 import { openDatabase, type Database } from '../src/persistence/database';
-import { LATEST_SCHEMA_VERSION, runMigrations } from '../src/persistence/migrations';
+import { LATEST_SCHEMA_VERSION, MIGRATIONS, runMigrations } from '../src/persistence/migrations';
 
 let directory: string;
 let database: Database;
@@ -51,7 +51,8 @@ describe('migrations', () => {
 
   it('apply once and then do nothing', () => {
     const first = runMigrations(database);
-    expect(first.map((migration) => migration.version)).toEqual([LATEST_SCHEMA_VERSION]);
+    expect(first.map((migration) => migration.version))
+      .toEqual(MIGRATIONS.map((migration) => migration.version));
     const second = runMigrations(database);
     expect(second).toEqual([]);
     const applied = database.prepare('SELECT COUNT(*) AS total FROM schema_migrations').get() as {

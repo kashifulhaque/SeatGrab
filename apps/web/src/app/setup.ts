@@ -13,6 +13,7 @@
  */
 import type { ContentAdvisory } from '@seatgrab/content';
 import type { GameConfig, GameContent } from '@seatgrab/engine';
+import type { ComputerDifficulty, SeatController } from '@seatgrab/protocol';
 
 import { PARTY_IDENTITIES } from '../assets/parties';
 
@@ -66,6 +67,10 @@ export interface SeatDraft {
   key: string;
   displayName: string;
   partyId: string;
+  /** Who plays this seat. Fixed at start, like the party. */
+  controller: SeatController;
+  /** Present exactly when `controller` is `computer`. */
+  difficulty?: ComputerDifficulty;
 }
 
 export interface SetupDraft {
@@ -78,7 +83,7 @@ export interface SetupDraft {
 export interface SetupProblem {
   /** The seat the problem belongs to, or `null` for a table-wide problem. */
   seatKey: string | null;
-  field: 'seats' | 'displayName' | 'partyId';
+  field: 'seats' | 'displayName' | 'partyId' | 'controller';
   message: string;
 }
 
@@ -86,7 +91,17 @@ let nextSeatKey = 0;
 
 function makeSeat(index: number, partyId: string): SeatDraft {
   nextSeatKey += 1;
-  return { key: `seat-${nextSeatKey}`, displayName: `Player ${index + 1}`, partyId };
+  return {
+    key: `seat-${nextSeatKey}`,
+    displayName: `Player ${index + 1}`,
+    partyId,
+    controller: 'human',
+  };
+}
+
+/** The default name for the `ordinal`-th computer at a table: `Computer 1`, `Computer 2`. */
+function computerName(ordinal: number): string {
+  return `Computer ${ordinal}`;
 }
 
 /** The first party identity no seat in `seats` holds, or `null` when all are taken. */
@@ -104,6 +119,71 @@ export function defaultSetupDraft(): SetupDraft {
     seats.push(makeSeat(index, partyId));
   }
   return { seats, advisories: [] };
+}
+
+/**
+ * Hand a seat to a person or to the computer.
+ *
+ * A seat turned over to the computer takes the default name `Computer N`, where `N` makes
+ * the name unique at this table, unless the person editing the lobby has already typed a
+ * name of their own that no other seat uses. A seat handed back to a person keeps whatever
+ * name it has and drops its difficulty, because the two fields travel together.
+ */
+export function setController(
+  draft: SetupDraft,
+  key: string,
+  controller: SeatController,
+  difficulty: ComputerDifficulty = 'medium',
+): SetupDraft {
+  const target = draft.seats.find((seat) => seat.key === key);
+  if (target === undefined) return draft;
+  if (controller === 'human') {
+    return {
+      ...draft,
+      seats: draft.seats.map((seat) => {
+        if (seat.key !== key) return seat;
+        const { difficulty: _dropped, ...rest } = seat;
+        return { ...rest, controller: 'human' as const };
+      }),
+    };
+  }
+
+  const others = draft.seats.filter((seat) => seat.key !== key);
+  const taken = new Set(others.map((seat) => seat.displayName.trim().toLocaleLowerCase()));
+  let displayName = target.displayName;
+  if (target.controller === 'human') {
+    let ordinal = 1;
+    while (taken.has(computerName(ordinal).toLocaleLowerCase())) ordinal += 1;
+    displayName = computerName(ordinal);
+  }
+  return {
+    ...draft,
+    seats: draft.seats.map((seat) =>
+      seat.key === key ? { ...seat, controller: 'computer' as const, difficulty, displayName } : seat,
+    ),
+  };
+}
+
+/** How many seats a person plays, and how many the computer does. */
+export function seatTally(draft: SetupDraft): { humans: number; computers: number } {
+  const computers = draft.seats.filter((seat) => seat.controller === 'computer').length;
+  return { humans: draft.seats.length - computers, computers };
+}
+
+/**
+ * The table the home screen's **Play against the computer** action opens.
+ *
+ * One person and two computers at medium, which is the smallest table this edition seats.
+ * The person can add seats, change difficulties or hand a seat back before starting.
+ */
+export function defaultComputerDraft(): SetupDraft {
+  const draft = defaultSetupDraft();
+  const seats = draft.seats.map((seat, index) =>
+    index === 0
+      ? { ...seat, displayName: 'You' }
+      : { ...seat, controller: 'computer' as const, difficulty: 'medium' as const, displayName: computerName(index) },
+  );
+  return { ...draft, seats };
 }
 
 export function addSeat(draft: SetupDraft): SetupDraft {
@@ -185,6 +265,23 @@ export function validateSetup(draft: SetupDraft): readonly SetupProblem[] {
     });
   }
 
+  if (draft.seats.length > 0 && !draft.seats.some((seat) => seat.controller === 'human')) {
+    problems.push({
+      seatKey: null,
+      field: 'seats',
+      message: 'At least one seat has to be played by a person.',
+    });
+  }
+  for (const seat of draft.seats) {
+    if (seat.controller === 'computer' && seat.difficulty === undefined) {
+      problems.push({
+        seatKey: seat.key,
+        field: 'controller',
+        message: 'Choose a difficulty for this computer seat.',
+      });
+    }
+  }
+
   const seenNames = new Map<string, string>();
   const seenParties = new Map<string, string>();
   for (const seat of draft.seats) {
@@ -246,6 +343,10 @@ export function toGameConfig(draft: SetupDraft, matchId: string): GameConfig {
       id: `p${index + 1}`,
       displayName: seat.displayName.trim(),
       partyId: seat.partyId,
+      controller: seat.controller,
+      ...(seat.controller === 'computer' && seat.difficulty !== undefined
+        ? { difficulty: seat.difficulty }
+        : {}),
     })),
     contentAdvisories: [...draft.advisories],
     tiePolicy: 'jointWinners',

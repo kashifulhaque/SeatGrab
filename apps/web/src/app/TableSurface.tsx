@@ -54,6 +54,7 @@ import {
   summarizeZones,
   type PlayerSummary,
   type ZoneSummary,
+  marksComputer,
 } from './table';
 import { useViewport } from './useViewport';
 
@@ -91,6 +92,9 @@ function SeatRow({ summary }: { summary: PlayerSummary }) {
           <span className="seat-row__who">
             <PartyMark partyId={player.partyId} size={30} />
             <span className="seat-row__name">{player.displayName}</span>
+            {marksComputer(player) ? (
+              <span className="seat-row__badge">computer</span>
+            ) : null}
             {summary.deciding ? (
               <span className="seat-row__badge seat-row__badge--deciding">To act</span>
             ) : summary.active ? (

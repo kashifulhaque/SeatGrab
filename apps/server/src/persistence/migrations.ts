@@ -90,6 +90,18 @@ export const MIGRATIONS: readonly Migration[] = [
       `CREATE INDEX events_revision ON events(match_id, revision)`,
     ],
   },
+  {
+    version: 2,
+    name: 'seat-controller',
+    statements: [
+      // Who plays a seat. A computer seat is claimed and holds no credential, so the
+      // "claimed" test widens from "has a credential" to "has a credential or is a
+      // computer". The default keeps every seat written before this migration human.
+      `ALTER TABLE seats ADD COLUMN controller TEXT NOT NULL DEFAULT 'human'
+         CHECK (controller IN ('human', 'computer'))`,
+      `ALTER TABLE seats ADD COLUMN difficulty TEXT`,
+    ],
+  },
 ];
 
 /** The highest migration version this build ships. */

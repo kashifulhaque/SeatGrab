@@ -17,6 +17,7 @@ import {
   SEATABLE_PARTY_IDS,
   isSeatablePartyId,
   type ClaimedSeat,
+  type ComputerDifficulty,
   type CommandResponse,
   type GameCommand,
   type LobbySeatView,
@@ -264,6 +265,10 @@ export class RoomService {
         claimed: seat.claimed,
         displayName: seat.displayName,
         partyId: seat.partyId,
+        controller: seat.controller,
+        ...(seat.controller === 'computer' && seat.difficulty !== null
+          ? { difficulty: seat.difficulty }
+          : {}),
       })),
       ready: seats.every((seat) => seat.claimed),
       contentPackId: match.contentPackId,
@@ -295,6 +300,8 @@ export class RoomService {
     const partyId = assertParty(input.partyId);
     const seats = this.#repository.listSeats(match.matchId);
 
+    // A computer seat reads as claimed, so this scan already refuses a name or a party
+    // that a computer at this table holds.
     for (const seat of seats) {
       if (!seat.claimed) continue;
       if (seat.partyId === partyId) {
@@ -325,6 +332,97 @@ export class RoomService {
       );
     }
     return this.#claim(match, wanted.seatIndex, displayName, partyId);
+  }
+
+  /**
+   * Hold a free seat with a computer.
+   *
+   * Host only, lobby only, and never the host's own seat: the table needs at least one
+   * person in it, and the host is the seat that can still free a computer afterwards.
+   * The server picks the name and the party rather than taking them from the request,
+   * because a computer seat mints no credential and so has nobody to correct a clash.
+   */
+  seatComputer(host: SeatIdentity, seatIndex: number, difficulty: ComputerDifficulty): LobbyView {
+    const match = this.#repository.findMatch(host.matchId);
+    if (match === null) {
+      throw new RoomError(404, 'NO_SUCH_MATCH', 'That match no longer exists.');
+    }
+    if (!host.isHost) {
+      throw new RoomError(403, 'NOT_HOST', 'Only the seat that opened this room can seat a computer at it.');
+    }
+    if (match.status !== 'lobby') {
+      throw new RoomError(409, 'MATCH_STARTED', 'This match has started, so its seats are locked.');
+    }
+    if (seatIndex === host.seatIndex) {
+      throw new RoomError(
+        409,
+        'CANNOT_SEAT_HOST',
+        'The host seat is played by a person. Seat the computer somewhere else.',
+      );
+    }
+    const seats = this.#repository.listSeats(match.matchId);
+    const wanted = seats.find((seat) => seat.seatIndex === seatIndex);
+    if (wanted === undefined) {
+      throw new RoomError(404, 'NO_SUCH_SEAT', `This table has no seat ${seatIndex}.`);
+    }
+    if (wanted.claimed) {
+      throw new RoomError(409, 'SEAT_TAKEN', `Seat ${seatIndex} is already held.`);
+    }
+
+    const taken = seats
+      .filter((seat) => seat.claimed && seat.displayName !== null)
+      .map((seat) => seat.displayName!.toLocaleLowerCase());
+    let ordinal = 1;
+    let displayName = `Computer ${ordinal}`;
+    while (taken.includes(displayName.toLocaleLowerCase())) {
+      ordinal += 1;
+      displayName = `Computer ${ordinal}`;
+    }
+    const heldParties = new Set(seats.filter((seat) => seat.claimed).map((seat) => seat.partyId));
+    const partyId = SEATABLE_PARTY_IDS.find((candidate) => !heldParties.has(candidate));
+    if (partyId === undefined) {
+      throw new RoomError(409, 'NO_FREE_PARTY', 'Every party identity at this table is taken.');
+    }
+
+    const seated = this.#repository.seatComputer(match.matchId, seatIndex, {
+      displayName,
+      partyId,
+      difficulty,
+      claimedAt: this.#now().toISOString(),
+    });
+    if (!seated) {
+      throw new RoomError(409, 'SEAT_TAKEN', `Seat ${seatIndex} was taken while this request was in flight.`);
+    }
+    return this.lobby(match.roomCode);
+  }
+
+  /**
+   * The identities the computer driver acts under, one per computer seat.
+   *
+   * These are built from seat rows and never from a credential, because a computer seat
+   * holds none. `authenticate` therefore still refuses every computer seat, so nothing
+   * arriving over the wire can act as one.
+   */
+  computerSeats(matchId: string): readonly (SeatIdentity & { difficulty: ComputerDifficulty })[] {
+    return this.#repository
+      .listSeats(matchId)
+      .flatMap((seat) => {
+        if (seat.controller !== 'computer' || seat.difficulty === null) return [];
+        return [{
+          matchId: seat.matchId,
+          seatIndex: seat.seatIndex,
+          playerId: seat.playerId,
+          isHost: false,
+          displayName: seat.displayName ?? seat.playerId,
+          partyId: seat.partyId ?? seat.playerId,
+          difficulty: seat.difficulty,
+        }];
+      });
+  }
+
+  /** Every match that is mid-play and seats at least one computer. */
+  matchesWithComputers(): readonly MatchRow[] {
+    return this.#repository.listMatchesWithComputers(['setup', 'active']);
   }
 
   /**
@@ -460,6 +558,10 @@ export class RoomService {
         id: row.playerId,
         displayName: row.displayName ?? row.playerId,
         partyId: row.partyId ?? row.playerId,
+        controller: row.controller,
+        ...(row.controller === 'computer' && row.difficulty !== null
+          ? { difficulty: row.difficulty }
+          : {}),
       })),
       contentAdvisories: match.contentAdvisories.filter(
         (value): value is Advisory => (ADVISORIES as readonly string[]).includes(value),

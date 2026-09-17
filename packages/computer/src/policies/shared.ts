@@ -586,6 +586,11 @@ export function arbitrageCandidates(view: PlayerView, seatId: string, actions: A
   for (const entry of oneShort.sort((a, b) => b.voters - a.voters)) {
     const need = RESOURCE_ORDER.find((resource) => entry.short.named[resource] > 0) ?? resourceOrderFor(view, seatId)[0];
     if (need === undefined) continue;
+    // Arbitrage takes two of one type out of the public reserve. A reserve that has run
+    // dry makes the command a certain refusal, and a seat that spends its whole decision
+    // on one ends its turn having done nothing — which, on a board where nobody can place
+    // any more, is a turn the table then repeats forever.
+    if (view.publicReserve[need] < 2) continue;
     const give = spare.find((resource) => resource !== need && held[resource] >= 1);
     if (give === undefined) continue;
     out.push({
@@ -607,8 +612,17 @@ export function shakedownCandidates(
   actions: ActionCandidates,
   from: 'richest' | 'leader',
 ): readonly Scored[] {
-  if (!actions.shakedown || !view.legalActions.includes('UseDonations')) return [];
-  const need = neededResource(view, seatId, actions);
+  // `actions.shakedown` is the whole test: it already asks whether the power is unlocked
+  // and has a use left this turn. `view.legalActions` does not name the power commands at
+  // all — it lists the ordinary actions of a turn — so asking it here left Shakedown
+  // unreachable at every difficulty, which is not what the difficulty table says.
+  if (!actions.shakedown) return [];
+  // Only when one resource is the whole gap, as Arbitrage is. A seat four short of every
+  // open card gains nothing it can spend by taking one, and a rule that took one anyway
+  // would take one every turn for the rest of the match without ever buying anything.
+  const oneShort = actions.unaffordable.filter((entry) => entry.short.total === 1);
+  if (oneShort.length === 0) return [];
+  const need = neededResource(view, seatId, { ...actions, unaffordable: oneShort });
   if (need === null) return [];
   const rivals = view.players.filter((player) => player.id !== seatId && player.resources[need] >= 1);
   if (rivals.length === 0) return [];

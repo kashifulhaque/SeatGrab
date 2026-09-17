@@ -47,7 +47,7 @@ export async function playComputers(
   const maxSteps = options.maxSteps ?? 6000;
   const table = tableOf(match);
   const steps: ComputerPlayStep[] = [];
-  const refusals: ComputerPlayResult['refusals'] = [];
+  const refusals: (ComputerRefusal & { seatId: string; revision: number })[] = [];
   const seatIds = Object.keys(seats);
   const first = seatIds[0];
   if (first === undefined) throw new Error('playComputers needs at least one seat');

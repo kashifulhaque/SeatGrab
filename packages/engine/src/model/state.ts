@@ -1,5 +1,11 @@
 import type { BoardZoneId, Archetype, ResourceType, ResourceVector } from '@seatgrab/content';
-import type { ChoicePromptOp, ChoiceSelection, VisibleEvent } from '@seatgrab/protocol';
+import type {
+  ChoicePromptOp,
+  ChoiceSelection,
+  ComputerDifficulty,
+  SeatController,
+  VisibleEvent,
+} from '@seatgrab/protocol';
 
 export const GAME_SCHEMA_VERSION = 1;
 export const BASE_RESOURCE_CAP = 12;
@@ -17,6 +23,10 @@ export interface GameConfig {
     id: PlayerId;
     displayName: string;
     partyId: string;
+    /** Absent means `human`, so a config written before the field existed still loads. */
+    controller?: SeatController;
+    /** Present if and only if `controller` is `computer`. */
+    difficulty?: ComputerDifficulty;
   }[];
   contentAdvisories: readonly ('sensitive' | 'trigger')[];
   tiePolicy: 'jointWinners';

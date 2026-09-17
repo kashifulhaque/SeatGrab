@@ -133,9 +133,9 @@ function lobbyView(overrides: Partial<LobbyView> = {}): LobbyView {
     seatCount: 3,
     contentAdvisories: [],
     seats: [
-      { seatIndex: 0, playerId: 'p1', isHost: true, claimed: true, displayName: 'Asha', partyId: 'kite' },
-      { seatIndex: 1, playerId: 'p2', isHost: false, claimed: true, displayName: 'Bikram', partyId: 'sprout' },
-      { seatIndex: 2, playerId: 'p3', isHost: false, claimed: false, displayName: null, partyId: null },
+      { seatIndex: 0, playerId: 'p1', isHost: true, claimed: true, displayName: 'Asha', partyId: 'kite', controller: 'human' },
+      { seatIndex: 1, playerId: 'p2', isHost: false, claimed: true, displayName: 'Bikram', partyId: 'sprout', controller: 'human' },
+      { seatIndex: 2, playerId: 'p3', isHost: false, claimed: false, displayName: null, partyId: null, controller: 'human' },
     ],
     ready: false,
     contentPackId: 'core-set',

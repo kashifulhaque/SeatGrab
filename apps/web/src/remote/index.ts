@@ -28,6 +28,7 @@ export {
   foldRoomCode,
   readLobby,
   releaseSeat,
+  seatComputer,
   startMatch,
   type ClaimedSeat,
   type LobbySeatView,

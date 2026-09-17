@@ -24,7 +24,7 @@
  *    nothing new — and offers the way back to the room code instead.
  */
 import type { ContentAdvisory } from '@seatgrab/content';
-import type { CommandResponse } from '@seatgrab/protocol';
+import type { CommandResponse, ComputerDifficulty, SeatController } from '@seatgrab/protocol';
 
 import { PARTY_IDENTITIES, type PartyIdentity } from '../assets/parties';
 import type { ConnectionStatus, LobbySeatView, LobbyView, StoredSeat } from '../remote';
@@ -194,6 +194,17 @@ export interface LobbySeatRow {
    * host's own seat are ordinary rows; neither needs an explanation.
    */
   release: { can: boolean; reason?: string };
+  /** Who plays the seat. A computer seat is claimed and holds no credential. */
+  controller: SeatController;
+  /** Present exactly when `controller` is `computer`. */
+  difficulty?: ComputerDifficulty;
+  /**
+   * Whether this browser may seat a computer here.
+   *
+   * It mirrors `RoomService.seatComputer`: the host only, before the match starts, on a
+   * free seat, and never the host's own.
+   */
+  canSeatComputer: boolean;
 }
 
 export function lobbySeatRows(
@@ -215,12 +226,23 @@ export function lobbySeatRows(
       playerId: seat.playerId,
       isHost: seat.isHost,
       claimed: seat.claimed,
-      label: seat.claimed ? seat.displayName ?? seat.playerId : 'Waiting for a player',
+      label: seat.claimed
+        ? seat.displayName ?? seat.playerId
+        : 'Waiting for a player',
       party: seat.partyId === null
         ? null
         : PARTY_IDENTITIES.find((party) => party.partyId === seat.partyId) ?? null,
       isMine: mine !== null && seat.seatIndex === mine.seatIndex,
       release: releaseState(lobby, seat, mine),
+      controller: seat.controller,
+      ...(seat.controller === 'computer' && seat.difficulty !== undefined
+        ? { difficulty: seat.difficulty }
+        : {}),
+      canSeatComputer: !seat.claimed
+        && lobby.status === 'lobby'
+        && mine !== null
+        && mine.isHost === true
+        && seat.seatIndex !== mine.seatIndex,
     }));
 }
 

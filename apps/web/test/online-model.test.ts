@@ -67,6 +67,7 @@ function lobbyOf(claims: readonly (null | { name: string; partyId: string })[]):
       claimed: claim !== null,
       displayName: claim?.name ?? null,
       partyId: claim?.partyId ?? null,
+      controller: 'human' as const,
     })),
     ready: claims.every((claim) => claim !== null),
     contentPackId: 'core-set',

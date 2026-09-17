@@ -24,6 +24,11 @@ import {
   type GameContent,
   type GameState,
 } from '@seatgrab/engine';
+import {
+  isComputerDifficulty,
+  type ComputerDifficulty,
+  type SeatController,
+} from '@seatgrab/protocol';
 
 /** Identifies the file as a SeatGrab local save rather than any other JSON document. */
 export const LOCAL_SNAPSHOT_FORMAT = 'seatgrab.local-snapshot';
@@ -38,6 +43,20 @@ export const LOCAL_SNAPSHOT_FORMAT_VERSION = 1;
 export const LOCAL_MODE_NOTICE =
   'Local play is pass-and-play on one trusted device. The save holds every seat’s private '
   + 'cards and answers, so anyone with this device or an exported file can read them.';
+
+/**
+ * One seat as the envelope records it.
+ *
+ * `controller` is additive: a save written before computer seats existed carries no such
+ * field, and every reader here defaults it to `human`.
+ */
+export type SavedSeat = {
+  id: string;
+  displayName: string;
+  partyId: string;
+  controller: SeatController;
+  difficulty?: ComputerDifficulty;
+};
 
 export interface LocalSnapshotEnvelope {
   format: string;
@@ -55,7 +74,7 @@ export interface LocalSnapshotEnvelope {
   status: 'setup' | 'active' | 'finished';
   /** Metadata for the saved-match list. No rule reads it. */
   savedAt: string;
-  players: readonly { id: string; displayName: string; partyId: string }[];
+  players: readonly SavedSeat[];
   state: GameState;
 }
 
@@ -74,7 +93,7 @@ export interface LocalMatchSummary extends ReadabilityVersions {
   matchId: string;
   revision: number;
   status: 'setup' | 'active' | 'finished';
-  players: readonly { id: string; displayName: string; partyId: string }[];
+  players: readonly SavedSeat[];
   savedAt: string;
   /**
    * `null` when this build can read the save; otherwise why it cannot.
@@ -131,9 +150,7 @@ function requireStatus(source: Record<string, unknown>): 'setup' | 'active' | 'f
   return value;
 }
 
-function requirePlayers(
-  source: Record<string, unknown>,
-): readonly { id: string; displayName: string; partyId: string }[] {
+function requirePlayers(source: Record<string, unknown>): readonly SavedSeat[] {
   const value = source['players'];
   if (!Array.isArray(value) || value.length < 3 || value.length > 5) {
     throw new LocalSnapshotError('NOT_A_SNAPSHOT', 'The save does not list 3 to 5 seats.');
@@ -142,10 +159,14 @@ function requirePlayers(
     if (!isRecord(entry)) {
       throw new LocalSnapshotError('NOT_A_SNAPSHOT', 'A seat in the save is not a record.');
     }
+    const controller = entry['controller'] === 'computer' ? 'computer' : 'human';
+    const difficulty = entry['difficulty'];
     return {
       id: requireString(entry, 'id'),
       displayName: requireString(entry, 'displayName'),
       partyId: requireString(entry, 'partyId'),
+      controller,
+      ...(controller === 'computer' && isComputerDifficulty(difficulty) ? { difficulty } : {}),
     };
   });
 }
@@ -254,11 +275,19 @@ export function buildEnvelope(state: GameState, savedAt: Date): LocalSnapshotEnv
     revision: state.revision,
     status: state.status,
     savedAt: savedAt.toISOString(),
-    players: state.players.map((player) => ({
-      id: player.id,
-      displayName: player.displayName,
-      partyId: player.partyId,
-    })),
+    players: state.players.map((player) => {
+      const seat = state.config.players.find((entry) => entry.id === player.id);
+      const controller = seat?.controller ?? 'human';
+      return {
+        id: player.id,
+        displayName: player.displayName,
+        partyId: player.partyId,
+        controller,
+        ...(controller === 'computer' && seat?.difficulty !== undefined
+          ? { difficulty: seat.difficulty }
+          : {}),
+      };
+    }),
     state: JSON.parse(serializeGame(state)) as GameState,
   };
 }

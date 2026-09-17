@@ -279,6 +279,10 @@ export function rematchConfig(view: PlayerView, matchId: string): GameConfig {
       id: `p${index + 1}`,
       displayName: player.displayName,
       partyId: player.partyId,
+      controller: player.controller,
+      ...(player.controller === 'computer' && player.difficulty !== undefined
+        ? { difficulty: player.difficulty }
+        : {}),
     })),
     contentAdvisories: [...view.setup.contentAdvisories],
     tiePolicy: view.setup.tiePolicy,

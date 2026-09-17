@@ -82,6 +82,13 @@ export interface ServerConfig {
    * enforce it.
    */
   trustProxy: boolean;
+  /**
+   * Milliseconds a computer seat waits before it acts.
+   *
+   * The pause is for the people watching: a computer that answered instantly would make
+   * a turn arrive as one jump. Tests set it to 0 and await the driver instead.
+   */
+  computerDelayMs: number;
 }
 
 export const DEFAULT_PORT = 8787;
@@ -199,5 +206,6 @@ export function readServerConfig(env: NodeJS.ProcessEnv = process.env): ServerCo
     httpBurstRequests: readInteger(env, 'SEATGRAB_HTTP_BURST_REQUESTS', 60, 1, 100000),
     httpRequestsPerSecond: readInteger(env, 'SEATGRAB_HTTP_REQUESTS_PER_SECOND', 5, 1, 10000),
     trustProxy: readFlag(env, 'SEATGRAB_TRUST_PROXY'),
+    computerDelayMs: readInteger(env, 'SEATGRAB_COMPUTER_DELAY_MS', 800, 0, 60000),
   };
 }

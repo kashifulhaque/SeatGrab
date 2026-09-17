@@ -51,8 +51,8 @@ function record(matchId: string, savedAt: string, revision = 1): LocalMatchRecor
       revision,
       status: 'active',
       players: [
-        { id: 'p1', displayName: 'Asha', partyId: 'purple' },
-        { id: 'p2', displayName: 'Bikram', partyId: 'green' },
+        { id: 'p1', displayName: 'Asha', partyId: 'purple', controller: 'human' },
+        { id: 'p2', displayName: 'Bikram', partyId: 'green', controller: 'human' },
       ],
       savedAt,
       formatVersion: 1,

@@ -76,10 +76,14 @@ const P2_INFLUENCE = 9;
  * asserts no card is in two places at once and `readDocument` re-runs those invariants
  * when this screen resumes the save.
  */
-function savedMatch(status: 'active' | 'finished'): GameState {
-  const state = createGame(config, CORE_CONTENT, 31);
+function savedMatch(
+  status: 'active' | 'finished',
+  settings: GameConfig = config,
+  activePlayerId = 'p1',
+): GameState {
+  const state = createGame(settings, CORE_CONTENT, 31);
   state.status = status;
-  state.turn.activePlayerId = 'p1';
+  state.turn.activePlayerId = activePlayerId;
   state.turn.order = ['p1', 'p2', 'p3'];
   state.turn.ordinal = 1;
   state.turn.phase = status === 'finished' ? 'finished' : 'action';
@@ -105,9 +109,13 @@ function savedMatch(status: 'active' | 'finished'): GameState {
 let container: HTMLDivElement;
 let root: Root;
 
-async function render(status: 'active' | 'finished' = 'active'): Promise<void> {
+async function render(
+  status: 'active' | 'finished' = 'active',
+  settings: GameConfig = config,
+  activePlayerId = 'p1',
+): Promise<void> {
   const store = createMemoryStore();
-  const state = savedMatch(status);
+  const state = savedMatch(status, settings, activePlayerId);
   const savedAt = new Date(Date.UTC(2026, 0, 1));
   await store.write({
     summary: summarize(buildEnvelope(state, savedAt)),
@@ -257,5 +265,70 @@ describe('a finished match, rendered', () => {
     expect(text()).not.toContain(`Play ${P1_TITLE}`);
     expect(text()).not.toContain('Trades, reactions, and debts');
     expect(buttonLabelled('End turn').disabled).toBe(true);
+  });
+});
+
+/**
+ * A table of one person and two computers.
+ *
+ * The seats and the state are the same as every other case here, so the two hands are
+ * still distinguishable; only who plays them changes. The person is p1, whose turn it is.
+ */
+const soloConfig: GameConfig = {
+  ...config,
+  players: [
+    { id: 'p1', displayName: 'Asha', partyId: 'kite', controller: 'human' },
+    { id: 'p2', displayName: 'Bikram', partyId: 'cog', controller: 'computer', difficulty: 'easy' },
+    { id: 'p3', displayName: 'Chandni', partyId: 'sprout', controller: 'computer', difficulty: 'medium' },
+  ],
+};
+
+describe('a table of one person and two computers', () => {
+  it('opens on the person’s own seat with no cover and nothing to pass', async () => {
+    await render('active', soloConfig);
+
+    // No cover was drawn on the way in, and none can be raised: there is nobody to pass to.
+    expect(container.querySelector('.cover-screen')).toBeNull();
+    expect(text()).not.toContain('Pass the device');
+    expect(text()).not.toContain('Pass to');
+    expect(text()).not.toContain('Hide my cards');
+
+    // The person's own panel is on screen, because it opened there.
+    expect(text()).toContain('Trades, reactions, and debts');
+    expect(text()).toContain(P1_TITLE);
+    const resources = container.querySelector('.status-bar__resources');
+    expect(resources?.getAttribute('aria-label')).toBe('Asha’s resources');
+  });
+
+  it('plays a computer’s turn without ever drawing its private data', async () => {
+    // p2 is a computer and it is p2's turn, so the driver has something to do at once.
+    await render('active', soloConfig, 'p2');
+    // p2 holds a trick in the same saved state, one `viewFor` call away. A computer seat
+    // never reveals, so it is never in the document.
+    expect(text()).not.toContain(P2_TITLE);
+    expect(statusBar()).toContain('thinking');
+
+    // Let the driver run. The pace is read from storage and defaults to Normal, so this
+    // waits past the pause rather than assuming Fast.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+    });
+
+    // It acted: the turn has moved on from the computer that was thinking.
+    expect(statusBar()).not.toContain('Bikram (computer) is thinking');
+    expect(text()).not.toContain(P2_TITLE);
+    expect(container.querySelector('.cover-screen')).toBeNull();
+    // The person's own panel is still the only private one on screen.
+    expect(text()).toContain(P1_TITLE);
+    expect(text()).not.toContain('could not find a legal move');
+  });
+
+  it('marks a computer seat in words wherever the table names one', async () => {
+    await render('active', soloConfig);
+    // The board's own roster prints every seat, and marks the two computers in words
+    // rather than only with an icon.
+    const roster = container.querySelectorAll('.seat-row__badge');
+    const badges = [...roster].map((badge) => badge.textContent);
+    expect(badges.filter((badge) => badge === 'computer')).toHaveLength(2);
   });
 });

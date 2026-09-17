@@ -221,9 +221,9 @@ describe('rematch', () => {
 
     expect(next.matchId).toBe('local-rematch');
     expect(next.players).toEqual([
-      { id: 'p1', displayName: 'Asha', partyId: 'kite' },
-      { id: 'p2', displayName: 'Bikram', partyId: 'cog' },
-      { id: 'p3', displayName: 'Chandni', partyId: 'sprout' },
+      { id: 'p1', displayName: 'Asha', partyId: 'kite', controller: 'human' },
+      { id: 'p2', displayName: 'Bikram', partyId: 'cog', controller: 'human' },
+      { id: 'p3', displayName: 'Chandni', partyId: 'sprout', controller: 'human' },
     ]);
     expect(next.contentAdvisories).toEqual(['trigger']);
     expect(next.tiePolicy).toBe('jointWinners');

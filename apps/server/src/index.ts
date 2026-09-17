@@ -44,6 +44,9 @@ async function main(): Promise<void> {
 
   await app.listen({ port: config.port, host: config.host });
   app.log.info({ database: config.databasePath }, 'SeatGrab room server ready');
+  // A match whose computer was mid-decision when the last process stopped has nothing
+  // else to wake it: its people are watching a turn that never arrives.
+  built.computers.recover();
 }
 
 main().catch((error: unknown) => {

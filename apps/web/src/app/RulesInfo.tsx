@@ -26,13 +26,14 @@ import { ADVISORY_FILTERS, MAX_SEATS, MIN_SEATS } from './setup';
 import { ROUTES } from './routes';
 import { LOCAL_MODE_NOTICE } from '../local';
 
-type ChapterId = 'win' | 'turn' | 'board' | 'cards' | 'house' | 'set';
+type ChapterId = 'win' | 'turn' | 'board' | 'cards' | 'computer' | 'house' | 'set';
 
 const CHAPTERS: readonly { id: ChapterId; glyph: GlyphName; label: string; blurb: string }[] = [
   { id: 'win', glyph: 'trophy', label: 'How you win', blurb: 'The goal, and what actually scores' },
   { id: 'turn', glyph: 'turn', label: 'Your turn', blurb: 'The four steps, in order' },
   { id: 'board', glyph: 'map', label: 'The board', blurb: 'Zones, redistricting, volatile areas' },
   { id: 'cards', glyph: 'cards', label: 'Cards', blurb: 'Resources, archetypes, tricks, trades' },
+  { id: 'computer', glyph: 'play', label: 'The computer', blurb: 'What it can and cannot see' },
   { id: 'house', glyph: 'gavel', label: 'House rules', blurb: `${ADJUDICATIONS.length} rulings the engine applies` },
   { id: 'set', glyph: 'gear', label: 'This set', blurb: 'Decks, filters and limits' },
 ];
@@ -369,11 +370,69 @@ function SetChapter() {
   );
 }
 
+/**
+ * What a computer seat knows, stated plainly.
+ *
+ * A person sitting down against the computer is entitled to know whether it is reading
+ * their hand. It is not, and the answer is structural rather than a promise:
+ * `@seatgrab/computer` does not depend on the engine, so it cannot reach the
+ * authoritative state at all.
+ */
+function ComputerChapter() {
+  return (
+    <>
+      <p className="panel__lede">
+        A computer seat plays from the same table you do. It reads its own projection — the
+        one thing the engine sends to a seat — and submits the same commands your controls
+        do. It never sees the state behind the table.
+      </p>
+      <ul className="disclosures">
+        <li>
+          <strong>It sees what you see of the table</strong>
+          <span>
+            The board, the market, every seat&rsquo;s resources and score, and the public
+            history. All of it is public to everyone, you included.
+          </span>
+        </li>
+        <li>
+          <strong>It does not see any hand but its own</strong>
+          <span>
+            Your voter cards, your kept policy cards and your dirty tricks are not in its
+            projection, so no difficulty can read them.
+          </span>
+        </li>
+        <li>
+          <strong>It does not know what a policy answer pays</strong>
+          <span>
+            The reward and the archetype of an answer are hidden from a seat until it
+            commits, and hidden from the computer on the same terms. All three difficulties
+            answer the policy question on a coin flip.
+          </span>
+        </li>
+        <li>
+          <strong>It obeys every refusal</strong>
+          <span>
+            A computer submits commands and the engine decides them. It applies no rule of
+            its own, and a command the engine refuses is a defect to report rather than
+            something it works around.
+          </span>
+        </li>
+      </ul>
+      <p className="small">
+        Difficulty changes how well a seat uses public information, and nothing else. Easy
+        buys cheap voters and spreads them around. Medium goes for the cheapest majorities
+        and uses its powers. Hard targets whoever is leading and times the end of the game.
+      </p>
+    </>
+  );
+}
+
 const CHAPTER_BODIES: Record<ChapterId, () => React.JSX.Element> = {
   win: WinChapter,
   turn: TurnChapter,
   board: BoardChapter,
   cards: CardsChapter,
+  computer: ComputerChapter,
   house: HouseChapter,
   set: SetChapter,
 };

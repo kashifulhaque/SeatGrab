@@ -14,6 +14,7 @@ import type { ServerConfig } from './config.js';
 import { openDatabase, type Database } from './persistence/database.js';
 import { LATEST_SCHEMA_VERSION, runMigrations } from './persistence/migrations.js';
 import { MatchRepository } from './persistence/repository.js';
+import { ComputerDriver } from './rooms/computerDriver.js';
 import { MatchHub } from './rooms/matchHub.js';
 import { RoomError, RoomService } from './rooms/roomService.js';
 import { registerRoutes } from './transport/httpRoutes.js';
@@ -26,6 +27,8 @@ export interface BuiltServer {
   rooms: RoomService;
   /** Sequences every change to a match and announces it to the seats watching. */
   hub: MatchHub;
+  /** Plays the computer seats. `index.ts` calls `recover()` once the port is open. */
+  computers: ComputerDriver;
   /** Closes the HTTP server and then the database, in that order. */
   close: () => Promise<void>;
 }
@@ -114,6 +117,17 @@ export function buildServer(options: BuildOptions): BuiltServer {
     },
   });
 
+  const computers = new ComputerDriver({
+    rooms,
+    hub,
+    delayMs: config.computerDelayMs,
+    log: {
+      info: (details, message) => app.log.info(details, message),
+      error: (details, message) => app.log.error(details, message),
+    },
+  });
+  computers.attach();
+
   registerSocketRoutes(app, { rooms, hub, config });
 
   registerRoutes(app, {
@@ -133,6 +147,7 @@ export function buildServer(options: BuildOptions): BuiltServer {
         return false;
       }
     },
+    computersReady: () => computers.healthy(),
     startedAt: (options.now ?? (() => new Date()))(),
     ...(options.now === undefined ? {} : { now: options.now }),
     limiter: new TokenBucketLimiter({
@@ -146,7 +161,9 @@ export function buildServer(options: BuildOptions): BuiltServer {
     database,
     rooms,
     hub,
+    computers,
     async close() {
+      computers.stop();
       await app.close();
       database.close();
     },

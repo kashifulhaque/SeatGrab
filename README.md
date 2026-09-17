@@ -5,6 +5,10 @@ answer policy questions, spend the resources they earn on voters, and place thos
 on a nine-zone board. Hold a zone's majority and its voters score; when every zone is held,
 the player with the most scoring voters wins.
 
+Play it three ways: pass and play on one device, against the computer at one of three
+difficulties, or in an online room on separate devices. Any seat at a table can be a
+computer, as long as one seat is a person.
+
 All card text, board art, icons and rules text in this repository are original to this
 project. The resource icons are [Lucide](https://lucide.dev) icons (ISC licence, see
 `LICENSES/`).
@@ -27,6 +31,10 @@ project. The resource icons are [Lucide](https://lucide.dev) icons (ISC licence,
   Breaking News card that resolves at the end of the turn.
 - **Dirty Tricks.** Bought face down for the price on the back; played on your turn, or
   as a reaction when the card says so.
+- **The computer.** A computer seat reads the same table you do. It does not see any hand
+  but its own, and it does not know what a policy answer pays before it commits. Easy
+  buys cheap voters and spreads them around; Medium goes for the cheapest majorities and
+  uses its powers; Hard targets the leader and times the end of the game.
 
 The house rules the engine applies where a table might argue are listed in
 `packages/content/src/ruleset.ts` and on the rules screen of the app.
@@ -38,6 +46,8 @@ The house rules the engine applies where a table might argue are listed in
 | `packages/content` | Typed card, board and house-rule data. Generated from `content/`. |
 | `packages/engine` | The rules engine: commands, effects, projections. |
 | `packages/protocol` | Shared command, view and socket schemas. |
+| `packages/seat` | What one seat can see and do, derived from its own projection. |
+| `packages/computer` | The computer opponent. Reads a seat's own projection; no engine dependency. |
 | `apps/web` | The React client. Pass-and-play and online builds. |
 | `apps/server` | The online room server. See `OPERATIONS.md`. |
 | `content/` | Editable JSON: card text and mechanical skeletons. |

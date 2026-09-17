@@ -16,6 +16,61 @@ treat them as historical context, not as a live reference.
 - The pass-and-play build carries no network code; `scripts/check_build_privacy.mjs`
   asserts this from the emitted bundle.
 
+## Computer opponents
+
+- A computer seat reads exactly what a person at that seat is shown — its own
+  `PlayerView` — and submits commands through the same `submit` a person's control
+  reaches. It applies no rule and it never bypasses `applyCommand`.
+- The decision logic is `packages/computer`, which depends on `@seatgrab/seat`,
+  `@seatgrab/protocol` and `@seatgrab/content` and deliberately **not** on
+  `@seatgrab/engine`. That is what makes the previous point structural rather than a
+  promise: the package cannot import `GameState`, `applyCommand` or `projectGame`, so it
+  cannot read the authoritative state or look up the reward of a policy answer that the
+  projection hides. `apps/web/test/computer.test.ts` asserts the missing dependency.
+- Three difficulties — `easy`, `medium`, `hard` — share one enumerator and one
+  evaluator and differ only in ordering and filtering. Difficulty is how well a seat uses
+  public information, and nothing else.
+- Who plays a seat is public, like its party: `controller` and `difficulty` are on every
+  `PublicPlayerView` and every `LobbySeatView`. Both are additive and optional wherever
+  they are stored, so a save or a snapshot written before they existed reads every seat
+  as `human`.
+- A table needs at least one person. `createGame` refuses one that has none.
+- Two drivers, one loop: `apps/web/src/app/useComputerSeats.ts` in the browser and
+  `apps/server/src/rooms/computerDriver.ts` on the server. Both find the first computer
+  seat whose own view says it has something to do, wait a pace, and take one step. A step
+  that has every candidate refused is a defect: it is surfaced and never retried on a
+  timer.
+
+### Measured, September 2026
+
+`pnpm tsx apps/web/test/tournament.ts`, 60 seeded three-player games with the seating
+rotated each game:
+
+| Difficulty | Wins | Total score |
+| --- | --- | --- |
+| easy | 0 | 151 |
+| medium | 17 | 1,767 |
+| hard | 42 | 2,053 |
+
+59 of the 60 finished, with no refused command. `sweep.ts 20 700000 --policy mixed` is the
+same figure from a different seed range: 59 of 60, no refusals, `medium 36 / hard 23 / easy
+1` on a sample a third the size. Do not tune the evaluator's constants against these
+without recording the run that replaces them.
+
+### The stalemate the policies cannot break
+
+About one game in sixty reaches a position the engine has no ending for: every zone is
+decided or full, the last one or two empty areas are in zones nobody can still win, and no
+seat both has voters left and can afford a card. Nobody can place, so the board never
+fills and the ninth majority never arrives. Every seat then ends its turn forever.
+
+It is a property of the board and the economy rather than of a difficulty — all three sit
+in it — and the autoplay driver escapes only because it proposes trades, which no policy
+does. Both drivers detect it instead of spinning: twelve consecutive computer turns that
+change nothing stops the driver, shows the same alert a refused move does, and logs
+`computers: degraded` on the server. Fixing the position itself needs either trade
+proposals or an engine ending for a board that cannot fill; both are follow-ups.
+
 ## Vocabulary
 
 | Term | Meaning |
@@ -26,3 +81,4 @@ treat them as historical context, not as a live reference.
 | Breaking News | Cards dealt by volatile areas, resolved at end of turn. |
 | Dirty Trick | Cards bought face down and played for effect. |
 | Redistricting rights | Held by the seat with strictly the most voters in a zone. |
+| Controller | Who plays a seat: a person or the computer. Fixed at start, like the party. |

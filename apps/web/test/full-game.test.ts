@@ -22,6 +22,7 @@ import { createLocalMatch, createMemoryStore, type LocalMatchOptions } from '../
 import { RESOURCE_ORDER, handCards } from '../src/app/actions';
 import { summarizeResults, type MatchResults } from '../src/app/results';
 import { autoplay, candidateCommands, type AutoplayResult } from './autoplay';
+import { playComputers } from './computerPlay';
 
 const PARTIES = ['kite', 'cog', 'sprout', 'lantern', 'compass'] as const;
 const NAMES = ['Asha', 'Bikram', 'Chandni', 'Devi', 'Ejaz'] as const;
@@ -178,6 +179,34 @@ describe('a complete match', () => {
     const summary = resultsOf(result);
     const marked = result.view.slots.filter((slot) => slot.voter?.majority === true).length;
     expect(summary.countedTotal).toBe(marked);
+  }, 120_000);
+
+  /**
+   * The same net, under the three policies rather than under the autoplay driver.
+   *
+   * `autoplay.ts` is instrument code with an opinion about candidate order that the
+   * sweeps depend on; the policies are shipped code with three different opinions. A
+   * match one finishes cleanly is no evidence about the others, so this plays a table
+   * of one seat per difficulty through `stepComputer` — the same function both drivers
+   * call — and holds it to the same standard: every command accepted, and a scored end.
+   */
+  it('carries a seeded mixed-difficulty table to a scored ending', async () => {
+    const seats = { p1: 'easy', p2: 'medium', p3: 'hard' } as const;
+    const settings = config('full-mixed', 3);
+    const match = await createLocalMatch(options(), settings, 4021);
+    const result = await playComputers(match, seats);
+
+    expect(result.stalled).toBeUndefined();
+    expect(result.refusals).toEqual([]);
+    expect(result.finished).toBe(true);
+    expect(result.view.status).toBe('finished');
+    expect(result.view.endReason).toBeDefined();
+
+    const summary = summarizeResults(result.view);
+    expect(summary).not.toBeNull();
+    const marked = result.view.slots.filter((slot) => slot.voter?.majority === true).length;
+    expect(summary!.countedTotal).toBe(marked);
+    expect(summary!.winners.length).toBeGreaterThanOrEqual(1);
   }, 120_000);
 });
 

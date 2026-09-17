@@ -12,6 +12,8 @@
  * seat's cover, straight into a seat's private data.
  */
 
+import type { PlayerView } from '@seatgrab/protocol';
+
 /** Which surface the shared device is showing. */
 export type HandoffState =
   /** The public projection. Nothing private is drawn. */
@@ -58,6 +60,23 @@ export function handoffReducer(state: HandoffState, action: HandoffAction): Hand
  */
 export function revealedSeatId(state: HandoffState): string | null {
   return state.kind === 'revealed' ? state.seatId : null;
+}
+
+/**
+ * Where the cover starts for a table, read from the match's own view.
+ *
+ * A table with exactly one human seat has nobody to hide anything from: the person
+ * holding the device plays that seat and every other seat is the computer, which never
+ * reveals. Such a table opens on that seat's own surface and never shows a cover. Every
+ * other table opens on the shared projection, exactly as before.
+ *
+ * This decides only the starting state. `handoffReducer` is unchanged and still refuses
+ * to move into a seat's private data except through that seat's own cover.
+ */
+export function initialHandoff(view: PlayerView): HandoffState {
+  const humans = view.players.filter((player) => player.controller !== 'computer');
+  const only = humans.length === 1 ? humans[0] : undefined;
+  return only === undefined ? SHARED_HANDOFF : { kind: 'revealed', seatId: only.id };
 }
 
 /** The seat the cover is waiting on, or `null` when no cover is showing. */

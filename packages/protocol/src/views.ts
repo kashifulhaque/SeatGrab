@@ -1,4 +1,5 @@
 import type { EngineErrorCode, ResourceVectorDto } from './commands.js';
+import type { ComputerDifficulty, SeatController } from './controllers.js';
 
 export interface PublicPlayerView {
   id: string;
@@ -11,6 +12,14 @@ export interface PublicPlayerView {
   trickHandCount: number;
   score: number;
   connected: boolean;
+  /**
+   * Who plays this seat. Public, like the seat's party: at a physical table everyone can
+   * see which chair holds a person. A projection of a save written before the field
+   * existed reads `human`.
+   */
+  controller: SeatController;
+  /** Present exactly when `controller` is `computer`. */
+  difficulty?: ComputerDifficulty;
 }
 
 export interface PublicSlotView {

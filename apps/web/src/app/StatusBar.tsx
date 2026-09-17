@@ -35,6 +35,7 @@ import type { Availability } from './actions';
 import {
   describeDecision,
   describeDecisionFor,
+  seatLabel,
   describeStep,
   turnSteps,
 } from './table';
@@ -80,6 +81,8 @@ export function StatusBar({
   me,
   endTurn,
   switcher,
+  thinking = null,
+  settings,
 }: {
   view: PlayerView;
   /** The revealed seat, whose resources are drawn. `null` draws none. */
@@ -87,6 +90,16 @@ export function StatusBar({
   endTurn: Availability & { onEndTurn: () => void; busy: boolean };
   /** The mode's control for changing seats. Absent online, where there is one seat. */
   switcher?: ReactNode;
+  /**
+   * The computer seat about to act, or `null`.
+   *
+   * It replaces the decision line while it is set, because "Devi (computer) is thinking…"
+   * is the one thing a person watching wants to know and the banner underneath would
+   * otherwise read as though the table were waiting on them.
+   */
+  thinking?: PublicPlayerView | null;
+  /** The mode's own settings, folded into the bar. Absent online. */
+  settings?: ReactNode;
 }) {
   const bar = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -138,7 +151,7 @@ export function StatusBar({
           )}
           <div className="status-bar__words">
             <p className="status-bar__news">
-              {decision.news}
+              {thinking == null ? decision.news : `${seatLabel(thinking)} is thinking…`}
               {decision.awayFromActiveSeat && activeName !== undefined ? (
                 <span className="status-bar__interrupt"> · still {activeName}’s turn</span>
               ) : null}
@@ -182,6 +195,7 @@ export function StatusBar({
         </div>
 
         {switcher === undefined ? null : <div className="status-bar__switcher">{switcher}</div>}
+        {settings === undefined ? null : <div className="status-bar__settings">{settings}</div>}
       </div>
 
       <div className="status-bar__steps">

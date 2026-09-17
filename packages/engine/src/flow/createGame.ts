@@ -46,6 +46,18 @@ export function createGame(config: GameConfig, content: GameContent, seed: numbe
   if (!config.matchId) {
     throw new Error('matchId must not be empty');
   }
+  for (const player of config.players) {
+    const controller = player.controller ?? 'human';
+    if (controller === 'computer' && player.difficulty === undefined) {
+      throw new Error('A computer seat must name a difficulty');
+    }
+    if (controller !== 'computer' && player.difficulty !== undefined) {
+      throw new Error('Only a computer seat may name a difficulty');
+    }
+  }
+  if (!config.players.some((player) => (player.controller ?? 'human') === 'human')) {
+    throw new Error('A table needs at least one human seat');
+  }
   validateEffectRegistry(content);
 
   let random: RandomState = { value: seed >>> 0, draws: 0 };

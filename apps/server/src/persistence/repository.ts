@@ -11,6 +11,12 @@
  * and it is synchronous from the first read to the commit so no other request can run
  * against a half-applied match.
  */
+import {
+  isComputerDifficulty,
+  type ComputerDifficulty,
+  type SeatController,
+} from '@seatgrab/protocol';
+
 import { inTransaction, type Database } from './database.js';
 
 export type MatchStatus = 'lobby' | 'setup' | 'active' | 'finished';
@@ -47,6 +53,10 @@ export interface SeatRow {
   claimedAt: string | null;
   /** The stored hash, so a caller can compare in constant time. Never the credential. */
   credentialHash: string | null;
+  /** Who plays the seat. A row written before migration 2 reads `human`. */
+  controller: SeatController;
+  /** Present exactly when `controller` is `computer`. */
+  difficulty: ComputerDifficulty | null;
 }
 
 export interface StoredCommand {
@@ -146,6 +156,8 @@ function toMatch(row: Row): MatchRow {
 }
 
 function toSeat(row: Row): SeatRow {
+  const controller: SeatController = optionalText(row, 'controller') === 'computer' ? 'computer' : 'human';
+  const difficulty = optionalText(row, 'difficulty');
   return {
     matchId: text(row, 'match_id'),
     seatIndex: integer(row, 'seat_index'),
@@ -153,9 +165,11 @@ function toSeat(row: Row): SeatRow {
     isHost: integer(row, 'is_host') === 1,
     displayName: optionalText(row, 'display_name'),
     partyId: optionalText(row, 'party_id'),
-    claimed: optionalText(row, 'credential_hash') !== null,
+    claimed: optionalText(row, 'credential_hash') !== null || controller === 'computer',
     claimedAt: optionalText(row, 'claimed_at'),
     credentialHash: optionalText(row, 'credential_hash'),
+    controller,
+    difficulty: isComputerDifficulty(difficulty) ? difficulty : null,
   };
 }
 
@@ -297,6 +311,47 @@ export class MatchRepository {
   }
 
   /**
+   * Hold a free seat with a computer, returning whether it was free.
+   *
+   * The guard is the same shape as `claimSeat`'s: a seat is free only while it holds
+   * neither a credential nor a computer, and the test is in the statement, so two
+   * requests for one seat leave exactly one winner.
+   */
+  seatComputer(
+    matchId: string,
+    seatIndex: number,
+    seat: { displayName: string; partyId: string; difficulty: ComputerDifficulty; claimedAt: string },
+  ): boolean {
+    return inTransaction(this.#database, () => {
+      const result = this.#database
+        .prepare(
+          `UPDATE seats SET display_name = ?, party_id = ?, controller = 'computer',
+                            difficulty = ?, claimed_at = ?
+             WHERE match_id = ? AND seat_index = ? AND credential_hash IS NULL
+               AND controller = 'human'`,
+        )
+        .run(seat.displayName, seat.partyId, seat.difficulty, seat.claimedAt, matchId, seatIndex);
+      return Number(result.changes) === 1;
+    });
+  }
+
+  /** Every match in one of the given statuses that seats at least one computer. */
+  listMatchesWithComputers(statuses: readonly MatchRow['status'][]): readonly MatchRow[] {
+    if (statuses.length === 0) return [];
+    const placeholders = statuses.map(() => '?').join(', ');
+    const rows = this.#database
+      .prepare(
+        `SELECT m.* FROM matches m
+           WHERE m.status IN (${placeholders})
+             AND EXISTS (SELECT 1 FROM seats s
+                           WHERE s.match_id = m.match_id AND s.controller = 'computer')
+           ORDER BY m.created_at`,
+      )
+      .all(...statuses) as Row[];
+    return rows.map(toMatch);
+  }
+
+  /**
    * Take a seat's claim back, returning whether there was one to take.
    *
    * The inverse of `claimSeat`, and guarded the same way: `credential_hash IS NOT NULL`
@@ -313,8 +368,9 @@ export class MatchRepository {
       const result = this.#database
         .prepare(
           `UPDATE seats SET display_name = NULL, party_id = NULL, credential_hash = NULL,
-                            claimed_at = NULL
-             WHERE match_id = ? AND seat_index = ? AND credential_hash IS NOT NULL`,
+                            claimed_at = NULL, controller = 'human', difficulty = NULL
+             WHERE match_id = ? AND seat_index = ?
+               AND (credential_hash IS NOT NULL OR controller = 'computer')`,
         )
         .run(matchId, seatIndex);
       return Number(result.changes) === 1;

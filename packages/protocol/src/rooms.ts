@@ -13,6 +13,8 @@
  * does.
  */
 
+import type { ComputerDifficulty, SeatController } from './controllers.js';
+
 /** One seat in a lobby, as anyone holding the room code may see it. */
 export interface LobbySeatView {
   seatIndex: number;
@@ -22,6 +24,10 @@ export interface LobbySeatView {
   /** Null until somebody claims the seat and gives a name. */
   displayName: string | null;
   partyId: string | null;
+  /** Who plays the seat. A computer seat is claimed but holds no credential. */
+  controller: SeatController;
+  /** Present exactly when `controller` is `computer`. */
+  difficulty?: ComputerDifficulty;
 }
 
 /**

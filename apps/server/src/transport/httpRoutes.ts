@@ -17,6 +17,8 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
+import { ComputerDifficultySchema } from '@seatgrab/protocol';
+
 import { readBearer } from '../credentials.js';
 import type { MatchHub } from '../rooms/matchHub.js';
 import { RoomError, type RoomService, type SeatIdentity } from '../rooms/roomService.js';
@@ -33,6 +35,10 @@ const ClaimSeatSchema = z.object({
   seatIndex: z.int().nonnegative().max(4).optional(),
   displayName: z.string(),
   partyId: z.string(),
+});
+
+const SeatComputerSchema = z.object({
+  difficulty: ComputerDifficultySchema,
 });
 
 function badBody(error: z.ZodError): never {
@@ -53,6 +59,14 @@ export interface RouteOptions {
   version: { schemaVersion: number; contentPackId: string; contentVersion: string; boardId: string };
   /** Whether the database answered a trivial read. */
   databaseReady: () => boolean;
+  /**
+   * Whether every computer seat is still deciding.
+   *
+   * `degraded` means a computer had every candidate refused in some match and the driver
+   * stopped scheduling for it. The process keeps serving; an operator reads the error log
+   * for the match ID and revision.
+   */
+  computersReady?: () => boolean;
   startedAt: Date;
   now?: () => Date;
   /**
@@ -105,9 +119,11 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
    */
   app.get('/health', async (_request: FastifyRequest, reply: FastifyReply) => {
     const ready = options.databaseReady();
+    const computers = options.computersReady?.() ?? true;
     return reply.status(ready ? 200 : 503).send({
       status: ready ? 'ok' : 'degraded',
       database: ready ? 'ok' : 'unavailable',
+      computers: computers ? 'ok' : 'degraded',
       uptimeSeconds: Math.floor((now().getTime() - options.startedAt.getTime()) / 1000),
       ...options.version,
     });
@@ -157,6 +173,24 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
       throw new RoomError(400, 'NO_SUCH_SEAT', 'A seat is named by its whole-number index.');
     }
     return reply.send(rooms.releaseSeat(seatOf(request, matchId), index));
+  });
+
+  /**
+   * The host seats a computer on a free seat.
+   *
+   * Host credential, lobby only. The body names only the difficulty: the server picks the
+   * display name and the party, because a computer seat mints no credential and so has
+   * nobody to correct a clash. The answer is the lobby, like the release route's.
+   */
+  app.put('/api/matches/:matchId/seats/:seatIndex/computer', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { matchId, seatIndex } = request.params as { matchId: string; seatIndex: string };
+    const index = Number(seatIndex);
+    if (!Number.isInteger(index) || index < 0) {
+      throw new RoomError(400, 'NO_SUCH_SEAT', 'A seat is named by its whole-number index.');
+    }
+    const parsed = SeatComputerSchema.safeParse(request.body);
+    if (!parsed.success) badBody(parsed.error);
+    return reply.send(rooms.seatComputer(seatOf(request, matchId), index, parsed.data.difficulty));
   });
 
   app.post('/api/matches/:matchId/start', async (request: FastifyRequest, reply: FastifyReply) => {
