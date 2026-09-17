@@ -1,9 +1,15 @@
 /**
  * A real server on a real database file, for the server suites.
  *
- * The database is a file rather than `:memory:` on purpose: the durability suite closes
- * the process and opens it again, and an in-memory database would make that test pass by
- * never having written anything. `restart()` is the whole point of the harness.
+ * The store is a local SQLite file rather than `:memory:` on purpose: the durability
+ * suite closes the process and opens it again, and an in-memory database would make that
+ * test pass by never having written anything. `restart()` is the whole point of the
+ * harness.
+ *
+ * It is the local driver rather than D1 for the same reason it is a file: a suite that
+ * needed an account, a token and a network would not be a suite anybody runs. Both
+ * drivers satisfy one interface and the server is written against that interface, so
+ * what is proved here is the server's behaviour and not SQLite's.
  *
  * `openSocket` drives the real WebSocket route through `injectWS`, which dispatches a
  * genuine upgrade request through the router, the route's hooks and `ws` itself — the
@@ -44,24 +50,29 @@ export async function startHarness(options: HarnessOptions = {}): Promise<Harnes
     GERRYMANDER_DB_PATH: databasePath,
     GERRYMANDER_LOG_LEVEL: 'silent',
     GERRYMANDER_PORT: '0',
+    // The suites assert against the store right after a command, so the harness writes
+    // through by default: a checkpoint per command is what they were written against and
+    // still what they mean. `checkpoint.test.ts` overrides it, because the window
+    // between checkpoints is the thing that suite is about.
+    GERRYMANDER_CHECKPOINT_EVERY_COMMANDS: '1',
     ...options.env,
   } as NodeJS.ProcessEnv);
 
   const seed = options.seed ?? 20260915;
   let ticks = 0;
-  const build = (): BuiltServer =>
-    buildServer({
+  const build = async (): Promise<BuiltServer> =>
+    await buildServer({
       config,
       now: () => new Date(Date.UTC(2026, 8, 15) + ticks++ * 1000),
       seed: () => seed,
     });
 
   const harness: Harness = {
-    server: build(),
+    server: await build(),
     config,
     async restart() {
       await harness.server.close();
-      harness.server = build();
+      harness.server = await build();
     },
     async dispose() {
       await harness.server.close();

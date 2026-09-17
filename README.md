@@ -19,12 +19,15 @@ project. The resource icons are [Lucide](https://lucide.dev) icons, ISC licence,
 
 ## Requirements
 
-- Node.js 24 or later. The server uses `node:sqlite`, which Node still marks experimental,
-  so every start prints an `ExperimentalWarning`. The warning is expected.
+- Node.js 24 or later. Development and the test suite store in `node:sqlite`, which Node
+  still marks experimental, so those runs print an `ExperimentalWarning`. The warning is
+  expected.
 - pnpm 10.28.0, pinned in `package.json`.
 - Python 3, to regenerate the cards and the board. Not needed to run the game.
+- A Cloudflare account, to deploy online rooms. Pass-and-play needs none.
 
-There's no native build step and no separate database server.
+There's no native build step and no database server to run: a deployment stores in
+Cloudflare D1, and everything else stores in a local file.
 
 ## Run it locally
 
@@ -50,7 +53,7 @@ pnpm test
 
 The application is two independent pieces, and a pass-and-play deployment needs only the
 first: a static browser build in `apps/web/dist`, and a Node process,
-`apps/server/dist/index.js`, with one SQLite file for online rooms.
+`apps/server/dist/index.js`, with a Cloudflare D1 database for online rooms.
 
 1. Install, typecheck and build. `pnpm typecheck` compiles every package into its `dist/`,
    which is what the server process runs, so don't skip it:
@@ -86,10 +89,19 @@ first: a static browser build in `apps/web/dist`, and a Node process,
 4. Start the room server with at least these settings:
 
    ```sh
-   GERRYMANDER_DB_PATH=/var/lib/gerrymander/gerrymander.db \
+   GERRYMANDER_D1_ACCOUNT_ID=YOUR_ACCOUNT_ID \
+   GERRYMANDER_D1_DATABASE_ID=YOUR_DATABASE_ID \
+   GERRYMANDER_D1_API_TOKEN=YOUR_API_TOKEN \
    GERRYMANDER_ALLOWED_ORIGINS=https://gerrymander.example.com \
    pnpm start
    ```
+
+   Create the database first with `npx wrangler d1 create gerrymander`, which prints the
+   database ID. The token needs the **D1 Edit** permission. The server applies its own
+   migrations at startup, before it opens the port.
+
+   Leave the three D1 settings unset to store in a local SQLite file at
+   `GERRYMANDER_DB_PATH` instead, which is what a development run does.
 
    Replace `https://gerrymander.example.com` with the exact origin the browser build is
    served from. A deployment that doesn't list its own origin refuses every browser at the

@@ -132,10 +132,10 @@ function openConnection(
    * becomes `state: null` and the connection stays open: the host's start is broadcast,
    * so a client that connected early is told when the match begins.
    */
-  const syncFor = (seat: SeatIdentity, since: number): SyncPayload => {
-    const caughtUp = rooms.events(seat, since);
+  const syncFor = async (seat: SeatIdentity, since: number): Promise<SyncPayload> => {
+    const caughtUp = await rooms.events(seat, since);
     try {
-      return { state: rooms.viewFor(seat), events: caughtUp.events, cursor: caughtUp.cursor };
+      return { state: await rooms.viewFor(seat), events: caughtUp.events, cursor: caughtUp.cursor };
     } catch (error) {
       if (error instanceof RoomError && error.code === 'NOT_STARTED') {
         return { state: null, events: caughtUp.events, cursor: caughtUp.cursor };
@@ -161,14 +161,14 @@ function openConnection(
    * says only that it does not hold a seat here — not which of the several ways it
    * failed to.
    */
-  const authenticate = (matchId: string, credential: string, since: number): void => {
+  const authenticate = async (matchId: string, credential: string, since: number): Promise<void> => {
     if (state.seat !== null) {
       fail('ALREADY_AUTHENTICATED', 'This connection already holds a seat.');
       return;
     }
     let seat: SeatIdentity;
     try {
-      seat = rooms.authenticate(matchId, credential);
+      seat = await rooms.authenticate(matchId, credential);
     } catch (error) {
       if (error instanceof RoomError) {
         fail(error.code, error.message);
@@ -192,7 +192,7 @@ function openConnection(
       partyId: seat.partyId,
     };
     state.detach = hub.attach({ seat, send });
-    send({ type: 'welcome', seat: identity, sync: syncFor(seat, since) });
+    send({ type: 'welcome', seat: identity, sync: await syncFor(seat, since) });
   };
 
   const handle = async (raw: string): Promise<void> => {
@@ -232,7 +232,7 @@ function openConnection(
     }
 
     if (frame.data.type === 'authenticate') {
-      authenticate(frame.data.matchId, frame.data.credential, frame.data.sinceEventCursor ?? 0);
+      await authenticate(frame.data.matchId, frame.data.credential, frame.data.sinceEventCursor ?? 0);
       return;
     }
 
@@ -250,7 +250,7 @@ function openConnection(
       send({
         type: 'sync',
         ...(requestId === undefined ? {} : { requestId }),
-        sync: syncFor(seat, frame.data.sinceEventCursor ?? 0),
+        sync: await syncFor(seat, frame.data.sinceEventCursor ?? 0),
       });
       return;
     }
@@ -307,7 +307,15 @@ function openConnection(
   const presented = readBearer(request.headers.authorization);
   const matchId = (request.query as { matchId?: string } | undefined)?.matchId;
   if (presented !== null && typeof matchId === 'string' && matchId.length > 0) {
-    authenticate(matchId, presented, 0);
+    // Not awaited: `openConnection` returns to the WebSocket plugin, and the welcome
+    // frame follows when the seat's first projection is ready. `authenticate` answers a
+    // refusal itself; this catches everything else, so a failure closes the connection
+    // rather than becoming an unhandled rejection.
+    void authenticate(matchId, presented, 0).catch((error: unknown) => {
+      request.log.error({ err: error }, 'Authenticating a credential presented on the upgrade failed');
+      fail('INTERNAL_ERROR', 'This connection could not be authenticated.');
+      shut(SOCKET_CLOSE.unauthorized, 'INTERNAL_ERROR');
+    });
   }
 }
 

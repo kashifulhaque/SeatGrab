@@ -89,8 +89,8 @@ describe('the HTTP request budget', () => {
     });
     expect(started.statusCode).toBe(200);
 
-    const seat = harness.server.rooms.authenticate(host.matchId, host.credential);
-    const before = harness.server.rooms.viewFor(seat).view.revision;
+    const seat = await harness.server.rooms.authenticate(host.matchId, host.credential);
+    const before = (await harness.server.rooms.viewFor(seat)).view.revision;
 
     const refused = await harness.server.app.inject({
       method: 'POST',
@@ -107,7 +107,7 @@ describe('the HTTP request budget', () => {
 
     // The command must not have been applied on the way to being refused: the budget is
     // spent before the route runs, so nothing reached the hub.
-    expect(harness.server.rooms.viewFor(seat).view.revision).toBe(before);
+    expect((await harness.server.rooms.viewFor(seat)).view.revision).toBe(before);
   });
 
   it('refills, so a table that waits can carry on', async () => {

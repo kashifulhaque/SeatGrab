@@ -7,9 +7,28 @@ services:
     environment:
       GERRYMANDER_HOST: 0.0.0.0
       GERRYMANDER_PORT: "8787"
-      GERRYMANDER_DB_PATH: /data/gerrymander.db
       GERRYMANDER_ALLOWED_ORIGINS: ${GERRYMANDER_ALLOWED_ORIGINS:-https://gerrymander.ifkash.dev}
+      # The durable store. Compose reads these from the `.env` file beside this one, which
+      # is not in the repository. `:?` fails the command with this message rather than
+      # starting a server that quietly stores somewhere else: with none of the three set,
+      # the server falls back to a local SQLite file, and nobody would notice until a
+      # restart lost the rooms.
+      GERRYMANDER_D1_ACCOUNT_ID: ${GERRYMANDER_D1_ACCOUNT_ID:?set it in .env beside docker-compose.yml}
+      GERRYMANDER_D1_DATABASE_ID: ${GERRYMANDER_D1_DATABASE_ID:?set it in .env beside docker-compose.yml}
+      GERRYMANDER_D1_API_TOKEN: ${GERRYMANDER_D1_API_TOKEN:?set it in .env beside docker-compose.yml}
+      # Commands that may go unwritten before the store is checkpointed, and so the number
+      # a kill loses. A clean stop loses nothing. See "What a checkpoint costs" in
+      # CLAUDE.md before changing it.
+      GERRYMANDER_CHECKPOINT_EVERY_COMMANDS: ${GERRYMANDER_CHECKPOINT_EVERY_COMMANDS:-10}
+      GERRYMANDER_CHECKPOINT_MAX_DELAY_MS: ${GERRYMANDER_CHECKPOINT_MAX_DELAY_MS:-5000}
+    # A `docker compose stop` sends SIGTERM and waits, which is what checkpoints every
+    # live match before the process exits. The default grace period is 10 seconds, and
+    # GERRYMANDER_SHUTDOWN_TIMEOUT_SECONDS defaults to the same, so raise both together.
+    stop_grace_period: 30s
     volumes:
+      # Kept mounted, and now unread: the store is D1. It still holds the SQLite file the
+      # server wrote before the move, so a rollback to an older image finds its rooms
+      # where it left them.
       - server-data:/data
     expose:
       - "8787"

@@ -1,0 +1,23 @@
+# Wrangler configuration for the Gerrymander room server's D1 database.
+#
+# No Worker is deployed from this file. The room server is an ordinary Node process that
+# reaches D1 over the HTTP API, because it holds long-lived WebSocket connections and a
+# per-match command queue that a Worker has no place to keep. This file exists so that
+# `wrangler d1 export`, `wrangler d1 execute` and `wrangler d1 info` can find the database
+# by name, for the backup and restore procedures in CLAUDE.md.
+#
+# The schema is not managed here either. The server runs its own migrations, in
+# `src/persistence/migrations.ts`, at startup and before it opens its port.
+#
+# Create the database with `npx wrangler d1 create gerrymander`, then put the id it prints
+# here and in GERRYMANDER_D1_DATABASE_ID. Give this database to nothing else: the table
+# names are ordinary words, and two migration systems on one database is how a deployment
+# loses a table.
+
+name = "gerrymander-store"
+compatibility_date = "2026-09-01"
+
+[[d1_databases]]
+binding = "GERRYMANDER_D1"
+database_name = "gerrymander"
+database_id = "aa5caf60-b4ab-4d82-8907-b96363035992"

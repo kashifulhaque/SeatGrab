@@ -10,6 +10,17 @@
  */
 import { isAbsolute, resolve } from 'node:path';
 
+/** What the D1 HTTP API needs to be reached. The token is a secret and is never logged. */
+export interface D1Config {
+  accountId: string;
+  databaseId: string;
+  apiToken: string;
+  /** How long one HTTP attempt may take before it is abandoned. */
+  timeoutMs: number;
+  /** How many times a retryable failure is tried again. */
+  maxAttempts: number;
+}
+
 export interface ServerConfig {
   /** TCP port to bind. */
   port: number;
@@ -19,8 +30,39 @@ export interface ServerConfig {
    * the bind address by accident.
    */
   host: string;
-  /** Absolute path of the SQLite file. Its directory is created at startup. */
+  /**
+   * Absolute path of the local SQLite file. Its directory is created at startup.
+   *
+   * Read only when `d1` is null. A deployment that names a D1 database never touches it.
+   */
   databasePath: string;
+  /**
+   * The Cloudflare D1 database to use as the durable store, or null for local SQLite.
+   *
+   * All three of the account, the database and the token must be set together: a
+   * half-configured D1 is a server that would silently keep writing to a local file an
+   * operator believes they have migrated away from.
+   */
+  d1: D1Config | null;
+  /**
+   * How many accepted commands may go unwritten before the store is checkpointed.
+   *
+   * The authority for a live match is the in-memory state; D1 holds a checkpoint of it.
+   * Writing on every command would put a round trip to Cloudflare on every turn, which
+   * is the cost this setting exists to avoid. It is also the size of the window a crash
+   * loses: at 10, a process that dies without a clean shutdown loses at most the last
+   * nine commands of each match, and every match resumes at a revision boundary rather
+   * than a partial one. `1` restores write-through, at one round trip per command.
+   */
+  checkpointEveryCommands: number;
+  /**
+   * The longest a change may sit unwritten, in milliseconds, however few commands it is.
+   *
+   * Without it a table that takes one action and stops for the night would hold that
+   * action in memory only. The two bounds are a ceiling each: whichever is reached first
+   * checkpoints the match.
+   */
+  checkpointMaxDelayMs: number;
   /**
    * Largest accepted request body, in bytes.
    *
@@ -173,6 +215,41 @@ function readFlag(env: NodeJS.ProcessEnv, name: string): boolean {
 }
 
 /**
+ * Read the D1 settings, or null when this deployment stores locally.
+ *
+ * The three that identify the database are all-or-nothing on purpose. A server that
+ * found two of them and fell back to a local file would be a server quietly writing
+ * where nobody is looking, and the operator would find out from a restore.
+ */
+function readD1(env: NodeJS.ProcessEnv): D1Config | null {
+  const accountId = env['GERRYMANDER_D1_ACCOUNT_ID']?.trim() ?? '';
+  const databaseId = env['GERRYMANDER_D1_DATABASE_ID']?.trim() ?? '';
+  const apiToken = env['GERRYMANDER_D1_API_TOKEN']?.trim() ?? '';
+
+  const named = [
+    ['GERRYMANDER_D1_ACCOUNT_ID', accountId],
+    ['GERRYMANDER_D1_DATABASE_ID', databaseId],
+    ['GERRYMANDER_D1_API_TOKEN', apiToken],
+  ] as const;
+  const missing = named.filter(([, value]) => value === '').map(([name]) => name);
+  if (missing.length === named.length) return null;
+  if (missing.length > 0) {
+    throw new ConfigError(
+      `To store in Cloudflare D1, set all of ${named.map(([name]) => name).join(', ')}. `
+      + `Missing: ${missing.join(', ')}. Leave all three unset to store in a local SQLite file.`,
+    );
+  }
+
+  return {
+    accountId,
+    databaseId,
+    apiToken,
+    timeoutMs: readInteger(env, 'GERRYMANDER_D1_TIMEOUT_MS', 10000, 100, 120000),
+    maxAttempts: readInteger(env, 'GERRYMANDER_D1_MAX_ATTEMPTS', 4, 1, 10),
+  };
+}
+
+/**
  * Read the configuration from an environment.
  *
  * The environment is a parameter so a test can build a configuration without touching
@@ -194,6 +271,9 @@ export function readServerConfig(env: NodeJS.ProcessEnv = process.env): ServerCo
     port: readInteger(env, 'GERRYMANDER_PORT', DEFAULT_PORT, 0, 65535),
     host: env['GERRYMANDER_HOST']?.trim() || '127.0.0.1',
     databasePath,
+    d1: readD1(env),
+    checkpointEveryCommands: readInteger(env, 'GERRYMANDER_CHECKPOINT_EVERY_COMMANDS', 10, 1, 1000),
+    checkpointMaxDelayMs: readInteger(env, 'GERRYMANDER_CHECKPOINT_MAX_DELAY_MS', 5000, 0, 600000),
     maxBodyBytes: readInteger(env, 'GERRYMANDER_MAX_BODY_BYTES', DEFAULT_MAX_BODY_BYTES, 1024, 4 * 1024 * 1024),
     logLevel: logLevel as ServerConfig['logLevel'],
     shutdownTimeoutSeconds: readInteger(env, 'GERRYMANDER_SHUTDOWN_TIMEOUT_SECONDS', 10, 0, 300),

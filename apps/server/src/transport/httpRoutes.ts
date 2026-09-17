@@ -57,8 +57,14 @@ export interface RouteOptions {
   hub: MatchHub;
   /** Reported by the health route so an operator can tell which build is running. */
   version: { schemaVersion: number; contentPackId: string; contentVersion: string; boardId: string };
-  /** Whether the database answered a trivial read. */
-  databaseReady: () => boolean;
+  /**
+   * Whether the store answered a trivial read, and every checkpoint has landed.
+   *
+   * Asynchronous because the store is reached over HTTP in a deployment. `app.ts` caches
+   * the answer for a few seconds, because `/health` sits outside the request budget and
+   * an uncached check would make health polling into billable traffic against D1.
+   */
+  databaseReady: () => Promise<boolean>;
   /**
    * Whether every computer seat is still deciding.
    *
@@ -107,8 +113,8 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
     });
   }
 
-  function seatOf(request: FastifyRequest, matchId: string): SeatIdentity {
-    return rooms.authenticate(matchId, readBearer(request.headers.authorization));
+  async function seatOf(request: FastifyRequest, matchId: string): Promise<SeatIdentity> {
+    return await rooms.authenticate(matchId, readBearer(request.headers.authorization));
   }
 
   /**
@@ -118,7 +124,7 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
    * nothing else: no room code, no seat, no count of who is playing.
    */
   app.get('/health', async (_request: FastifyRequest, reply: FastifyReply) => {
-    const ready = options.databaseReady();
+    const ready = await options.databaseReady();
     const computers = options.computersReady?.() ?? true;
     return reply.status(ready ? 200 : 503).send({
       status: ready ? 'ok' : 'degraded',
@@ -132,7 +138,7 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
   app.post('/api/rooms', async (request: FastifyRequest, reply: FastifyReply) => {
     const parsed = CreateRoomSchema.safeParse(request.body);
     if (!parsed.success) badBody(parsed.error);
-    const claim = rooms.createRoom({
+    const claim = await rooms.createRoom({
       seatCount: parsed.data.seatCount,
       displayName: parsed.data.displayName,
       partyId: parsed.data.partyId,
@@ -143,14 +149,14 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
 
   app.get('/api/rooms/:roomCode', async (request: FastifyRequest, reply: FastifyReply) => {
     const { roomCode } = request.params as { roomCode: string };
-    return reply.send(rooms.lobby(roomCode));
+    return reply.send(await rooms.lobby(roomCode));
   });
 
   app.post('/api/rooms/:roomCode/seats', async (request: FastifyRequest, reply: FastifyReply) => {
     const { roomCode } = request.params as { roomCode: string };
     const parsed = ClaimSeatSchema.safeParse(request.body);
     if (!parsed.success) badBody(parsed.error);
-    const claim = rooms.claimSeat({
+    const claim = await rooms.claimSeat({
       roomCode,
       displayName: parsed.data.displayName,
       partyId: parsed.data.partyId,
@@ -172,7 +178,7 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
     if (!Number.isInteger(index) || index < 0) {
       throw new RoomError(400, 'NO_SUCH_SEAT', 'A seat is named by its whole-number index.');
     }
-    return reply.send(rooms.releaseSeat(seatOf(request, matchId), index));
+    return reply.send(await rooms.releaseSeat(await seatOf(request, matchId), index));
   });
 
   /**
@@ -190,12 +196,14 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
     }
     const parsed = SeatComputerSchema.safeParse(request.body);
     if (!parsed.success) badBody(parsed.error);
-    return reply.send(rooms.seatComputer(seatOf(request, matchId), index, parsed.data.difficulty));
+    return reply.send(
+      await rooms.seatComputer(await seatOf(request, matchId), index, parsed.data.difficulty),
+    );
   });
 
   app.post('/api/matches/:matchId/start', async (request: FastifyRequest, reply: FastifyReply) => {
     const { matchId } = request.params as { matchId: string };
-    return reply.send(await hub.start(seatOf(request, matchId)));
+    return reply.send(await hub.start(await seatOf(request, matchId)));
   });
 
   /**
@@ -207,7 +215,7 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
    */
   app.get('/api/matches/:matchId/state', async (request: FastifyRequest, reply: FastifyReply) => {
     const { matchId } = request.params as { matchId: string };
-    return reply.send(rooms.viewFor(seatOf(request, matchId)));
+    return reply.send(await rooms.viewFor(await seatOf(request, matchId)));
   });
 
   app.get('/api/matches/:matchId/events', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -217,12 +225,12 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
     if (!Number.isInteger(since) || since < 0) {
       throw new RoomError(400, 'INVALID_CURSOR', '"since" must be a whole event cursor, or be left out.');
     }
-    return reply.send(rooms.events(seatOf(request, matchId), since));
+    return reply.send(await rooms.events(await seatOf(request, matchId), since));
   });
 
   app.post('/api/matches/:matchId/commands', async (request: FastifyRequest, reply: FastifyReply) => {
     const { matchId } = request.params as { matchId: string };
-    const seat = seatOf(request, matchId);
+    const seat = await seatOf(request, matchId);
     const { response, duplicate } = await hub.submit(seat, request.body);
     // A refused command is a legitimate answer about the game, not a broken request, so
     // it is 200 with `ok: false` and the engine's own code. The client reads the body.

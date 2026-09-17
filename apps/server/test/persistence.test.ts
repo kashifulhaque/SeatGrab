@@ -11,7 +11,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { ConfigError, DEFAULT_MAX_BODY_BYTES, DEFAULT_PORT, readServerConfig } from '../src/config';
+import {
+  ConfigError,
+  DEFAULT_MAX_BODY_BYTES,
+  DEFAULT_PORT,
+  readServerConfig,
+  type ServerConfig,
+} from '../src/config';
 import {
   credentialMatches,
   generateCredential,
@@ -28,124 +34,102 @@ import { LATEST_SCHEMA_VERSION, MIGRATIONS, runMigrations } from '../src/persist
 let directory: string;
 let database: Database;
 
-beforeEach(() => {
+beforeEach(async () => {
   directory = mkdtempSync(join(tmpdir(), 'gerrymander-persistence-'));
-  database = openDatabase(join(directory, 'gerrymander.db'));
+  database = openDatabase(configFor(join(directory, 'gerrymander.db')));
 });
 
-afterEach(() => {
-  database.close();
+afterEach(async () => {
+  await database.close();
   rmSync(directory, { recursive: true, force: true });
 });
 
+/** A configuration that names a local file, which is what `openDatabase` chooses on. */
+function configFor(databasePath: string): ServerConfig {
+  return readServerConfig({
+    GERRYMANDER_DB_PATH: databasePath,
+    GERRYMANDER_LOG_LEVEL: 'silent',
+  } as NodeJS.ProcessEnv);
+}
+
 describe('migrations', () => {
-  it('create the four tables section 14.3 names', () => {
-    runMigrations(database);
+  it('create the four tables section 14.3 names', async () => {
+    await runMigrations(database);
     const names = (
-      database.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[]
+      await database.all("SELECT name FROM sqlite_master WHERE type = 'table'") as { name: string }[]
     ).map((row) => row.name);
     for (const table of ['matches', 'seats', 'commands', 'events']) {
       expect(names).toContain(table);
     }
   });
 
-  it('apply once and then do nothing', () => {
-    const first = runMigrations(database);
+  it('apply once and then do nothing', async () => {
+    const first = await runMigrations(database);
     expect(first.map((migration) => migration.version))
       .toEqual(MIGRATIONS.map((migration) => migration.version));
-    const second = runMigrations(database);
+    const second = await runMigrations(database);
     expect(second).toEqual([]);
-    const applied = database.prepare('SELECT COUNT(*) AS total FROM schema_migrations').get() as {
+    const applied = await database.get('SELECT COUNT(*) AS total FROM schema_migrations') as {
       total: number;
     };
     expect(applied.total).toBe(LATEST_SCHEMA_VERSION);
   });
 
-  it('refuse a database written by a newer build rather than writing into it', () => {
-    runMigrations(database);
-    database
-      .prepare('INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)')
-      .run(LATEST_SCHEMA_VERSION + 1, 'from-the-future', new Date().toISOString());
-    expect(() => runMigrations(database)).toThrow(/restore a backup/u);
+  /**
+   * A migration is one batch whose last statement records the version, so a batch that
+   * failed partway leaves the version unrecorded and the next start runs it again. This
+   * is that retry: every statement has already been applied, and running them a second
+   * time must still succeed rather than fail on a table or a column that is already
+   * there.
+   */
+  it('apply again over a schema that already has everything', async () => {
+    await runMigrations(database);
+    await database.run('DELETE FROM schema_migrations');
+    const again = await runMigrations(database);
+    expect(again.map((migration) => migration.version))
+      .toEqual(MIGRATIONS.map((migration) => migration.version));
+    const seats = await database.all("SELECT name FROM pragma_table_info('seats')") as {
+      name: string;
+    }[];
+    expect(seats.map((column) => column.name)).toContain('controller');
   });
 
-  it('refuse a match row with a seat count this edition does not seat', () => {
-    runMigrations(database);
-    const insert = (): void => {
-      database
-        .prepare(
-          `INSERT INTO matches (
-             match_id, room_code, status, seat_count, content_advisories, tie_policy, revision,
-             content_pack_id, content_version, ruleset_id, ruleset_version, board_id, board_version,
-             snapshot, created_at, updated_at
-           ) VALUES ('m1', 'AAAAAAAA', 'lobby', 6, '[]', 'jointWinners', 0,
-             'c', '1', 'r', '1', 'b', '1', NULL, 'now', 'now')`,
-        )
-        .run();
-    };
-    expect(insert).toThrow();
-  });
-
-  it('refuse two seats holding the same credential hash', () => {
-    runMigrations(database);
-    database
-      .prepare(
-        `INSERT INTO matches (
-           match_id, room_code, status, seat_count, content_advisories, tie_policy, revision,
-           content_pack_id, content_version, ruleset_id, ruleset_version, board_id, board_version,
-           snapshot, created_at, updated_at
-         ) VALUES ('m1', 'AAAAAAAA', 'lobby', 3, '[]', 'jointWinners', 0,
-           'c', '1', 'r', '1', 'b', '1', NULL, 'now', 'now')`,
-      )
-      .run();
-    const seat = database.prepare(
-      'INSERT INTO seats (match_id, seat_index, player_id, credential_hash) VALUES (?, ?, ?, ?)',
+  it('refuse a database written by a newer build rather than writing into it', async () => {
+    await runMigrations(database);
+    await database.run(
+      'INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)',
+      [LATEST_SCHEMA_VERSION + 1, 'from-the-future', new Date().toISOString()],
     );
-    seat.run('m1', 0, 'p1', 'the-same-hash');
-    expect(() => seat.run('m1', 1, 'p2', 'the-same-hash')).toThrow();
+    await expect(runMigrations(database)).rejects.toThrow(/restore a backup/u);
+  });
+
+  it('refuse a match row with a seat count this edition does not seat', async () => {
+    await runMigrations(database);
+    await expect(database.run(
+      `INSERT INTO matches (
+         match_id, room_code, status, seat_count, content_advisories, tie_policy, revision,
+         content_pack_id, content_version, ruleset_id, ruleset_version, board_id, board_version,
+         snapshot, created_at, updated_at
+       ) VALUES ('m1', 'AAAAAAAA', 'lobby', 6, '[]', 'jointWinners', 0,
+         'c', '1', 'r', '1', 'b', '1', NULL, 'now', 'now')`,
+    )).rejects.toThrow();
+  });
+
+  it('refuse two seats holding the same credential hash', async () => {
+    await runMigrations(database);
+    await database.run(
+      `INSERT INTO matches (
+         match_id, room_code, status, seat_count, content_advisories, tie_policy, revision,
+         content_pack_id, content_version, ruleset_id, ruleset_version, board_id, board_version,
+         snapshot, created_at, updated_at
+       ) VALUES ('m1', 'AAAAAAAA', 'lobby', 3, '[]', 'jointWinners', 0,
+         'c', '1', 'r', '1', 'b', '1', NULL, 'now', 'now')`,
+    );
+    const seat = 'INSERT INTO seats (match_id, seat_index, player_id, credential_hash) VALUES (?, ?, ?, ?)';
+    await database.run(seat, ['m1', 0, 'p1', 'the-same-hash']);
+    await expect(database.run(seat, ['m1', 1, 'p2', 'the-same-hash'])).rejects.toThrow();
     // Two unclaimed seats both hold NULL, which the partial index must still allow.
-    expect(() => seat.run('m1', 2, 'p3', null)).not.toThrow();
-  });
-});
-
-describe('room codes', () => {
-  it('are drawn from an alphabet with no ambiguous characters in it', () => {
-    for (const character of 'ILOU01') {
-      expect(ROOM_CODE_ALPHABET).not.toContain(character);
-    }
-    expect(generateRoomCode()).toHaveLength(ROOM_CODE_LENGTH);
-  });
-
-  it('forgive case and spacing but not a character outside the alphabet', () => {
-    expect(normalizeRoomCode(' abcd-efgh ')).toBe('ABCDEFGH');
-    expect(normalizeRoomCode('ABCDEFG1')).toBeNull();
-    expect(normalizeRoomCode('ABCDEFG')).toBeNull();
-    expect(normalizeRoomCode('')).toBeNull();
-  });
-});
-
-describe('seat credentials', () => {
-  it('are stored only as a hash, and a wrong credential does not match', () => {
-    const credential = generateCredential();
-    const stored = hashCredential(credential);
-    expect(stored).not.toBe(credential);
-    expect(stored).toMatch(/^[0-9a-f]{64}$/u);
-    expect(credentialMatches(credential, stored)).toBe(true);
-    expect(credentialMatches(generateCredential(), stored)).toBe(false);
-    expect(credentialMatches(`${credential}x`, stored)).toBe(false);
-    expect(credentialMatches(credential, 'not-a-hash')).toBe(false);
-  });
-
-  it('differ every time one is minted', () => {
-    const minted = new Set(Array.from({ length: 64 }, () => generateCredential()));
-    expect(minted.size).toBe(64);
-  });
-
-  it('are read from the Authorization header and nowhere else', () => {
-    expect(readBearer('Bearer abc-123_x')).toBe('abc-123_x');
-    expect(readBearer('bearer abc')).toBeNull();
-    expect(readBearer('Basic abc')).toBeNull();
-    expect(readBearer(undefined)).toBeNull();
+    await expect(database.run(seat, ['m1', 2, 'p3', null])).resolves.toBeDefined();
   });
 });
 

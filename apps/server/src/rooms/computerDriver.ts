@@ -95,8 +95,8 @@ export class ComputerDriver {
    * the last process stopped has nothing to wake it otherwise: its people are watching a
    * turn that never arrives.
    */
-  recover(): void {
-    for (const match of this.#rooms.matchesWithComputers()) {
+  async recover(): Promise<void> {
+    for (const match of await this.#rooms.matchesWithComputers()) {
       this.#log.info({ matchId: match.matchId }, 'Resuming the computer seats of a match');
       void this.wake(match.matchId);
     }
@@ -157,7 +157,7 @@ export class ComputerDriver {
   async #run(matchId: string): Promise<void> {
     for (;;) {
       if (this.#stopped) return;
-      const due = this.#dueSeat(matchId);
+      const due = await this.#dueSeat(matchId);
       if (due === null) return;
       if (this.#delayMs > 0) {
         await new Promise<void>((resolve) => {
@@ -171,7 +171,11 @@ export class ComputerDriver {
         this.#idle.set(matchId, { turns: 0, board: due.board });
       }
 
-      const outcome = await stepComputer(this.#tableFor(due.seat), due.seat.playerId, due.difficulty);
+      const outcome = await stepComputer(
+        this.#tableFor(due.seat, due.view),
+        due.seat.playerId,
+        due.difficulty,
+      );
       if (outcome.kind === 'acted') {
         const running = this.#idle.get(matchId) ?? { turns: 0, board: due.board };
         const turns = outcome.command.type === 'RequestEndTurn' ? running.turns + 1 : 0;
@@ -207,16 +211,22 @@ export class ComputerDriver {
   }
 
   /** The first computer seat in this match whose own view says it has something to do. */
-  #dueSeat(
-    matchId: string,
-  ): { seat: SeatIdentity; difficulty: ComputerDifficulty; revision: number; board: string } | null {
-    for (const seat of this.#rooms.computerSeats(matchId)) {
-      const view = this.#viewOf(seat);
+  async #dueSeat(matchId: string): Promise<{
+    seat: SeatIdentity;
+    difficulty: ComputerDifficulty;
+    /** The projection this decision is made against, carried so it is read once. */
+    view: PlayerView;
+    revision: number;
+    board: string;
+  } | null> {
+    for (const seat of await this.#rooms.computerSeats(matchId)) {
+      const view = await this.#viewOf(seat);
       if (view === null) return null;
       if (hasSomethingToDo(view, seat.playerId)) {
         return {
           seat,
           difficulty: seat.difficulty,
+          view,
           revision: view.revision,
           board: boardSignature(view),
         };
@@ -232,16 +242,19 @@ export class ComputerDriver {
    * is answered from the idempotency record instead of being applied twice. The attempt
    * counter distinguishes the candidates of one decision, which share a revision.
    */
-  #tableFor(seat: SeatIdentity): ComputerTable {
+  #tableFor(seat: SeatIdentity, view: PlayerView): ComputerTable {
     let attempt = 0;
     return {
-      view: (playerId) => (playerId === seat.playerId ? this.#viewOf(seat) : null),
+      // `stepComputer` reads the view once, before it considers anything, so the
+      // projection `#dueSeat` already took is the one it gets. Projecting again here
+      // would be a second read for the same decision — and now that a read may await,
+      // a second one could also see a different revision halfway through a step.
+      view: (playerId) => (playerId === seat.playerId ? view : null),
       submit: async (playerId, command: GameCommand) => {
         if (playerId !== seat.playerId) {
           throw new Error('The computer driver may only submit for its own seat');
         }
-        const view = this.#viewOf(seat);
-        const revision = view?.revision ?? 0;
+        const revision = view.revision;
         const commandId = `computer:${seat.playerId}:${revision}:${attempt}`;
         attempt += 1;
         const { response } = await this.#hub.submit(seat, {
@@ -255,9 +268,9 @@ export class ComputerDriver {
     };
   }
 
-  #viewOf(seat: SeatIdentity): PlayerView | null {
+  async #viewOf(seat: SeatIdentity): Promise<PlayerView | null> {
     try {
-      return this.#rooms.viewFor(seat).view;
+      return (await this.#rooms.viewFor(seat)).view;
     } catch (error) {
       this.#log.error({ err: error, matchId: seat.matchId, playerId: seat.playerId },
         'Failed to project a computer seat');

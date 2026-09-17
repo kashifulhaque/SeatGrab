@@ -1,60 +1,35 @@
 /**
- * The SQLite connection.
+ * Open the durable store.
  *
- * This server uses Node's built-in `node:sqlite`. That keeps the deployment to one Node
- * process and a mounted file with no native build step, which is what section 14.5 asks
- * for. The module is still marked experimental by Node, so the surface used here is
- * deliberately narrow — open, `exec`, `prepare`, `close` — and every call goes through
- * this file, so swapping the driver means rewriting this file and nothing else.
+ * This file used to hold the `node:sqlite` connection and promised that swapping the
+ * driver meant rewriting it and nothing else. That is what happened: the two drivers are
+ * `localDriver.ts` and `d1Driver.ts`, the interface between them is `driver.ts`, and
+ * this file is now only the choice between them.
  *
- * `DatabaseSync` is synchronous on purpose. A transaction that never yields cannot be
- * interleaved with another request on the same event loop, which is what serializes
- * command processing per match in a single process. The repository relies on that: the
- * body of a transaction must contain no `await`.
+ * The choice is a deployment's, not a build's. A configuration that names a D1 database
+ * gets D1; one that does not gets a local SQLite file, which is what a development run
+ * and the test suite use. Both satisfy the same interface, so nothing above this file
+ * knows which one it has.
  */
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
+import type { ServerConfig } from '../config.js';
+import { D1HttpDriver } from './d1Driver.js';
+import type { SqlDriver } from './driver.js';
+import { LocalSqliteDriver } from './localDriver.js';
 
-export type Database = DatabaseSync;
+export type { SqlDriver, SqlRow, SqlStatement, SqlValue } from './driver.js';
 
-/**
- * Open the database, creating its directory if needed, and apply the connection pragmas.
- *
- * `journal_mode = WAL` keeps a reader from blocking the writer; `synchronous = FULL`
- * means an acknowledged command has reached the disk, which is what section 14.3
- * requires before a command is acknowledged. `foreign_keys` is off by default in SQLite
- * and the schema depends on it.
- */
-export function openDatabase(databasePath: string): Database {
-  if (databasePath !== ':memory:') {
-    mkdirSync(dirname(databasePath), { recursive: true });
+/** Kept as the name the rest of the server already imports. */
+export type Database = SqlDriver;
+
+export function openDatabase(config: ServerConfig): Database {
+  if (config.d1 !== null) {
+    return new D1HttpDriver({
+      accountId: config.d1.accountId,
+      databaseId: config.d1.databaseId,
+      apiToken: config.d1.apiToken,
+      timeoutMs: config.d1.timeoutMs,
+      maxAttempts: config.d1.maxAttempts,
+    });
   }
-  const database = new DatabaseSync(databasePath);
-  database.exec('PRAGMA journal_mode = WAL');
-  database.exec('PRAGMA synchronous = FULL');
-  database.exec('PRAGMA foreign_keys = ON');
-  database.exec('PRAGMA busy_timeout = 5000');
-  return database;
-}
-
-/**
- * Run `work` inside one transaction, rolling back if it throws.
- *
- * `BEGIN IMMEDIATE` takes the write lock at the start rather than on the first write, so
- * two writers fail to start instead of failing to upgrade halfway through. `work` must
- * be synchronous; an `await` inside it would let another request run against a state
- * this transaction is midway through changing.
- */
-export function inTransaction<T>(database: Database, work: () => T): T {
-  database.exec('BEGIN IMMEDIATE');
-  let result: T;
-  try {
-    result = work();
-  } catch (error) {
-    database.exec('ROLLBACK');
-    throw error;
-  }
-  database.exec('COMMIT');
-  return result;
+  return new LocalSqliteDriver(config.databasePath);
 }

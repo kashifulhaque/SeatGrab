@@ -278,9 +278,7 @@ describe('a started match with computer seats', () => {
     const host = await soloRoom();
     await start(host);
 
-    const stored = harness.server.database
-      .prepare('SELECT command_id, actor_player_id, command, revision_before FROM commands WHERE match_id = ?')
-      .all(host.matchId) as { command_id: string; actor_player_id: string; command: string; revision_before: number }[];
+    const stored = await harness.server.database.all('SELECT command_id, actor_player_id, command, revision_before FROM commands WHERE match_id = ?', [host.matchId]) as { command_id: string; actor_player_id: string; command: string; revision_before: number }[];
     const byComputer = stored.filter((row) => row.command_id.startsWith('computer:'));
     expect(byComputer.length).toBeGreaterThan(0);
     for (const row of byComputer) {
@@ -291,8 +289,7 @@ describe('a started match with computer seats', () => {
     // Replaying one of them, as the seat that sent it, is answered from the record rather
     // than applied a second time. This is what makes a restart mid-decision safe.
     const first = byComputer[0]!;
-    const seat = harness.server.rooms
-      .computerSeats(host.matchId)
+    const seat = (await harness.server.rooms.computerSeats(host.matchId))
       .find((candidate) => candidate.playerId === first.actor_player_id);
     expect(seat).toBeDefined();
     const again = await harness.server.hub.submit(seat!, {
@@ -306,7 +303,7 @@ describe('a started match with computer seats', () => {
 
   it('refuses a computer seat\u2019s credential, because it has none', async () => {
     const host = await soloRoom();
-    const seats = harness.server.rooms.computerSeats(host.matchId);
+    const seats = await harness.server.rooms.computerSeats(host.matchId);
     expect(seats.map((seat) => seat.playerId)).toEqual(['p2', 'p3']);
     expect(seats.every((seat) => !seat.isHost)).toBe(true);
     // Nothing arriving over the wire can act as one: `authenticate` looks a seat up by

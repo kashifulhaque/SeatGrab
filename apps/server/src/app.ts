@@ -15,6 +15,7 @@ import { openDatabase, type Database } from './persistence/database.js';
 import { LATEST_SCHEMA_VERSION, runMigrations } from './persistence/migrations.js';
 import { MatchRepository } from './persistence/repository.js';
 import { ComputerDriver } from './rooms/computerDriver.js';
+import { MatchStore } from './rooms/matchStore.js';
 import { MatchHub } from './rooms/matchHub.js';
 import { RoomError, RoomService } from './rooms/roomService.js';
 import { registerRoutes } from './transport/httpRoutes.js';
@@ -27,9 +28,18 @@ export interface BuiltServer {
   rooms: RoomService;
   /** Sequences every change to a match and announces it to the seats watching. */
   hub: MatchHub;
+  /** The authoritative state of every live match, and its checkpoints to the store. */
+  store: MatchStore;
   /** Plays the computer seats. `index.ts` calls `recover()` once the port is open. */
   computers: ComputerDriver;
-  /** Closes the HTTP server and then the database, in that order. */
+  /**
+   * Closes the HTTP server, checkpoints every live match, then closes the store.
+   *
+   * The order matters more than it used to. State is authoritative in memory between
+   * checkpoints, so a shutdown that closed the store without writing first would throw
+   * away every command since the last one. `close` writes them, and reports rather than
+   * swallows a write it could not do.
+   */
   close: () => Promise<void>;
 }
 
@@ -42,15 +52,40 @@ export interface BuildOptions {
   seed?: () => number;
 }
 
-export function buildServer(options: BuildOptions): BuiltServer {
+/**
+ * Assemble the server.
+ *
+ * Asynchronous because opening the store is: the migrations run against Cloudflare D1
+ * over HTTP in a deployment, and against a local SQLite file otherwise. `index.ts`
+ * awaits this before it listens, so a server that cannot reach its store fails to start
+ * rather than failing on the first player's request.
+ */
+export async function buildServer(options: BuildOptions): Promise<BuiltServer> {
   const { config } = options;
   const content = options.content ?? CORE_CONTENT;
-  const database = openDatabase(config.databasePath);
-  runMigrations(database);
+  const database = openDatabase(config);
+  await runMigrations(database);
 
   const repository = new MatchRepository(database);
+  const store = new MatchStore({
+    repository,
+    content,
+    checkpointEveryCommands: config.checkpointEveryCommands,
+    checkpointMaxDelayMs: config.checkpointMaxDelayMs,
+    onCheckpointFailed: (matchId, error, pendingCommands) => {
+      // Logged at error level with the match ID, like a refused computer move, and for
+      // the same reason: the commands are still only in memory, and an operator has to
+      // know before the process stops. The health route answers `database: degraded`
+      // until a later checkpoint for that match succeeds.
+      app.log.error(
+        { err: error, matchId, pendingCommands },
+        'Checkpoint to the store failed; these commands are held in memory only',
+      );
+    },
+  });
   const rooms = new RoomService({
     repository,
+    store,
     content,
     ...(options.now === undefined ? {} : { now: options.now }),
     ...(options.seed === undefined ? {} : { seed: options.seed }),
@@ -128,6 +163,37 @@ export function buildServer(options: BuildOptions): BuiltServer {
   });
   computers.attach();
 
+  /**
+   * Whether the store answered a trivial read recently, and whether every checkpoint has
+   * landed.
+   *
+   * The ping is cached. `/health` is deliberately outside the request budget, so an
+   * uncached check would let anyone turn health polling into traffic against D1, which
+   * is billed and rate-limited. A few seconds of staleness is the right trade for a
+   * route whose whole job is to keep answering while the server is busy.
+   *
+   * `degraded` here means a checkpoint failed and its commands are still only in memory.
+   * The status code stays 200 and `status` stays `ok`, as it does for a degraded
+   * computer: the matches that are running are running correctly, and refusing to serve
+   * them would not make the unwritten commands any safer.
+   */
+  const PING_CACHE_MS = 5000;
+  let lastPingAt = 0;
+  let lastPingOk = true;
+  const databaseReady = async (): Promise<boolean> => {
+    const at = (options.now ?? (() => new Date()))().getTime();
+    if (at - lastPingAt < PING_CACHE_MS) return lastPingOk && store.healthy;
+    lastPingAt = at;
+    try {
+      await database.ping();
+      lastPingOk = true;
+    } catch (error) {
+      app.log.error({ err: error }, 'The store did not answer a health read');
+      lastPingOk = false;
+    }
+    return lastPingOk && store.healthy;
+  };
+
   registerSocketRoutes(app, { rooms, hub, config });
 
   registerRoutes(app, {
@@ -139,14 +205,7 @@ export function buildServer(options: BuildOptions): BuiltServer {
       contentVersion: content.contentVersion,
       boardId: content.board.id,
     },
-    databaseReady: () => {
-      try {
-        database.prepare('SELECT 1 AS ok').get();
-        return true;
-      } catch {
-        return false;
-      }
-    },
+    databaseReady,
     computersReady: () => computers.healthy(),
     startedAt: (options.now ?? (() => new Date()))(),
     ...(options.now === undefined ? {} : { now: options.now }),
@@ -161,11 +220,21 @@ export function buildServer(options: BuildOptions): BuiltServer {
     database,
     rooms,
     hub,
+    store,
     computers,
     async close() {
       computers.stop();
       await app.close();
-      database.close();
+      // Everything accepted and not yet checkpointed is written here. A failure is
+      // logged rather than raised: the caller is a shutdown, and there is nothing left
+      // to retry with, but an operator must be told which match lost commands.
+      try {
+        await store.flushAll();
+      } catch (error) {
+        app.log.error({ err: error }, 'Some matches could not be checkpointed during shutdown');
+      }
+      store.dispose();
+      await database.close();
     },
   };
 }

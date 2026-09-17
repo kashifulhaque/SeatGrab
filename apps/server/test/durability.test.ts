@@ -131,9 +131,7 @@ describe('a restart resumes the same match', () => {
     expect(before.view.status).toBe('setup');
     expect(before.view.pendingDecision?.kind).toBe('startingResources');
     const snapshotBefore = (
-      harness.server.database
-        .prepare('SELECT snapshot FROM matches WHERE match_id = ?')
-        .get(first.matchId) as { snapshot: string }
+      await harness.server.database.get('SELECT snapshot FROM matches WHERE match_id = ?', [first.matchId]) as { snapshot: string }
     ).snapshot;
 
     await harness.restart();
@@ -145,9 +143,7 @@ describe('a restart resumes the same match', () => {
     expect(after.view.pendingDecision).toEqual(before.view.pendingDecision);
     expect(after.legalActions).toEqual(before.legalActions);
     const snapshotAfter = (
-      harness.server.database
-        .prepare('SELECT snapshot FROM matches WHERE match_id = ?')
-        .get(first.matchId) as { snapshot: string }
+      await harness.server.database.get('SELECT snapshot FROM matches WHERE match_id = ?', [first.matchId]) as { snapshot: string }
     ).snapshot;
     expect(snapshotAfter).toBe(snapshotBefore);
   });
@@ -205,9 +201,7 @@ describe('a repeated command ID', () => {
     // The proof that it was not applied twice: one revision step, and one row each in
     // the command log and the ballot the engine recorded.
     expect((await readState(first)).view.revision).toBe(once.revision);
-    const rows = harness.server.database
-      .prepare('SELECT COUNT(*) AS total FROM commands WHERE match_id = ? AND command_id = ?')
-      .get(first.matchId, 'ballot-1') as { total: number };
+    const rows = await harness.server.database.get('SELECT COUNT(*) AS total FROM commands WHERE match_id = ? AND command_id = ?', [first.matchId, 'ballot-1']) as { total: number };
     expect(rows.total).toBe(1);
   });
 
@@ -290,9 +284,7 @@ describe('a command is applied for the seat that sent it', () => {
       candidateId: 'p3',
     });
     expect(result.ok).toBe(true);
-    const row = harness.server.database
-      .prepare('SELECT actor_player_id FROM commands WHERE match_id = ? AND command_id = ?')
-      .get(first.matchId, 'by-p2') as { actor_player_id: string };
+    const row = await harness.server.database.get('SELECT actor_player_id FROM commands WHERE match_id = ? AND command_id = ?', [first.matchId, 'by-p2']) as { actor_player_id: string };
     expect(row.actor_player_id).toBe('p2');
 
     // p1 has not voted, so its ballot is still open.
@@ -306,12 +298,8 @@ describe('the stored event log', () => {
     const first = seats[0] as Claim;
     await electFirstPlayer(seats);
 
-    const match = harness.server.database
-      .prepare('SELECT revision FROM matches WHERE match_id = ?')
-      .get(first.matchId) as { revision: number };
-    const highest = harness.server.database
-      .prepare('SELECT MAX(revision) AS revision FROM events WHERE match_id = ?')
-      .get(first.matchId) as { revision: number };
+    const match = await harness.server.database.get('SELECT revision FROM matches WHERE match_id = ?', [first.matchId]) as { revision: number };
+    const highest = await harness.server.database.get('SELECT MAX(revision) AS revision FROM events WHERE match_id = ?', [first.matchId]) as { revision: number };
     expect(highest.revision).toBe(match.revision);
   });
 
@@ -331,9 +319,7 @@ describe('the stored event log', () => {
     expect(body.cursor).toBeGreaterThanOrEqual(body.events.length);
 
     // No stored event reaches a seat carrying the engine's server-only visibility.
-    const serverOnly = harness.server.database
-      .prepare("SELECT event_id FROM events WHERE match_id = ? AND visibility = 'server'")
-      .all(first.matchId) as { event_id: string }[];
+    const serverOnly = await harness.server.database.all("SELECT event_id FROM events WHERE match_id = ? AND visibility = 'server'", [first.matchId]) as { event_id: string }[];
     for (const hidden of serverOnly) {
       expect(body.events.some((event) => event.id === hidden.event_id)).toBe(false);
     }

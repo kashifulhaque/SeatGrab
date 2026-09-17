@@ -104,7 +104,11 @@ export class MatchHub {
    */
   async start(seat: SeatIdentity): Promise<SeatView> {
     const view = await this.#queue.run(seat.matchId, () => this.#rooms.start(seat));
-    this.broadcast(seat.matchId);
+    // Awaited before `#onChanged`, which is what wakes the computer driver. Projecting a
+    // seat is asynchronous now, so letting this run loose would let the driver's next
+    // command broadcast its own state frames while these are still being built, and a
+    // seat could be sent revision N + 1 before revision N.
+    await this.broadcast(seat.matchId);
     this.#onChanged(seat.matchId);
     return view;
   }
@@ -112,9 +116,11 @@ export class MatchHub {
   /**
    * Apply one command, then tell everyone watching the match what it did to their seat.
    *
-   * The queued task is `RoomService.submit` alone, and that is still synchronous from
-   * the read to the commit. The queue is what makes that irrelevant: even if the task
-   * yielded, nothing else for this match could run inside it.
+   * The queued task is `RoomService.submit` alone, and that task now yields: it reads
+   * and writes the in-memory match, and awaits a checkpoint on the commands that reach
+   * the bound. The queue is what makes that safe, and it is no longer a belt over a
+   * synchronous path but the whole of the guarantee — nothing else for this match runs
+   * inside the task.
    */
   async submit(
     seat: SeatIdentity,
@@ -124,7 +130,7 @@ export class MatchHub {
     // A refused command changes no state, so there is nothing to announce. A duplicate
     // replays an answer that was already broadcast when it was first decided.
     if (result.response.ok && !result.duplicate) {
-      this.broadcast(seat.matchId);
+      await this.broadcast(seat.matchId);
       this.#onChanged(seat.matchId);
     }
     return result;
@@ -138,12 +144,12 @@ export class MatchHub {
    * an unreadable snapshot is one seat's problem to surface, not a reason for the rest
    * of the table to go quiet.
    */
-  broadcast(matchId: string): void {
+  async broadcast(matchId: string): Promise<void> {
     const attached = this.#connections.get(matchId);
     if (attached === undefined) return;
     for (const connection of [...attached]) {
       try {
-        connection.send({ type: 'state', state: this.#rooms.viewFor(connection.seat) });
+        connection.send({ type: 'state', state: await this.#rooms.viewFor(connection.seat) });
       } catch (error) {
         this.#onBroadcastError(error, connection.seat);
       }

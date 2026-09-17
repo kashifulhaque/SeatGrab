@@ -370,8 +370,20 @@ The application is two independent pieces, and a pass-and-play deployment needs 
 first:
 
 - **A static browser build**, in `apps/web/dist`. Any static host serves it.
-- **A Node process**, `apps/server/dist/index.js`, with one SQLite file. It's the authority
-  for online rooms, and nothing else writes to that file.
+- **A Node process**, `apps/server/dist/index.js`, with a durable store behind it. It's the
+  authority for online rooms, and nothing else writes to that store.
+
+#### Two stores
+
+The store is chosen by configuration, not by the build, and both satisfy one interface in
+`apps/server/src/persistence/driver.ts`:
+
+| Store | Chosen by | What it's for |
+| --- | --- | --- |
+| Cloudflare D1 | `GERRYMANDER_D1_*` set | A deployment. Reached over the HTTP API, because the server is an ordinary Node process rather than a Worker. |
+| Local SQLite | `GERRYMANDER_D1_*` unset | Development and the test suite. Node's built-in `node:sqlite`, one file. |
+
+Nothing above `persistence/database.ts` knows which one it has.
 
 #### Two browser builds
 
@@ -393,7 +405,14 @@ Every setting has a default that runs a single-instance development server, so a
 
 | Variable | Default | What it does |
 |---|---|---|
-| `GERRYMANDER_DB_PATH` | `./data/gerrymander.db` | The SQLite file. Its directory is created at startup. |
+| `GERRYMANDER_DB_PATH` | `./data/gerrymander.db` | The local SQLite file, read only when the D1 settings are unset. Its directory is created at startup. |
+| `GERRYMANDER_D1_ACCOUNT_ID` | none | The Cloudflare account that holds the D1 database. |
+| `GERRYMANDER_D1_DATABASE_ID` | none | The D1 database's UUID, as `wrangler d1 create` prints it. |
+| `GERRYMANDER_D1_API_TOKEN` | none | An API token with the **D1 Edit** permission on that account. A secret: it never reaches a log or the health route. |
+| `GERRYMANDER_D1_TIMEOUT_MS` | `10000` | How long one HTTP attempt to D1 may take. |
+| `GERRYMANDER_D1_MAX_ATTEMPTS` | `4` | How many times a retryable D1 failure is tried again. A 429, a 408, a 5xx and a transport failure are retryable; a 4xx is not. |
+| `GERRYMANDER_CHECKPOINT_EVERY_COMMANDS` | `10` | Accepted commands that may go unwritten before the store is checkpointed. Also the size of the window an unclean stop loses. `1` writes through. |
+| `GERRYMANDER_CHECKPOINT_MAX_DELAY_MS` | `5000` | The longest a change may sit unwritten, however few commands it is. |
 | `GERRYMANDER_HOST` | `127.0.0.1` | Bind address. Leave it on loopback and put a reverse proxy in front. |
 | `GERRYMANDER_PORT` | `8787` | TCP port. |
 | `GERRYMANDER_ALLOWED_ORIGINS` | the two loopback spellings of the Vite dev server | Comma-separated browser origins allowed to open a WebSocket. `*` is refused. |
@@ -409,6 +428,65 @@ Every setting has a default that runs a single-instance development server, so a
 
 A setting the server can't read stops it with exit code 2 and a message naming the
 variable. It doesn't fall back to a default.
+
+The three D1 settings that identify the database are all-or-nothing. Setting two of them
+stops the server rather than falling back to a local file, because a server quietly
+writing where nobody is looking is a fault an operator finds out about from a restore.
+
+#### Create the D1 database
+
+Gerrymander runs its own migrations against whatever store it's given, so creating the
+database is the whole of the setup. Don't point it at a D1 database another application
+uses: the table names — `matches`, `seats`, `commands`, `events` — are ordinary words, and
+two migration systems on one database is how a deployment loses a table.
+
+```sh
+npx wrangler d1 create gerrymander
+```
+
+The output names the `database_id`. Pass it as `GERRYMANDER_D1_DATABASE_ID`, with the
+account ID and an API token carrying the **D1 Edit** permission. The server applies every
+pending migration at startup, before it opens the port, so a store it can't reach stops it
+there rather than on the first player's request.
+
+### What a checkpoint costs
+
+The server doesn't write to D1 on every command, and this is the section that says what
+that buys and what it costs.
+
+D1 is reached over HTTP, so a write-through store would put a round trip to Cloudflare in
+the middle of every turn. Instead the authority for a live match is the state in this
+process, in `apps/server/src/rooms/matchStore.ts`, and D1 holds a checkpoint of it. A
+checkpoint is one HTTP call carrying the snapshot, the events and the idempotency records
+together, and it's written:
+
+- every `GERRYMANDER_CHECKPOINT_EVERY_COMMANDS` accepted or refused commands,
+- `GERRYMANDER_CHECKPOINT_MAX_DELAY_MS` after the first unwritten change,
+- when a match finishes,
+- when the process stops cleanly.
+
+Whichever comes first. So the commands between checkpoints cost no network at all, and one
+command in `n` waits for a write.
+
+**Players never see the lag.** Views, event reads and duplicate detection are all answered
+from the live match, unwritten changes included. The store being behind is the store's
+business.
+
+**A clean stop loses nothing.** `SIGTERM` and `SIGINT` checkpoint every live match before
+closing.
+
+**An unclean stop loses the window.** A kill or a power loss loses that match's commands
+since its last checkpoint — at most `GERRYMANDER_CHECKPOINT_EVERY_COMMANDS - 1` of them.
+Every match still comes back at a revision boundary, never part-way through a command,
+because a checkpoint writes the snapshot and its events and its command records together.
+A player who re-sends a command ID that was lost that way has it applied again rather than
+answered from the record, because the record was lost with it.
+
+Set `GERRYMANDER_CHECKPOINT_EVERY_COMMANDS=1` to write through and pay one round trip per
+turn instead. That's what the test suite runs at, because it's the setting under which the
+older durability assertions still mean what they say;
+`apps/server/test/checkpoint.test.ts` is the suite that sets it higher on purpose and
+proves each of the four points above, including the loss.
 
 ### The origin allowlist
 
@@ -460,8 +538,8 @@ location /api {
 
 ### Health
 
-`GET /health` answers 200 when the database answers a trivial read, and 503 when it
-doesn't. The body names the build so a mismatch between the browser and the server is
+`GET /health` answers 200 when the store answers a trivial read and every checkpoint has
+landed, and 503 when the store doesn't answer. The body names the build so a mismatch between the browser and the server is
 visible:
 
 ```sh
@@ -475,9 +553,24 @@ The output is similar to the following:
  "contentPackId":"core-set","contentVersion":"0.9.0","boardId":"grid-nine"}
 ```
 
-It names no room code, no seat, and no count of who is playing. It's also deliberately
-outside the request budget: a health check that starts failing because the server is busy
-reports the opposite of what it's for.
+It names no room code, no seat, and no count of who is playing, and it never names the D1
+token. It's also deliberately outside the request budget: a health check that starts
+failing because the server is busy reports the opposite of what it's for. Because it's
+outside that budget, the read behind it is cached for a few seconds — otherwise anyone
+could turn health polling into billable traffic against D1.
+
+`database` reads `degraded` when a checkpoint failed and its commands are still held in
+memory. The status code stays 200: the matches that are running are running correctly, and
+refusing to serve them wouldn't make the unwritten commands any safer. Search the log at
+error level for the match ID:
+
+```sh
+journalctl -u gerrymander | grep 'Checkpoint to the store failed'
+```
+
+The field clears when a later checkpoint for that match succeeds. A `degraded` that
+persists means D1 is refusing something this build sends, which is a defect to report with
+the match ID.
 
 `computers` reads `degraded` when a computer seat in some match had every move it
 considered refused. The match it happened in is stopped for that seat and nothing retries
@@ -494,39 +587,58 @@ only when the process restarts.
 
 ### Back up and restore
 
-The database is one SQLite file in WAL mode, so a plain file copy of a running server can
-capture a `.db` without the `-wal` beside it. Use SQLite's own backup instead, which is
-safe while the server runs:
+D1 takes its own backups, and `wrangler` exports one as SQL while the server runs:
 
 ```sh
-sqlite3 /var/lib/gerrymander/gerrymander.db ".backup '/var/backups/gerrymander-$(date +%F).db'"
+npx wrangler d1 export gerrymander --remote --output gerrymander-$(date +%F).sql
 ```
 
-To restore, stop the server first. A restore under a running process leaves it holding a
-file that no longer matches its WAL:
+An export taken from a running server can miss the commands that haven't been checkpointed
+yet — see [What a checkpoint costs](#what-a-checkpoint-costs). To take one that misses
+nothing, stop the server first: a clean stop checkpoints every live match before it closes
+the store.
+
+To restore, stop the server, then import into an empty database. An import under a running
+process races the checkpoints that process is still writing:
 
 ```sh
 systemctl stop gerrymander
-rm -f /var/lib/gerrymander/gerrymander.db /var/lib/gerrymander/gerrymander.db-wal /var/lib/gerrymander/gerrymander.db-shm
-cp /var/backups/gerrymander-2026-09-16.db /var/lib/gerrymander/gerrymander.db
+npx wrangler d1 execute gerrymander --remote \
+  --command 'DROP TABLE IF EXISTS events; DROP TABLE IF EXISTS commands;
+             DROP TABLE IF EXISTS seats; DROP TABLE IF EXISTS matches;
+             DROP TABLE IF EXISTS schema_migrations'
+npx wrangler d1 execute gerrymander --remote --file gerrymander-2026-09-16.sql
 systemctl start gerrymander
 ```
 
-Removing the `-wal` and `-shm` files matters. Left in place, they belong to the file you
-just replaced, and the server either fails to open the database or reads a mixture of the
-two. A restored server resumes every room in the backup at the revision it was taken at:
-commands accepted after the backup are gone, and a client that reconnects is sent the
-restored state rather than its own.
+Dropping the tables first matters. An import over a populated database leaves rows from
+both, and a match whose snapshot is one revision and whose events are another is worse
+than a match that's missing. A restored server resumes every room in the backup at the
+revision it was taken at: commands accepted after the backup are gone, and a client that
+reconnects is sent the restored state rather than its own.
+
+Point `wrangler` at the right database with an `apps/server/wrangler.toml` naming it, or
+pass the database name the account knows it by. No Worker is deployed from that file; it
+exists so the CLI can find the database.
 
 ### Restart and recovery
 
-A restart is safe at any point. Every accepted command is one transaction carrying the
-snapshot, the events, and the idempotency record together, so a process that dies
-mid-command either committed it whole or didn't commit it at all.
+A clean restart is safe at any point and loses nothing. An unclean one — a kill, a power
+loss — loses the commands since that match's last checkpoint, and nothing else. See [What a
+checkpoint costs](#what-a-checkpoint-costs), which is the section to read before choosing
+`GERRYMANDER_CHECKPOINT_EVERY_COMMANDS` for a deployment.
 
-`SIGTERM` and `SIGINT` both close the HTTP server first, so no new request starts, and
-then close the database. If in-flight requests don't finish within
-`GERRYMANDER_SHUTDOWN_TIMEOUT_SECONDS`, the process logs and exits with code 1.
+A checkpoint carries the snapshot, the events and the idempotency records together, and
+writes the match row last. So a checkpoint that fails part-way leaves rows nothing reads
+yet and a match at the revision it was already at; the next attempt sends the same
+statements again, which is harmless by construction. A match never comes back part-way
+through a command.
+
+`SIGTERM` and `SIGINT` both close the HTTP server first, so no new request starts, then
+checkpoint every live match, then close the store. That order is what makes a clean stop
+lossless. If in-flight requests don't finish within
+`GERRYMANDER_SHUTDOWN_TIMEOUT_SECONDS`, the process logs and exits with code 1; a
+checkpoint it couldn't write is logged at error level naming the match.
 
 Rooms survive a restart in SQLite. Connected browsers show Reconnecting, retry with a
 backoff, and rejoin the same seat at the same pending decision. Nothing is lost and no
@@ -534,7 +646,9 @@ player has to re-enter a room code.
 
 Resending a command ID that the server already accepted returns the stored response with
 `"duplicate": true` and applies nothing a second time. A client that's unsure whether a
-command landed can safely send it again with the same ID.
+command landed can safely send it again with the same ID. The record is searched in memory
+before the store, so this holds inside the checkpoint window too — but not across an
+unclean restart that lost the window, where the command is applied again.
 
 Matches with computer seats resume too. After the port is open, the server looks for every
 match that is mid-play and seats a computer, and continues it — a table whose computer was
@@ -574,15 +688,37 @@ stderr names the variable and the values it accepts.
 **The server exits with `ERR_MODULE_NOT_FOUND`.** The build is stale or partial. Run
 `pnpm typecheck` to rebuild every package's `dist/`, then start again.
 
+**The server exits at startup naming the D1 settings.** Two of the three that identify the
+database are set and one isn't. Set all three, or none — the server won't fall back to a
+local file while it looks half-configured.
+
+**Startup fails with a D1 403 or "Authentication error".** The API token doesn't carry the
+**D1 Edit** permission on that account, or it's scoped to a different account than
+`GERRYMANDER_D1_ACCOUNT_ID`.
+
+**`/health` answers `database: degraded` but the tables still play.** A checkpoint failed
+and its commands are held in memory. See [Health](#health) for the log line to search for.
+The commands are still live; they're only unwritten.
+
+**Rooms come back a few commands behind after a restart.** The process didn't stop
+cleanly, so it lost that match's checkpoint window. Lower
+`GERRYMANDER_CHECKPOINT_EVERY_COMMANDS` to narrow it, and check that the service manager
+sends `SIGTERM` and waits rather than killing.
+
 ### What this deployment doesn't do
 
 State these plainly rather than discovering them in production:
 
-- **One process, one file.** There's no clustering and no shared-state story. A second
-  process on the same database would corrupt the command ordering that `MatchQueue` exists
-  to guarantee.
+- **One process.** There's no clustering and no shared-state story, and moving the store to
+  D1 doesn't add one. A second process on the same database would corrupt the command
+  ordering that `MatchQueue` exists to guarantee — and now it would do worse, because each
+  process holds its own authoritative copy of a live match in memory and they'd overwrite
+  each other at every checkpoint. Run exactly one.
 - **No CORS policy on the HTTP surface.** Origin checking is a WebSocket rule, so a browser
   reaches `/api` same-origin only. Serve the browser build and the server from one origin.
+- **No point-in-time recovery of the last few commands.** A backup is as current as the
+  last checkpoint, and so is an unclean restart. See [What a checkpoint
+  costs](#what-a-checkpoint-costs).
 - **Local saves are unencrypted.** The pass-and-play build stores every seat's private
   cards and answers in the browser's IndexedDB, and exports them in clear JSON. That's the
   stated pass-and-play model. It's never the online model: the server has no full-state

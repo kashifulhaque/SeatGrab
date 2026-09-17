@@ -97,9 +97,7 @@ describe('creating a room', () => {
 
   it('stores only the hash of a credential', async () => {
     const claim = await createRoom();
-    const rows = harness.server.database
-      .prepare('SELECT credential_hash FROM seats WHERE match_id = ? AND credential_hash IS NOT NULL')
-      .all(claim.matchId) as { credential_hash: string }[];
+    const rows = await harness.server.database.all('SELECT credential_hash FROM seats WHERE match_id = ? AND credential_hash IS NOT NULL', [claim.matchId]) as { credential_hash: string }[];
     expect(rows).toHaveLength(1);
     expect(rows[0]?.credential_hash).not.toBe(claim.credential);
     expect(rows[0]?.credential_hash).toMatch(/^[0-9a-f]{64}$/u);
