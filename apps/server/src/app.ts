@@ -164,25 +164,26 @@ export async function buildServer(options: BuildOptions): Promise<BuiltServer> {
   computers.attach();
 
   /**
-   * Whether the store answered a trivial read recently, and whether every checkpoint has
-   * landed.
+   * Whether the store answered a trivial read recently.
+   *
+   * Deliberately separate from whether checkpoints are landing, which is
+   * `store.healthy` and is reported on its own. Failing to reach the store is a reason
+   * to answer 503 and be taken out of rotation; failing to write a checkpoint is not,
+   * and conflating them would be actively harmful — a container marked unhealthy for a
+   * failed checkpoint is a container something will restart, and the restart is what
+   * discards the unwritten commands the degraded state exists to warn about.
    *
    * The ping is cached. `/health` is deliberately outside the request budget, so an
    * uncached check would let anyone turn health polling into traffic against D1, which
    * is billed and rate-limited. A few seconds of staleness is the right trade for a
    * route whose whole job is to keep answering while the server is busy.
-   *
-   * `degraded` here means a checkpoint failed and its commands are still only in memory.
-   * The status code stays 200 and `status` stays `ok`, as it does for a degraded
-   * computer: the matches that are running are running correctly, and refusing to serve
-   * them would not make the unwritten commands any safer.
    */
   const PING_CACHE_MS = 5000;
   let lastPingAt = 0;
   let lastPingOk = true;
   const databaseReady = async (): Promise<boolean> => {
     const at = (options.now ?? (() => new Date()))().getTime();
-    if (at - lastPingAt < PING_CACHE_MS) return lastPingOk && store.healthy;
+    if (at - lastPingAt < PING_CACHE_MS) return lastPingOk;
     lastPingAt = at;
     try {
       await database.ping();
@@ -191,7 +192,7 @@ export async function buildServer(options: BuildOptions): Promise<BuiltServer> {
       app.log.error({ err: error }, 'The store did not answer a health read');
       lastPingOk = false;
     }
-    return lastPingOk && store.healthy;
+    return lastPingOk;
   };
 
   registerSocketRoutes(app, { rooms, hub, config });
@@ -206,6 +207,7 @@ export async function buildServer(options: BuildOptions): Promise<BuiltServer> {
       boardId: content.board.id,
     },
     databaseReady,
+    checkpointsReady: () => store.healthy,
     computersReady: () => computers.healthy(),
     startedAt: (options.now ?? (() => new Date()))(),
     ...(options.now === undefined ? {} : { now: options.now }),

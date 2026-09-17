@@ -560,9 +560,11 @@ outside that budget, the read behind it is cached for a few seconds — otherwis
 could turn health polling into billable traffic against D1.
 
 `database` reads `degraded` when a checkpoint failed and its commands are still held in
-memory. The status code stays 200: the matches that are running are running correctly, and
-refusing to serve them wouldn't make the unwritten commands any safer. Search the log at
-error level for the match ID:
+memory, and `unavailable` when the store didn't answer at all. Only the second answers
+503. The distinction is the point: a container marked unhealthy for a failed checkpoint is
+a container something will restart, and the restart is what turns unwritten commands into
+lost ones. The compose healthcheck keys on the status code for that reason. Search the log
+at error level for the match ID:
 
 ```sh
 journalctl -u gerrymander | grep 'Checkpoint to the store failed'
@@ -698,7 +700,12 @@ local file while it looks half-configured.
 
 **`/health` answers `database: degraded` but the tables still play.** A checkpoint failed
 and its commands are held in memory. See [Health](#health) for the log line to search for.
-The commands are still live; they're only unwritten.
+The commands are still live; they're only unwritten. Don't restart the process to clear
+it — that's what would lose them. A later checkpoint clears the field on its own.
+
+**`docker compose ps` shows the server unhealthy.** The healthcheck only fails on a
+non-200, which means the server couldn't reach D1. Check the token and the account first,
+then Cloudflare's status.
 
 **Rooms come back a few commands behind after a restart.** The process didn't stop
 cleanly, so it lost that match's checkpoint window. Lower

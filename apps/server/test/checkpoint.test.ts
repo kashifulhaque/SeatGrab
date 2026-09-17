@@ -304,3 +304,50 @@ describe('the matches held in memory', () => {
     expect((await readState(first)).view.revision).toBe(revision);
   });
 });
+
+describe('what a failed checkpoint does to the health route', () => {
+  /**
+   * The distinction this suite exists for: a store that cannot be reached is a reason to
+   * answer 503 and be taken out of rotation; a checkpoint that failed is not. They were
+   * once the same flag, and that is worse than useless under a container healthcheck —
+   * the restart it triggers is exactly what turns unwritten commands into lost ones.
+   */
+  it('reports degraded but keeps answering 200', async () => {
+    const seats = await dealtMatch({
+      GERRYMANDER_CHECKPOINT_EVERY_COMMANDS: '50',
+      GERRYMANDER_CHECKPOINT_MAX_DELAY_MS: '0',
+    });
+    const first = seats[0] as Claim;
+    const revision = await electFirstPlayer(seats);
+
+    // Break the store under the running server, then force the checkpoint to attempt.
+    const store = harness.server.store;
+    const database = harness.server.database as unknown as {
+      batch: (statements: readonly unknown[]) => Promise<unknown>;
+    };
+    const realBatch = database.batch.bind(database);
+    database.batch = async () => { throw new Error('D1 is unreachable'); };
+    await store.flush(first.matchId).catch(() => undefined);
+
+    expect(store.healthy).toBe(false);
+
+    const health = await harness.server.app.inject({ method: 'GET', url: '/health' });
+    expect(health.statusCode).toBe(200);
+    const body = health.json<{ status: string; database: string }>();
+    expect(body.status).toBe('ok');
+    expect(body.database).toBe('degraded');
+
+    // The match is still played correctly from memory while the store is refusing.
+    expect((await readState(first)).view.revision).toBe(revision);
+
+    // And it recovers: the pending changes were kept, so the next checkpoint writes them.
+    database.batch = realBatch;
+    await store.flush(first.matchId);
+    expect(store.healthy).toBe(true);
+    expect(await storedRevision(first.matchId)).toBe(revision);
+    expect(await storedCommandCount(first.matchId)).toBe(3);
+
+    const recovered = await harness.server.app.inject({ method: 'GET', url: '/health' });
+    expect(recovered.json<{ database: string }>().database).toBe('ok');
+  });
+});

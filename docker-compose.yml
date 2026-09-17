@@ -21,6 +21,23 @@ services:
       # CLAUDE.md before changing it.
       GERRYMANDER_CHECKPOINT_EVERY_COMMANDS: ${GERRYMANDER_CHECKPOINT_EVERY_COMMANDS:-10}
       GERRYMANDER_CHECKPOINT_MAX_DELAY_MS: ${GERRYMANDER_CHECKPOINT_MAX_DELAY_MS:-5000}
+    # `node:24-slim` carries no curl or wget, so the check runs Node's own fetch. A
+    # non-200 means the server could not reach D1; a failed checkpoint deliberately stays
+    # 200 and is reported in the body instead, because marking this container unhealthy
+    # for one would invite a restart, and the restart is what turns commands held in
+    # memory into commands that are gone.
+    #
+    # `start_period` covers the migrations, which run against D1 before the port opens.
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8787/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
     # A `docker compose stop` sends SIGTERM and waits, which is what checkpoints every
     # live match before the process exits. The default grace period is 10 seconds, and
     # GERRYMANDER_SHUTDOWN_TIMEOUT_SECONDS defaults to the same, so raise both together.
@@ -39,6 +56,9 @@ services:
       dockerfile: apps/web/Dockerfile
     container_name: gerrymander-web
     restart: unless-stopped
+    # Ordering only, deliberately not `condition: service_healthy`. The web container
+    # serves the app itself; gating it on the server means that a D1 outage at boot takes
+    # the whole site down rather than just online play.
     depends_on:
       - server
     networks:

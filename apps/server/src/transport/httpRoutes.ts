@@ -58,13 +58,25 @@ export interface RouteOptions {
   /** Reported by the health route so an operator can tell which build is running. */
   version: { schemaVersion: number; contentPackId: string; contentVersion: string; boardId: string };
   /**
-   * Whether the store answered a trivial read, and every checkpoint has landed.
+   * Whether the store answered a trivial read.
    *
    * Asynchronous because the store is reached over HTTP in a deployment. `app.ts` caches
    * the answer for a few seconds, because `/health` sits outside the request budget and
    * an uncached check would make health polling into billable traffic against D1.
+   *
+   * This alone decides the status code, so it must mean "cannot be reached" and nothing
+   * softer. See `checkpointsReady`.
    */
   databaseReady: () => Promise<boolean>;
+  /**
+   * Whether everything accepted so far has reached the store.
+   *
+   * False means a checkpoint failed and those commands are held in memory. It is
+   * reported, and it does not change the status code: a process that is serving its
+   * matches correctly should not be taken out of rotation or restarted for it, and a
+   * restart is precisely what would turn unwritten commands into lost ones.
+   */
+  checkpointsReady?: () => boolean;
   /**
    * Whether every computer seat is still deciding.
    *
@@ -124,11 +136,15 @@ export function registerRoutes(app: FastifyInstance, options: RouteOptions): voi
    * nothing else: no room code, no seat, no count of who is playing.
    */
   app.get('/health', async (_request: FastifyRequest, reply: FastifyReply) => {
-    const ready = await options.databaseReady();
+    const reachable = await options.databaseReady();
+    const checkpoints = options.checkpointsReady?.() ?? true;
     const computers = options.computersReady?.() ?? true;
-    return reply.status(ready ? 200 : 503).send({
-      status: ready ? 'ok' : 'degraded',
-      database: ready ? 'ok' : 'unavailable',
+    // Only an unreachable store answers 503. A failed checkpoint, a stopped computer
+    // seat: both are reported and both leave the code at 200, because the matches this
+    // process is serving are still being served correctly.
+    return reply.status(reachable ? 200 : 503).send({
+      status: reachable ? 'ok' : 'degraded',
+      database: reachable ? (checkpoints ? 'ok' : 'degraded') : 'unavailable',
       computers: computers ? 'ok' : 'degraded',
       uptimeSeconds: Math.floor((now().getTime() - options.startedAt.getTime()) / 1000),
       ...options.version,
