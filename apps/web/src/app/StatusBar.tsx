@@ -168,7 +168,12 @@ export function StatusBar({
               <li key={resource}>
                 <img src={RESOURCE_ASSETS[resource].url} alt="" aria-hidden="true" width={22} height={22} />
                 <span className="visually-hidden">{RESOURCE_ASSETS[resource].label} </span>
-                <span className="status-bar__count">{me.resources[resource]}</span>
+                {/* Keyed on the figure, so a count that changes mounts a fresh node and
+                    the stylesheet's bump plays. Paying for something should be visible in
+                    the bar that says what you hold. */}
+                <span key={me.resources[resource]} className="status-bar__count">
+                  {me.resources[resource]}
+                </span>
               </li>
             ))}
             <li className="status-bar__cap" title="Resources held, of the most you may hold">

@@ -615,12 +615,66 @@ describe('placing a voter group', () => {
     }).message).toContain('blocks this player from placing voters in that zone');
   });
 
-  it('takes a second pick on a chosen area as a change of mind', () => {
+  it('takes a second pick on a chosen area as a change of mind, keeping the zone', () => {
     const slotId = zoneSlots('north')[0]!.slotId;
     let draft: ActionDraft = { kind: 'place', groupId: 'group-1', slotIds: [] };
     draft = actionDraftReducer(draft, { type: 'pick', slotId, voterId: null });
     draft = actionDraftReducer(draft, { type: 'pick', slotId, voterId: null });
-    expect(draft).toEqual({ kind: 'place', groupId: 'group-1', slotIds: [] });
+    // Taking an area back is not taking the zone back: the zone is a separate choice with
+    // its own control, and a group has to stay in one zone anyway.
+    expect(draft).toEqual({ kind: 'place', groupId: 'group-1', slotIds: [], zoneId: 'north' });
+  });
+
+  it('settles the zone on the first area tapped, and rings only that zone after', () => {
+    // Placing is a choice of zone and then of areas inside it. Ringing all 126 empty areas
+    // at once put the real decision behind a hundred equal-looking ones, so the first tap
+    // does both: it names the zone and places the first voter of the group in it.
+    const state = withPendingGroup();
+    const view = viewFor(state, 'p1');
+    const [first] = zoneSlots('north');
+
+    let draft: ActionDraft = { kind: 'place', groupId: 'group-1', slotIds: [], zoneId: null };
+    const whole = draftTargeting(view, 'p1', draft);
+    expect(whole).not.toBeNull();
+    expect(whole!.slotIds.size).toBeGreaterThan(zoneSlots('north').length);
+
+    draft = actionDraftReducer(draft, { type: 'pick', slotId: first!.slotId, voterId: null });
+    expect(draft).toEqual({
+      kind: 'place',
+      groupId: 'group-1',
+      slotIds: [first!.slotId],
+      zoneId: 'north',
+    });
+
+    const narrowed = draftTargeting(view, 'p1', draft);
+    expect(narrowed).not.toBeNull();
+    for (const slotId of narrowed!.slotIds) {
+      expect(CORE_BOARD.slots.find((slot) => slot.slotId === slotId)?.zoneId).toBe('north');
+    }
+    expect(narrowed!.slotIds.has(first!.slotId)).toBe(false);
+  });
+
+  it('changes zone by abandoning the areas that fixed the old one', () => {
+    const [first] = zoneSlots('north');
+    let draft: ActionDraft = { kind: 'place', groupId: 'group-1', slotIds: [], zoneId: null };
+    draft = actionDraftReducer(draft, { type: 'pick', slotId: first!.slotId, voterId: null });
+    draft = actionDraftReducer(draft, { type: 'placeZone', zoneId: null });
+    expect(draft).toEqual({ kind: 'place', groupId: 'group-1', slotIds: [], zoneId: null });
+  });
+
+  it('rings nothing once every voter in the group has an area', () => {
+    const state = withPendingGroup();
+    const view = viewFor(state, 'p1');
+    const [first, second] = zoneSlots('north');
+    const draft: ActionDraft = {
+      kind: 'place',
+      groupId: 'group-1',
+      slotIds: [first!.slotId, second!.slotId],
+      zoneId: 'north',
+    };
+    // Not "nothing is legal", which is a problem, but "nothing is left to choose", which
+    // is the step being finished. The board goes back to being a board.
+    expect(draftTargeting(view, 'p1', draft)).toBeNull();
   });
 
   it('narrows to a group’s own allowedZoneIds, and the engine refuses the rest', () => {

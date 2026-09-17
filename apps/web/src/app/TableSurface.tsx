@@ -23,6 +23,8 @@
  * composing an action, its legal areas are ringed here and clicking one feeds the choice
  * back. The set arrives already computed; this file neither derives it nor decides what
  * choosing one means, so the shared board stays a board rather than becoming a composer.
+ * The banner that says so sits *above* the map rather than under it, because it is an
+ * instruction about the map and a player reads down into the thing it is about.
  *
  * Section 13.10 also asks for a zoomable board on a phone. The zoom here enlarges the
  * drawing inside a frame that then scrolls, rather than transforming a fixed box: the
@@ -348,19 +350,21 @@ function ActiveEffects({ view }: { view: PlayerView }) {
           </ul>
         </>
       )}
-      <h3>Draw piles</h3>
-      <dl className="facts facts--tight">
-        {describeDecks(view).map((entry) => (
-          <div key={entry.label}>
-            <dt>{entry.label}</dt>
-            <dd>{entry.value}</dd>
-          </div>
-        ))}
-      </dl>
-      <p className="hint">
-        Counts only. The order of every draw pile, and the identity of the next card in it,
-        stay where they belong.
-      </p>
+      <details className="disclosure">
+        <summary>Draw piles</summary>
+        <dl className="facts facts--tight">
+          {describeDecks(view).map((entry) => (
+            <div key={entry.label}>
+              <dt>{entry.label}</dt>
+              <dd>{entry.value}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="hint">
+          Counts only. The order of every draw pile, and the identity of the next card in it,
+          stay where they belong.
+        </p>
+      </details>
     </section>
   );
 }
@@ -387,10 +391,7 @@ function History({ view }: { view: PlayerView }) {
           ))}
         </ol>
       )}
-      <p className="small">
-        The 25 most recent public events, newest first. A private event appears only in the view
-        of a seat entitled to it.
-      </p>
+      <p className="small">The 25 most recent public events, newest first.</p>
     </section>
   );
 }
@@ -443,6 +444,9 @@ export function TableSurface({
     { id: 'seats', label: 'Seats' },
     { id: 'log', label: 'Log' },
   ];
+  // On a phone the board is a tab rather than the middle of the screen, so a step that
+  // wants an area tapped has to say that the board is where that happens.
+  const boardWanted = (targeting?.slotIds.size ?? 0) > 0;
 
   return (
     <>
@@ -460,6 +464,9 @@ export function TableSurface({
               {entry.label}
               {entry.id === 'act' && hasSeat && attention ? (
                 <span className="tab__dot" aria-label="Something is waiting on you" />
+              ) : null}
+              {entry.id === 'board' && boardWanted ? (
+                <span className="tab__dot" aria-label="Areas are ringed here for what you are doing" />
               ) : null}
             </button>
           ))}
@@ -491,8 +498,7 @@ export function TableSurface({
             ))}
           </ul>
           <p className="small seats__key">
-            Majority voters are the score: voters inside a zone you hold. The most at the end wins.
-            Select a seat for the full card.
+            Majority voters are the score. Select a seat for the rest.
           </p>
         </section>
 
@@ -521,31 +527,36 @@ export function TableSurface({
               <div className="board-zoom" role="group" aria-label="Board magnification">
                 <button
                   type="button"
-                  className="button button--quiet"
+                  className="button button--quiet button--icon"
                   disabled={zoomStep === 0}
+                  title="Zoom out"
                   onClick={() => setZoomStep((step) => Math.max(0, step - 1))}
                 >
-                  Zoom out
+                  <span aria-hidden="true">−</span>
+                  <span className="visually-hidden">Zoom out</span>
                 </button>
                 <p className="board-zoom__level" role="status">
-                  {zoom === 1 ? 'Whole board' : `${zoom}× — scroll the frame to pan`}
+                  {zoom === 1 ? 'Fitted' : `${zoom}×`}
                 </p>
                 <button
                   type="button"
-                  className="button button--quiet"
+                  className="button button--quiet button--icon"
                   disabled={zoomStep === ZOOM_STEPS.length - 1}
+                  title="Zoom in"
                   onClick={() => setZoomStep((step) => Math.min(ZOOM_STEPS.length - 1, step + 1))}
                 >
-                  Zoom in
+                  <span aria-hidden="true">+</span>
+                  <span className="visually-hidden">Zoom in</span>
                 </button>
-                <button
-                  type="button"
-                  className="button button--quiet"
-                  disabled={zoomStep === 0}
-                  onClick={() => setZoomStep(0)}
-                >
-                  Fit
-                </button>
+                {zoomStep === 0 ? null : (
+                  <button
+                    type="button"
+                    className="button button--quiet"
+                    onClick={() => setZoomStep(0)}
+                  >
+                    Fit
+                  </button>
+                )}
               </div>
             ) : null}
           </div>
@@ -553,11 +564,18 @@ export function TableSurface({
           {boardTab === 'board' ? (
             <>
               {targeting === null || targeting === undefined ? null : (
-                <p className="board-legend" role="status">
-                  {targeting.slotIds.size === 0
-                    ? `No area on the board is a legal place to ${targeting.label}.`
-                    : `${targeting.slotIds.size} ringed area${targeting.slotIds.size === 1 ? '' : 's'}: `
-                      + `choose one to ${targeting.label}.`}
+                <p
+                  className={`board-legend${targeting.slotIds.size === 0 ? ' board-legend--none' : ''}`}
+                  role="status"
+                >
+                  <span className="board-legend__pin" aria-hidden="true" />
+                  <span>
+                    {targeting.slotIds.size === 0
+                      ? `No area on this board is a legal place to ${targeting.label}.`
+                      : targeting.slotIds.size > 40
+                        ? `Tap a ringed area to ${targeting.label}.`
+                        : `Tap one of the ${targeting.slotIds.size} ringed areas to ${targeting.label}.`}
+                  </span>
                 </p>
               )}
               <div
@@ -585,17 +603,20 @@ export function TableSurface({
               </div>
               <p className="board-caption" role="status">
                 {selectedSlot === null
-                  ? 'Select an area to read what is on it. Arrow keys move between areas, '
-                    + 'Page Up and Page Down change zone.'
+                  ? 'Select an area to read what is on it.'
                   : `${describeSlot(
                     selectedSlot,
                     view.zones.find((zone) => zone.id === selectedSlot.zoneId),
                     view.players,
-                  )} Inspecting ${slotLabel(selectedSlot.slotId, view.zones)}; select it again to stop.`}
+                  )} Select it again to stop.`}
               </p>
               <details className="disclosure disclosure--key">
                 <summary>What the marks mean</summary>
                 <BoardLegend />
+                <p className="small">
+                  From the keyboard: Tab reaches the board, the arrow keys move between areas,
+                  Page Up and Page Down change zone, and Enter inspects one.
+                </p>
               </details>
             </>
           ) : (

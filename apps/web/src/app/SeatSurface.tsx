@@ -28,8 +28,18 @@
  *
  * Every rule below comes from `actions.ts`, and the engine re-checks all of it. Nothing
  * here decides what is legal, and nothing here rewords a refusal.
+ *
+ * Two things this column does about *where the player is looking*, both from a playtest
+ * where a purchase opened off the top of the column and the player went looking for it:
+ *
+ * - When the Now card becomes a new thing — a prompt arrives, an action opens — the card
+ *   is scrolled into view, takes focus and flashes once. The column is its own scrolling
+ *   box under a pinned bar, so an action opening above the scroll position was silent.
+ * - While an action is open, **What you can do** folds shut. The open action is then the
+ *   only thing in the column, which is the point: one thing is being done, and the list
+ *   the player just chose from is not competing with it. Cancelling opens the list again.
  */
-import type { CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { CORE_CONTENT } from '@seatgrab/engine';
 import type { GameCommand } from '@seatgrab/protocol';
@@ -60,9 +70,66 @@ import {
 } from './composers/CampaignComposer';
 import { PlayerMat } from './composers/PlayerMat';
 import { PromptComposer } from './composers/PromptComposer';
-import { TurnComposer, TurnDraftComposer, isTurnDraft } from './composers/TurnComposer';
+import {
+  PendingVoters,
+  TurnComposer,
+  TurnDraftComposer,
+  isTurnDraft,
+} from './composers/TurnComposer';
 
 const POLICY_CARDS = new Map(CORE_CONTENT.policyCards.map((card) => [card.id, card]));
+
+/**
+ * A name for whatever the Now card is currently about.
+ *
+ * It changes exactly when the card's contents become a different thing to do, which is
+ * when the card is worth pointing the player at. It is deliberately not the draft object:
+ * editing a payment inside an open purchase is the same action, and must not re-scroll
+ * the column out from under the stepper being pressed.
+ */
+function nowSubject(draft: ActionDraft, promptKey: string | null): string {
+  if (promptKey !== null) return `prompt:${promptKey}`;
+  switch (draft.kind) {
+    case 'none':
+      return 'free';
+    case 'influence':
+      return `influence:${draft.cardId}`;
+    case 'place':
+      return `place:${draft.groupId}`;
+    case 'gerrymander':
+      return `gerrymander:${draft.rightsZoneId}`;
+    default:
+      return draft.kind;
+  }
+}
+
+/**
+ * `Your turn`, said once, over the table.
+ *
+ * A turn arriving used to be a quiet change of wording in a pinned bar. This is the
+ * announcement: it shows for a moment when the turn becomes this seat's and then leaves
+ * on its own. It covers nothing — it is not a dialog, takes no focus and has no control —
+ * so a player who is already acting is never interrupted by it.
+ */
+function TurnFanfare({ on, label }: { on: boolean; label: string }) {
+  const [shown, setShown] = useState(0);
+  const was = useRef(on);
+  useEffect(() => {
+    if (on && !was.current) setShown((count) => count + 1);
+    was.current = on;
+  }, [on]);
+  useEffect(() => {
+    if (shown === 0) return;
+    const timer = setTimeout(() => setShown(0), 2000);
+    return () => clearTimeout(timer);
+  }, [shown]);
+  if (shown === 0) return null;
+  return (
+    <div key={shown} className="fanfare" role="status" aria-live="polite">
+      <span className="fanfare__text">{label}</span>
+    </div>
+  );
+}
 
 export function SeatSurface({
   result,
@@ -104,11 +171,46 @@ export function SeatSurface({
 
   const nowKind = hasPrompt ? 'prompt' : composing ? 'composing' : 'free';
 
+  // Scroll the Now card back under the player's eye whenever it becomes a new thing, and
+  // flash it once so the change is seen rather than merely present. `scrollIntoView` is
+  // guarded because jsdom, which the render tests use, does not implement it.
+  const nowRef = useRef<HTMLElement>(null);
+  const subject = nowSubject(
+    draft,
+    hasPrompt ? (prompt === undefined ? 'refusal' : `${prompt.kind}:${prompt.interactionId}`) : null,
+  );
+  const [arrivals, setArrivals] = useState(0);
+  const lastSubject = useRef(subject);
+  useEffect(() => {
+    if (lastSubject.current === subject) return;
+    lastSubject.current = subject;
+    if (subject === 'free' || finished) return;
+    const card = nowRef.current;
+    if (card === null) return;
+    card.focus?.({ preventScroll: true });
+    card.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    setArrivals((count) => count + 1);
+  }, [finished, subject]);
+
+  // "What you can do" folds away while an action is open, so the open action is the only
+  // thing in the column. Reopening it by hand while composing is allowed and sticks.
+  const [optionsOpen, setOptionsOpen] = useState(acting.can);
+  const optionsState = useRef({ can: acting.can, composing });
+  useEffect(() => {
+    const was = optionsState.current;
+    if (was.can === acting.can && was.composing === composing) return;
+    optionsState.current = { can: acting.can, composing };
+    setOptionsOpen(acting.can && !composing);
+  }, [acting.can, composing]);
+
+  const myTurn = !finished && !hasPrompt && view.activePlayerId === seatId;
+
   return (
     <div
       className="seat-surface"
       style={partyColor === undefined ? undefined : ({ '--party': partyColor } as CSSProperties)}
     >
+      <TurnFanfare on={myTurn} label="Your turn" />
       <section className="panel private action-column" aria-labelledby="private-heading">
         <header className="seat-head">
           <PartyMark partyId={me?.partyId ?? ''} size={36} />
@@ -130,7 +232,15 @@ export function SeatSurface({
         ) : (
           <>
             {/* The one thing to do now, and the control that does it, in one card. */}
-            <section className={`now now--${nowKind}`} aria-labelledby="now-heading">
+            <section
+              ref={nowRef}
+              tabIndex={-1}
+              className={`now now--${nowKind}`}
+              aria-labelledby="now-heading"
+            >
+              {arrivals === 0 ? null : (
+                <span key={arrivals} className="now__flash" aria-hidden="true" />
+              )}
               <p className="now__eyebrow">
                 {nowKind === 'prompt' ? 'Your prompt' : nowKind === 'composing' ? 'Your action' : 'Now'}
               </p>
@@ -147,6 +257,17 @@ export function SeatSurface({
                 ) : null}
               </div>
               {nowKind === 'composing' ? null : <p className="now__detail">{guide.detail}</p>}
+
+              {nowKind === 'free' && result.ok ? (
+                <PendingVoters
+                  view={view}
+                  seatId={seatId}
+                  draft={draft}
+                  dispatch={dispatch}
+                  submit={submit}
+                  busy={busy}
+                />
+              ) : null}
 
               {nowKind === 'prompt' ? (
                 <div className="now__body">
@@ -190,10 +311,16 @@ export function SeatSurface({
             </section>
 
             {result.ok ? (
-              <details className="drawer drawer--options" open={acting.can}>
+              <details
+                className="drawer drawer--options"
+                open={optionsOpen}
+                onToggle={(event) => setOptionsOpen(event.currentTarget.open)}
+              >
                 <summary>
                   <h3>What you can do</h3>
-                  {acting.can ? (
+                  {composing ? (
+                    <span className="small">Paused — finish or cancel above</span>
+                  ) : acting.can ? (
                     <span className="small">Voter cards, a trick, powers</span>
                   ) : (
                     <span className="small">Not right now</span>

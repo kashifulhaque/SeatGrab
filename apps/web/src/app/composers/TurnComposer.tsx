@@ -4,8 +4,13 @@
  * Section 13.7 wants a purchase or a target built in steps, with the final cost, the
  * voter yield, the legal placements and any effect standing in the way all visible before
  * a resource moves. That shape repeats for every action here: open one, see its targets
- * highlighted on the board and listed beside it, watch what is still missing, then
- * confirm.
+ * ringed on the board, watch what is still missing, then confirm.
+ *
+ * A step that wants a place on the map is composed against the map. `BoardTarget` says so
+ * in words, counts what is ringed, reads the picks back as chips and keeps the list of
+ * areas folded underneath as the alternative. Placing a card's voters goes further and
+ * asks for the *zone* first, because that is the choice the rule actually makes — all of
+ * a card's voters go in one zone — and ringing all 126 empty areas at once buried it.
  *
  * What this file does not do is decide anything. `actions.ts` derives every legal target
  * and every shortfall from the projection, and the engine re-checks all of it: a refusal
@@ -47,6 +52,7 @@ import {
   gerrymanderAllowance,
   gerrymanderRightsZoneIds,
   hasElectionFever,
+  legalPlacementSlotIds,
   volunteersRemaining,
   level3Limit,
   openingPayment,
@@ -64,6 +70,8 @@ import {
   type PowerId,
   type Targeting,
 } from '../actions';
+
+import { useViewport } from '../useViewport';
 
 import { ResourcePicker, type PickerRow } from './ResourcePicker';
 import type { ComposerSubmit } from './PromptComposer';
@@ -102,10 +110,11 @@ function can(view: PlayerView, action: string): boolean {
 /**
  * A list of legal areas, in printed board order.
  *
- * The board highlights the same set at the same time. This exists beside it because a
- * phone in portrait cannot make 129 areas comfortably tappable, and because reading a
- * target as a sentence is often faster than finding it on a map. Focusing or hovering an
- * option scrolls the board into view, so the map and the list stay one control.
+ * The board highlights the same set at the same time, and the board is the control this
+ * step is built around. This list is the fallback beside it: a phone in portrait cannot
+ * make 129 areas comfortably tappable, and reading a target as a sentence is sometimes
+ * faster than finding it on a map. Focusing or hovering an option scrolls the board into
+ * view, so the map and the list stay one control.
  */
 function TargetSelect({
   view,
@@ -138,7 +147,7 @@ function TargetSelect({
         }}
       >
         <option value="">
-          {ordered.length === 0 ? 'No area is legal here' : `Choose one of ${ordered.length}, or tap it on the board`}
+          {ordered.length === 0 ? 'No area is legal here' : `Choose one of ${ordered.length}`}
         </option>
         {ordered.map((slot) => (
           <option key={slot.slotId} value={slot.slotId}>
@@ -147,6 +156,122 @@ function TargetSelect({
         ))}
       </select>
     </label>
+  );
+}
+
+/** One area already chosen, shown so it can be read back and undone. */
+export interface ChosenTarget {
+  /** Stable across renders: the slot for a destination, the voter for a source. */
+  id: string;
+  label: string;
+  /** Absent when the pick can no longer be undone from here. */
+  onRemove?: (() => void) | undefined;
+}
+
+/**
+ * Choosing an area, with the board as the control.
+ *
+ * The playtest that prompted this met a bare `<select>` of up to 129 options for a step
+ * whose whole point is a place on a map, and could not tell that the ringed areas beside
+ * it were the same thing. So the instruction now names the board first and says how many
+ * areas are ringed; the picks read back as chips that can be taken off one at a time; and
+ * the list is folded underneath as the alternative rather than presented as the control.
+ *
+ * It decides nothing. `slotIds` is the legal set the board is already ringing, computed
+ * once in `actions.ts`, and every pick goes straight back to the draft reducer.
+ */
+function BoardTarget({
+  view,
+  call,
+  slotIds,
+  onPick,
+  chosen,
+  progress,
+  listLabel,
+  disabled = false,
+}: {
+  view: PlayerView;
+  /** What choosing an area means here, said as an instruction. */
+  call: string;
+  slotIds: ReadonlySet<string>;
+  onPick: (slotId: string) => void;
+  chosen: readonly ChosenTarget[];
+  /** How far through a multi-pick step this is. Absent for a single pick. */
+  progress?: { done: number; total: number };
+  listLabel: string;
+  disabled?: boolean;
+}) {
+  const count = slotIds.size;
+  // Three states, and the difference matters: still choosing, finished choosing, and
+  // nothing legal to choose. The last one is a problem and the middle one is not, and an
+  // earlier draft of this drew both in red.
+  const done = progress !== undefined && progress.done >= progress.total;
+  const stuck = count === 0 && !done;
+  // On a phone the board is a different tab, so the map is a trip away rather than a
+  // glance away: the sentence says which tab, and the list opens where the player is
+  // standing instead of asking to be unfolded.
+  const phone = useViewport() === 'phone';
+  const where = phone ? 'on the Board tab' : 'on the board';
+  return (
+    <div className="target">
+      <p
+        className={`target__call${stuck ? ' target__call--none' : ''}${done ? ' target__call--done' : ''}`}
+      >
+        <span className="target__pin" aria-hidden="true" />
+        <span>
+          {done
+            ? call
+            : stuck
+              ? `No area on the board can take this. ${call}`
+              : count > 40
+                ? `${call} Tap a ringed area ${where}, or pick one from the list below.`
+                : `${call} Tap one of the ${count} ringed area${count === 1 ? '' : 's'} ${where}`
+                  + ', or pick one from the list below.'}
+        </span>
+      </p>
+      {progress === undefined ? null : (
+        <p className="target__progress" role="status">
+          <span className="target__pips" aria-hidden="true">
+            {Array.from({ length: progress.total }, (_, index) => (
+              <span
+                key={index}
+                className={`target__pip${index < progress.done ? ' target__pip--done' : ''}`}
+              />
+            ))}
+          </span>
+          {progress.done} of {progress.total} placed
+        </p>
+      )}
+      {chosen.length === 0 ? null : (
+        <ul className="picks">
+          {chosen.map((pick) => (
+            <li key={pick.id}>
+              <span>{pick.label}</span>
+              {pick.onRemove === undefined ? null : (
+                <button
+                  type="button"
+                  className="button button--quiet"
+                  disabled={disabled}
+                  onClick={pick.onRemove}
+                >
+                  Remove
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <details className="target__list" open={phone && !done}>
+        <summary>Rather pick from a list?</summary>
+        <TargetSelect
+          view={view}
+          label={listLabel}
+          slotIds={slotIds}
+          onPick={onPick}
+          disabled={disabled}
+        />
+      </details>
+    </div>
   );
 }
 
@@ -424,36 +549,94 @@ function Placement({
 } & ComposerSubmit) {
   const group = view.pendingVoterGroups.find((candidate) => candidate.id === draft.groupId);
   if (group === undefined) return <p className="field-problem">That group is no longer waiting.</p>;
+  const placed = draft.slotIds.length;
+  const zoneId = draft.zoneId ?? null;
+
+  // The zones this group could still go in, with the room each has left. Read off the
+  // same legal set the board rings, so a zone offered here is a zone the engine accepts.
+  const open = legalPlacementSlotIds(view, seatId, group, []);
+  const room = new Map<string, number>();
+  for (const slot of view.slots) {
+    if (open.has(slot.slotId)) room.set(slot.zoneId, (room.get(slot.zoneId) ?? 0) + 1);
+  }
+  const choices = view.zones.filter((zone) => (room.get(zone.id) ?? 0) > 0);
+
   return (
     <div className="composer__body">
       <h4>Place {group.count} voter{group.count === 1 ? '' : 's'}</h4>
-      <p className="small">
-        {group.sameZone
-          ? 'Every voter in this group goes in one zone. The first area you choose decides which.'
-          : 'These voters may be spread across zones.'}
-      </p>
-      <TargetSelect
-        view={view}
-        label="Add an area"
-        slotIds={targeting?.slotIds ?? new Set()}
-        onPick={(slotId) => dispatch({ type: 'pick', slotId, voterId: null })}
-        disabled={busy}
-      />
-      <ul className="picks">
-        {draft.slotIds.map((slotId) => (
-          <li key={slotId}>
-            <span>{describeSlotTarget(slotId)}</span>
+
+      {zoneId === null ? (
+        <>
+          <p className="small">
+            {group.sameZone
+              ? `All ${group.count} go in one zone. Choose it first; the board then rings that zone’s`
+                + ' free areas and nothing else.'
+              : 'Choose a zone to place in. You may come back and choose another for the rest.'}
+          </p>
+          <p className="target__call">
+            <span className="target__pin" aria-hidden="true" />
+            <span>
+              Tap any ringed area on the board in the zone you want, or choose a zone here.
+            </span>
+          </p>
+          {choices.length === 0 ? (
+            <p className="field-problem">
+              No zone has room for {group.sameZone ? 'the whole group' : 'another voter'}. These
+              voters are lost when the turn ends.
+            </p>
+          ) : (
+            <ul className="zone-choices">
+              {choices.map((zone) => (
+                <li key={zone.id}>
+                  <button
+                    type="button"
+                    className="button zone-choice"
+                    disabled={busy}
+                    onClick={() => dispatch({ type: 'placeZone', zoneId: zone.id })}
+                  >
+                    <span className="zone-choice__name">{zone.displayName}</span>
+                    <span className="zone-choice__room">
+                      {room.get(zone.id)} free · {zone.majorityThreshold} holds it
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      ) : (
+        <>
+          <p className="placement__zone">
+            <span>
+              Placing in <strong>{zoneName(zoneId)}</strong>
+            </span>
             <button
               type="button"
               className="button button--quiet"
               disabled={busy}
-              onClick={() => dispatch({ type: 'pick', slotId, voterId: null })}
+              onClick={() => dispatch({ type: 'placeZone', zoneId: null })}
             >
-              Remove
+              Change zone
             </button>
-          </li>
-        ))}
-      </ul>
+          </p>
+          <BoardTarget
+            view={view}
+            call={placed >= group.count
+              ? 'Every voter has an area.'
+              : `Choose where a voter stands in ${zoneName(zoneId)}.`}
+            slotIds={targeting?.slotIds ?? new Set()}
+            onPick={(slotId) => dispatch({ type: 'pick', slotId, voterId: null })}
+            chosen={draft.slotIds.map((slotId) => ({
+              id: slotId,
+              label: describeSlotTarget(slotId),
+              onRemove: () => dispatch({ type: 'pick', slotId, voterId: null }),
+            }))}
+            progress={{ done: placed, total: group.count }}
+            listLabel="Add an area"
+            disabled={busy}
+          />
+        </>
+      )}
       <Confirm view={view} seatId={seatId} draft={draft} submit={submit} busy={busy} label="Place these voters" />
     </div>
   );
@@ -508,48 +691,43 @@ function Gerrymander({
       </p>
 
       {sourceSlot === null ? (
-        <TargetSelect
+        <BoardTarget
           view={view}
-          label="Voter to move"
+          call="Step 1 of 2 — choose the voter to move."
           slotIds={targeting?.slotIds ?? new Set()}
           onPick={(slotId) => dispatch({
             type: 'pick',
             slotId,
             voterId: view.slots.find((slot) => slot.slotId === slotId)?.voter?.id ?? null,
           })}
+          chosen={[]}
+          listLabel="Voter to move"
           disabled={busy}
         />
       ) : (
-        <>
-          <p>
-            Moving the voter in <strong>{describeSlotTarget(sourceSlot.slotId)}</strong>
-            {sourceSlot.voter?.ownerId === seatId ? ' — one of yours.' : ' — an opponent’s.'}
-          </p>
-          <div className="actions">
-            <button
-              type="button"
-              className="button button--quiet"
-              disabled={busy}
-              onClick={() => dispatch({
+        <BoardTarget
+          view={view}
+          call={`Step 2 of 2 — choose where the voter in ${describeSlotTarget(sourceSlot.slotId)}`
+            + `${sourceSlot.voter?.ownerId === seatId ? ' (one of yours)' : ' (an opponent’s)'} moves to.`}
+          slotIds={targeting?.slotIds ?? new Set()}
+          onPick={(slotId) => dispatch({ type: 'pick', slotId, voterId: null })}
+          chosen={[
+            {
+              id: sourceSlot.slotId,
+              label: `Moving: ${describeSlotTarget(sourceSlot.slotId)}`,
+              onRemove: () => dispatch({
                 type: 'pick',
                 slotId: sourceSlot.slotId,
                 voterId: sourceSlot.voter?.id ?? null,
-              })}
-            >
-              Choose a different voter
-            </button>
-          </div>
-          <TargetSelect
-            view={view}
-            label="Where it moves to"
-            slotIds={targeting?.slotIds ?? new Set()}
-            onPick={(slotId) => dispatch({ type: 'pick', slotId, voterId: null })}
-            disabled={busy}
-          />
-          {draft.destinationSlotId === null ? null : (
-            <p>Destination: {describeSlotTarget(draft.destinationSlotId)}.</p>
-          )}
-        </>
+              }),
+            },
+            ...(draft.destinationSlotId === null
+              ? []
+              : [{ id: draft.destinationSlotId, label: `To: ${describeSlotTarget(draft.destinationSlotId)}` }]),
+          ]}
+          listLabel="Where it moves to"
+          disabled={busy}
+        />
       )}
       <Confirm view={view} seatId={seatId} draft={draft} submit={submit} busy={busy} label="Move this voter" />
     </div>
@@ -559,6 +737,7 @@ function Gerrymander({
 function VoterPick({
   view,
   label,
+  call,
   dispatch,
   targeting,
   chosen,
@@ -566,6 +745,8 @@ function VoterPick({
 }: {
   view: PlayerView;
   label: string;
+  /** What choosing a voter means here, said as an instruction over the board. */
+  call: string;
   dispatch: (action: DraftAction) => void;
   targeting: Targeting | null;
   /** Voter IDs already chosen, listed back so a pick can be undone. */
@@ -573,39 +754,28 @@ function VoterPick({
   busy: boolean;
 }) {
   return (
-    <>
-      <TargetSelect
-        view={view}
-        label={label}
-        slotIds={targeting?.slotIds ?? new Set()}
-        onPick={(slotId) => dispatch({
-          type: 'pick',
-          slotId,
-          voterId: view.slots.find((slot) => slot.slotId === slotId)?.voter?.id ?? null,
-        })}
-        disabled={busy}
-      />
-      <ul className="picks">
-        {chosen.map((voterId) => {
-          const slot = view.slots.find((candidate) => candidate.voter?.id === voterId);
-          return (
-            <li key={voterId}>
-              <span>{slot === undefined ? voterId : describeSlotTarget(slot.slotId)}</span>
-              <button
-                type="button"
-                className="button button--quiet"
-                disabled={busy || slot === undefined}
-                onClick={() => {
-                  if (slot !== undefined) dispatch({ type: 'pick', slotId: slot.slotId, voterId });
-                }}
-              >
-                Remove
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </>
+    <BoardTarget
+      view={view}
+      call={call}
+      slotIds={targeting?.slotIds ?? new Set()}
+      onPick={(slotId) => dispatch({
+        type: 'pick',
+        slotId,
+        voterId: view.slots.find((slot) => slot.slotId === slotId)?.voter?.id ?? null,
+      })}
+      chosen={chosen.map((voterId) => {
+        const slot = view.slots.find((candidate) => candidate.voter?.id === voterId);
+        return {
+          id: voterId,
+          label: slot === undefined ? voterId : describeSlotTarget(slot.slotId),
+          onRemove: slot === undefined
+            ? undefined
+            : () => dispatch({ type: 'pick', slotId: slot.slotId, voterId }),
+        };
+      })}
+      listLabel={label}
+      disabled={busy}
+    />
   );
 }
 
@@ -723,6 +893,7 @@ function PowerComposer({
           <VoterPick
             view={view}
             label="Voter to evict"
+            call="Choose the voter to evict."
             dispatch={dispatch}
             targeting={targeting}
             chosen={draft.voterId === null ? [] : [draft.voterId]}
@@ -740,6 +911,7 @@ function PowerComposer({
           <VoterPick
             view={view}
             label="Opponent voter to discard"
+            call="Choose the opponent voter to discard."
             dispatch={dispatch}
             targeting={targeting}
             chosen={draft.voterId === null ? [] : [draft.voterId]}
@@ -768,6 +940,7 @@ function PowerComposer({
           <VoterPick
             view={view}
             label="Voter to convert"
+            call="Choose a voter to convert. Two, from one opponent, in one zone."
             dispatch={dispatch}
             targeting={targeting}
             chosen={draft.voterIds}
@@ -880,6 +1053,57 @@ export function TurnDraftComposer({
 }
 
 /**
+ * The voter groups this seat must place before its turn can end.
+ *
+ * It is exported because `SeatSurface` draws it inside the Now card whenever the seat is
+ * free: a group that is due *is* the one thing to do, and a button for it at the foot of
+ * a folded list was one a player did not find.
+ */
+export function PendingVoters({
+  view,
+  seatId,
+  draft,
+  dispatch,
+  submit,
+  busy,
+}: Omit<TurnComposerProps, 'targeting'>) {
+  const pending = view.pendingVoterGroups.filter((group) => group.controllerId === seatId);
+  if (pending.length === 0) return null;
+  const due = dueGroupIds(view, seatId);
+  return (
+    <section className="composer__group composer__group--urgent">
+      <h4>Voters waiting to be placed</h4>
+      <p className="hint">The turn cannot end while a group is due.</p>
+      <div className="actions">
+        {pending.map((group) => (
+          <button
+            key={group.id}
+            type="button"
+            className="button button--primary"
+            disabled={busy}
+            aria-pressed={draft.kind === 'place' && draft.groupId === group.id}
+            onClick={() => dispatch({
+              type: 'open',
+              draft: { kind: 'place', groupId: group.id, slotIds: [], zoneId: null },
+            })}
+          >
+            Place {group.count} voter{group.count === 1 ? '' : 's'}
+          </button>
+        ))}
+        <button
+          type="button"
+          className="button"
+          disabled={busy || due.length === 0}
+          onClick={() => submit({ type: 'ConfirmPendingVoterDiscard', groupIds: [...due] })}
+        >
+          Discard all
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/**
  * What the seat can do this turn, as a list of controls.
  *
  * Drawn only when the action phase is this seat's: the caller writes the one-line reason
@@ -920,33 +1144,11 @@ export function TurnComposer({
 
   return (
     <div className="composer">
-      {pending.length === 0 ? null : (
-        <section className="composer__group composer__group--urgent">
-          <h4>Voters waiting to be placed</h4>
-          <p className="hint">The turn cannot end while a group is due.</p>
-          <div className="actions">
-            {pending.map((group) => (
-              <button
-                key={group.id}
-                type="button"
-                className="button button--primary"
-                disabled={busy}
-                aria-pressed={draft.kind === 'place' && draft.groupId === group.id}
-                onClick={open({ kind: 'place', groupId: group.id, slotIds: [] })}
-              >
-                Place {group.count} voter{group.count === 1 ? '' : 's'}
-              </button>
-            ))}
-            <button
-              type="button"
-              className="button"
-              disabled={busy || due.length === 0}
-              onClick={() => submit({ type: 'ConfirmPendingVoterDiscard', groupIds: [...due] })}
-            >
-              Discard all
-            </button>
-          </div>
-        </section>
+      {/* The waiting groups are drawn in the Now card while the seat is free, which is
+          where a player looks for the one thing the turn cannot end without. This copy
+          keeps them reachable while some other action is open. */}
+      {draft.kind === 'none' ? null : (
+        <PendingVoters view={view} seatId={seatId} draft={draft} dispatch={dispatch} submit={submit} busy={busy} />
       )}
 
       <ul className="action-list">

@@ -94,6 +94,11 @@ export function zoneName(zoneId: string): string {
   return ZONE_BY_ID.get(zoneId)?.displayName ?? zoneId;
 }
 
+/** The zone an area belongs to, read off the board rather than off a projection. */
+export function zoneOfSlot(slotId: string): string | null {
+  return CORE_BOARD.slots.find((candidate) => candidate.slotId === slotId)?.zoneId ?? null;
+}
+
 /** `matchingEffect` in `packages/engine/src/rules/effectModifiers.ts`, read off the view. */
 function effectTouches(view: PlayerView, kind: string, playerId: string): boolean {
   return view.activeEffects.some(
@@ -794,7 +799,21 @@ export type ActionDraft =
   | { kind: 'none' }
   | { kind: 'influence'; cardId: string; groundswell: boolean; payment: PaymentDraft }
   | { kind: 'trick'; payment: PaymentDraft }
-  | { kind: 'place'; groupId: string; slotIds: readonly string[] }
+  | {
+    kind: 'place';
+    groupId: string;
+    slotIds: readonly string[];
+    /**
+     * The zone the placement has been narrowed to, or absent for the whole board.
+     *
+     * Placing a card's voters is a choice of *zone* first — the rule is that they go in
+     * one — and only then of areas inside it. Ringing all 126 empty areas at once put the
+     * real decision behind a hundred equal-looking ones. This narrows what the board
+     * rings; it forbids nothing the engine allows, and clearing it returns the whole
+     * legal set. `legalPlacementSlotIds` is still what says which areas are legal.
+     */
+    zoneId?: string | null;
+  }
   | {
     kind: 'gerrymander';
     rightsZoneId: string;
@@ -875,6 +894,8 @@ export type DraftAction =
   | { type: 'donationOpponent'; playerId: string }
   | { type: 'donationResource'; resource: ResourceType }
   | { type: 'rightsZone'; zoneId: string }
+  /** Narrow an open placement to one zone, or to the whole board again with `null`. */
+  | { type: 'placeZone'; zoneId: string | null }
   /**
    * One board area was chosen, from the map or from a list.
    *
@@ -922,6 +943,12 @@ export function actionDraftReducer(draft: ActionDraft, action: DraftAction): Act
     case 'rightsZone':
       return draft.kind === 'gerrymander'
         ? { ...draft, rightsZoneId: action.zoneId, voterId: null, destinationSlotId: null }
+        : draft;
+    case 'placeZone':
+      // Changing zone abandons the areas already chosen, because for a group that must
+      // stay together they are what fixed the old zone.
+      return draft.kind === 'place'
+        ? { ...draft, zoneId: action.zoneId, slotIds: [] }
         : draft;
     case 'choiceOption':
       return draft.kind === 'choice' ? { ...draft, optionId: action.optionId } : draft;
@@ -998,8 +1025,17 @@ export function actionDraftReducer(draft: ActionDraft, action: DraftAction): Act
     case 'pick': {
       const { slotId, voterId } = action;
       switch (draft.kind) {
-        case 'place':
+        case 'place': {
+          // Before a zone is settled, tapping an area settles it and places the first
+          // voter there in the same gesture. A card's voters go in one zone, so the tap
+          // that chooses an area has already chosen the zone; asking for both separately
+          // was a step the rule does not have.
+          if ((draft.zoneId ?? null) === null) {
+            const zoneId = zoneOfSlot(slotId);
+            return zoneId === null ? draft : { ...draft, zoneId, slotIds: [slotId] };
+          }
           return { ...draft, slotIds: toggle(draft.slotIds, slotId, Number.MAX_SAFE_INTEGER) };
+        }
         case 'gerrymander': {
           if (draft.voterId === null) {
             return voterId === null ? draft : { ...draft, voterId, destinationSlotId: null };
@@ -1229,10 +1265,25 @@ export function draftTargeting(
     case 'place': {
       const group = view.pendingVoterGroups.find((candidate) => candidate.id === draft.groupId);
       if (group === undefined) return null;
-      return {
-        slotIds: legalPlacementSlotIds(view, seatId, group, draft.slotIds),
-        label: 'place a voter here',
-      };
+      // Every voter has an area: there is nothing left to choose, so the board goes back
+      // to being a board rather than saying that nothing is legal.
+      if (draft.slotIds.length >= group.count) return null;
+      const legal = legalPlacementSlotIds(view, seatId, group, draft.slotIds);
+      const zoneId = draft.zoneId ?? null;
+      if (zoneId === null) {
+        return {
+          slotIds: legal,
+          label: group.sameZone && group.count > 1
+            ? 'start placing — the zone you tap takes the whole group'
+            : 'place a voter here',
+        };
+      }
+      const inZone = new Set(
+        view.slots
+          .filter((slot) => slot.zoneId === zoneId && legal.has(slot.slotId))
+          .map((slot) => slot.slotId),
+      );
+      return { slotIds: inZone, label: `place a voter in ${zoneName(zoneId)}` };
     }
     case 'gerrymander':
       return draft.voterId === null

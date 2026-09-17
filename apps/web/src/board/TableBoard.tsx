@@ -16,6 +16,11 @@
  *   carries its owner's emblem, and a marked voter carries a ring and a tick.
  * - The hit target is the content pack's `hitRadius`, which is larger than the
  *   drawn circle, so a small dot on a crowded map is still comfortably clickable.
+ *
+ * While `highlightedSlotIds` is non-empty the board is in a targeting state: the ringed
+ * areas pulse and everything else fades back. The fade is a contrast change and nothing
+ * else — a faded area is still described, still focusable and still opens for inspection,
+ * so the board never withholds what it is showing, only what it is pointing at.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -148,11 +153,22 @@ export function TableBoard({
   const zoneById = new Map(zones.map((zone) => [zone.id, zone]));
   const summaryById = new Map(summaries.map((summary) => [summary.id, summary]));
   const highlighted = highlightedSlotIds ?? new Set<string>();
+  // While an action has legal targets, the areas that are not among them are faded, so
+  // the ringed ones are what the eye lands on. Nothing is hidden: a faded area is still
+  // readable, still focusable and still carries its own description.
+  const targeting = highlighted.size > 0;
+  // A ringed area is a pointer. A hundred of them at once is wallpaper, so past this many
+  // the stylesheet stops them pulsing and draws them quietly instead. The composers avoid
+  // reaching it by narrowing first — placement asks for a zone before it asks for an area.
+  const crowded = highlighted.size > 24;
 
   return (
     <svg
       ref={svg}
-      className="board board--live"
+      className={
+        `board board--live${targeting ? ' board--targeting' : ''}`
+        + `${targeting && crowded ? ' board--targeting-many' : ''}`
+      }
       viewBox={BOARD.art.viewBox}
       role="group"
       aria-label={
@@ -184,6 +200,7 @@ export function TableBoard({
           const classes = ['board__area'];
           if (selected) classes.push('board__area--selected');
           if (legal) classes.push('board__area--legal');
+          if (targeting && !legal) classes.push('board__area--dimmed');
           return (
             <g
               key={slot.slotId}
@@ -202,32 +219,41 @@ export function TableBoard({
             >
               {/* The hit area is invisible and larger than the drawn dot. */}
               <circle className="board__hit" cx={at.x} cy={at.y} r={hit} />
-              <circle
-                className={slot.voter === undefined ? 'board__slot' : 'board__slot board__slot--taken'}
-                cx={at.x}
-                cy={at.y}
-                r={radius}
-                style={party === undefined ? undefined : { fill: party.color }}
-              />
-              {party === undefined ? null : (
-                <image
-                  className="board__token"
-                  href={party.url}
-                  x={at.x - radius * 0.78}
-                  y={at.y - radius * 0.78}
-                  width={radius * 1.56}
-                  height={radius * 1.56}
-                  preserveAspectRatio="xMidYMid meet"
-                />
+              {slot.voter === undefined ? (
+                <circle className="board__slot" cx={at.x} cy={at.y} r={radius} />
+              ) : (
+                /* Keyed on the voter, so a voter arriving on an empty area mounts a fresh
+                   node and the stylesheet's arrival animation plays for it. A token that
+                   changes hands remounts for the same reason. */
+                <g className="board__voter" key={slot.voter.id}>
+                  <circle
+                    className="board__slot board__slot--taken"
+                    cx={at.x}
+                    cy={at.y}
+                    r={radius}
+                    style={party === undefined ? undefined : { fill: party.color }}
+                  />
+                  {party === undefined ? null : (
+                    <image
+                      className="board__token"
+                      href={party.url}
+                      x={at.x - radius * 0.78}
+                      y={at.y - radius * 0.78}
+                      width={radius * 1.56}
+                      height={radius * 1.56}
+                      preserveAspectRatio="xMidYMid meet"
+                    />
+                  )}
+                </g>
               )}
               {slot.voter?.majority === true ? (
-                <>
+                <g className="board__majority">
                   <circle className="board__majority-ring" cx={at.x} cy={at.y} r={radius + 4} />
                   <path
                     className="board__majority-tick"
                     d={`M${at.x + radius - 1} ${at.y - radius - 5}l4 8 8-13`}
                   />
-                </>
+                </g>
               ) : null}
               {slot.volatile ? (
                 <circle className="board__slot-volatile" cx={at.x} cy={at.y} r={radius + 8} />
@@ -260,7 +286,12 @@ export function TableBoard({
               <text className="board__plaque-name" y={-7}>
                 {shortName(zone.displayName)}
               </text>
-              <text className="board__plaque-count" x={-4} y={17}>
+              <text
+                key={summary === undefined ? 'none' : summary.filled}
+                className="board__plaque-count"
+                x={-4}
+                y={17}
+              >
                 {summary === undefined ? '—' : `${summary.filled}/${zone.capacity}`}
               </text>
               <text className="board__plaque-need" x={4} y={17}>

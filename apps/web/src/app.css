@@ -889,7 +889,7 @@ a {
 .board-caption {
   margin: 10px 0 0;
   font-weight: 600;
-  min-height: 3em;
+  min-height: 2em;
 }
 
 /* ------------------------------------------------------- live board marks */
@@ -1498,10 +1498,50 @@ a {
   padding: 4px 4px 4px 10px;
 }
 
-/* The legend under the board while an action is highlighting its targets. */
+/*
+ * The banner over the board while an action is highlighting its targets. It sits above
+ * the map rather than under it because it is an instruction about the map, and it carries
+ * the same ring the areas do so the sentence and the board read as one control.
+ */
 .board-legend {
-  margin: 8px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 8px;
+  padding: 9px 12px;
   font-weight: 600;
+  background: #7b4fbf14;
+  border: 1px solid #7b4fbf55;
+  border-left: 4px solid var(--faith);
+  border-radius: var(--radius);
+}
+
+.board-legend--none {
+  background: #b3261e12;
+  border-color: #b3261e55;
+  border-left-color: var(--problem);
+}
+
+.board-legend__pin {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 3px solid var(--faith);
+  border-radius: 50%;
+  animation: pin-bob 1.6s ease-in-out infinite;
+}
+
+.board-legend--none .board-legend__pin {
+  border-color: var(--problem);
+  animation: none;
+}
+
+/* A square control whose whole label is one glyph. */
+.button--icon {
+  padding: 8px 12px;
+  min-height: 38px;
+  font-size: 18px;
+  line-height: 1;
 }
 
 .mat {
@@ -4260,4 +4300,406 @@ a {
   .tile:hover {
     transform: none;
   }
+}
+
+/* ==================================================== motion and attention, 2026-09 */
+
+/*
+ * A board game moves. Until this section the screen only ever cut from one still state to
+ * the next, which is why it read as a form rather than as a table: a voter appeared, a
+ * majority was suddenly marked, an action opened somewhere off the top of a column, and
+ * nothing anywhere said that any of it had happened.
+ *
+ * Every animation here is either a *state arriving* — a token landing, a majority being
+ * marked, a turn starting — or a *pointer* at something the player now has to look at. No
+ * animation gates a control: everything is clickable for the whole of it, nothing is
+ * revealed only at the end of one, and the reduce-motion rule at the foot of this file
+ * shortens all of them to nothing without changing what is on screen.
+ */
+
+@keyframes token-land {
+  0% { transform: scale(0.2); opacity: 0; }
+  60% { transform: scale(1.18); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes majority-mark {
+  0% { stroke-dashoffset: 120; opacity: 0.2; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+
+@keyframes target-pulse {
+  0%, 100% { opacity: 1; stroke-width: 4; }
+  50% { opacity: 0.45; stroke-width: 7; }
+}
+
+@keyframes card-flash {
+  0% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
+@keyframes rise-in {
+  0% { transform: translateY(6px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fanfare-sweep {
+  0% { transform: translateY(-14px) scale(0.94); opacity: 0; }
+  18% { transform: translateY(0) scale(1); opacity: 1; }
+  78% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-10px) scale(0.98); opacity: 0; }
+}
+
+@keyframes pin-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* --------------------------------------------------------- the board, moving */
+
+/*
+ * A voter arriving. The group is keyed on the voter in `TableBoard`, so it is a fresh
+ * node every time one lands or changes hands, and this plays exactly then. `fill-box`
+ * scales it about its own centre rather than about the SVG's origin.
+ */
+.board__voter {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: token-land 320ms cubic-bezier(0.2, 1.3, 0.5, 1) both;
+}
+
+.board__majority {
+  animation: rise-in 260ms ease-out both;
+}
+
+.board__majority-ring {
+  stroke-dasharray: 120;
+  animation: majority-mark 420ms ease-out both;
+}
+
+/* A legal target breathes, so the ringed areas are the first thing the eye finds. */
+.board__legal-ring {
+  animation: target-pulse 1.6s ease-in-out infinite;
+}
+
+/*
+ * While an action has legal targets, everything that is not one is faded back. Nothing is
+ * hidden and nothing is disabled: a faded area still carries its own description, is
+ * still focusable and still opens for inspection.
+ */
+.board--targeting .board__area--dimmed {
+  opacity: 0.35;
+  transition: opacity 180ms ease;
+}
+
+.board--targeting .board__area--dimmed:hover,
+.board--targeting .board__area--dimmed:focus-visible {
+  opacity: 0.8;
+}
+
+.board__area--legal {
+  cursor: copy;
+}
+
+/* ------------------------------------------------------- controls that answer */
+
+.button {
+  transition: transform 110ms ease, box-shadow 110ms ease, background-color 140ms ease;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 #1f2a4426;
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.market__card {
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.market--buyable .market__card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px #1f2a441f;
+}
+
+.market__card--open {
+  animation: rise-in 200ms ease-out;
+}
+
+/* ------------------------------------------------------ pointing at the Now card */
+
+/*
+ * The flash. `SeatSurface` remounts this on a new key each time the Now card becomes a
+ * new thing, which is what replays the animation; it is a sibling overlay rather than an
+ * animation on the card so that restarting it never disturbs what is inside the card.
+ */
+.now {
+  animation: rise-in 220ms ease-out;
+}
+
+.now:focus {
+  outline: none;
+}
+
+.now__flash {
+  position: absolute;
+  inset: -3px;
+  border-radius: calc(var(--radius) + 3px);
+  background: var(--trim);
+  pointer-events: none;
+  animation: card-flash 900ms ease-out forwards;
+}
+
+/*
+ * The announcement over the table. It is a status region, never a dialog: it takes no
+ * focus, covers no control and leaves on its own.
+ */
+.fanfare {
+  position: fixed;
+  top: calc(var(--bar-h) + 18px);
+  left: 50%;
+  translate: -50% 0;
+  z-index: 40;
+  pointer-events: none;
+  background: var(--frame-deep);
+  color: var(--trim);
+  border: 2px solid var(--trim);
+  border-radius: 999px;
+  padding: 10px 28px;
+  box-shadow: 0 10px 30px #0b122466;
+  animation: fanfare-sweep 2s ease-in-out forwards;
+}
+
+.fanfare__text {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 19px;
+  font-weight: var(--weight-bold);
+}
+
+/* ----------------------------------------------------- choosing an area, 13.7 */
+
+/*
+ * The board-first target step. The instruction names the board and counts what is ringed
+ * on it; the list underneath is the alternative, folded away, rather than the control.
+ */
+.target {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+}
+
+.target__call {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  background: #7b4fbf14;
+  border: 1px solid #7b4fbf55;
+  border-left: 4px solid var(--faith);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
+.target__call--none {
+  background: #b3261e12;
+  border-color: #b3261e55;
+  border-left-color: var(--problem);
+}
+
+.target__call--done {
+  background: #2e7d4f12;
+  border-color: #2e7d4f55;
+  border-left-color: var(--ok);
+}
+
+.target__call--done .target__pin {
+  border-color: var(--ok);
+  background: var(--ok);
+  animation: none;
+}
+
+/* A ring that matches the rings on the board, so the sentence and the map read as one. */
+.target__pin {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border: 3px solid var(--faith);
+  border-radius: 50%;
+  animation: pin-bob 1.6s ease-in-out infinite;
+}
+
+.target__call--none .target__pin {
+  border-color: var(--problem);
+  animation: none;
+}
+
+.target__progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--text-small);
+  color: var(--ink-soft);
+}
+
+.target__pips {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.target__pip {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--ink-soft);
+  border-radius: 50%;
+}
+
+.target__pip--done {
+  background: var(--party);
+  border-color: var(--frame);
+  animation: token-land 280ms cubic-bezier(0.2, 1.3, 0.5, 1);
+}
+
+.target__list > summary {
+  cursor: pointer;
+  font-size: var(--text-small);
+  color: var(--ink-soft);
+}
+
+.target__list[open] > summary {
+  margin-bottom: 6px;
+}
+
+/* --------------------------------------------------------- panels, arriving */
+
+.coach {
+  animation: rise-in 240ms ease-out;
+}
+
+/*
+ * Motion is decoration here, so switching it off must leave every state readable. The
+ * global reduce-motion rule at the top of this file already collapses every duration; the
+ * rules below take away the things that are not durations.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .board__legal-ring,
+  .board-legend__pin,
+  .target__pin {
+    animation: none;
+  }
+
+  .board__legal-ring {
+    stroke-width: 5;
+  }
+
+  .button:hover:not(:disabled),
+  .button:active:not(:disabled),
+  .market--buyable .market__card:hover {
+    transform: none;
+  }
+
+  .now__flash {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------ placing, zone first */
+
+/*
+ * A card's voters go in one zone, so the zone is the choice and the areas inside it are
+ * the detail. These are the nine zones, each with the room it has left; picking one is
+ * what narrows the board to a set a player can actually read.
+ */
+.zone-choices {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 6px;
+}
+
+.zone-choice {
+  width: 100%;
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  text-align: left;
+  padding: 8px 10px;
+}
+
+.zone-choice__name {
+  font-size: var(--text-body);
+  font-weight: var(--weight-bold);
+}
+
+.zone-choice__room {
+  font-family: var(--body);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--text-small);
+  opacity: 0.8;
+}
+
+.placement__zone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 6px 6px 6px 10px;
+  background: var(--paper-bright);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--radius);
+}
+
+/*
+ * Too many rings at once. The pulse is a pointer and stops being one when everything is
+ * pointed at, so past the threshold in `TableBoard` the rings go quiet and thin and the
+ * fade on everything else does the work instead.
+ */
+.board--targeting-many .board__legal-ring {
+  animation: none;
+  stroke-width: 2.5;
+  opacity: 0.75;
+}
+
+/* The rest of a lesson, folded under the paragraph that the next action needs. */
+.coach__more > summary {
+  cursor: pointer;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: var(--text-small);
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+
+/* A figure that has just changed, in the bar and on a zone plaque. */
+@keyframes count-bump {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+.status-bar__count {
+  display: inline-block;
+  animation: count-bump 380ms ease-out;
+}
+
+.board__plaque-count {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: count-bump 420ms ease-out;
 }

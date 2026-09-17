@@ -11,6 +11,12 @@
  * sequence of two things. Nothing here blocks a control, and the card is never in the way
  * of the seat's own column.
  *
+ * It shows a lesson's **first paragraph and its task**, and folds the rest behind one
+ * control. A playtest read the card as three paragraphs of rules standing between it and
+ * a board it had not looked at yet, and skipped the card. The rule that is needed to take
+ * the next action is always the first paragraph; the ones after it are the detail, and
+ * they are one click away rather than gone.
+ *
  * The coach is read-only. It never submits a command, never enables or disables a
  * control, and never predicts a ruling: the match underneath is the ordinary match, and a
  * player who ignores the card entirely can still play every legal move.
@@ -110,16 +116,22 @@ export function TutorialCoach({
       <h2 id="coach-heading" className="coach__title">
         {lesson.title}
       </h2>
-      {lesson.body.map((paragraph) => (
-        <p key={paragraph} className="coach__body">
-          {paragraph}
-        </p>
-      ))}
+      <p className="coach__body">{lesson.body[0]}</p>
       {lesson.task === undefined ? null : (
         <p className="coach__task">
           <span className="coach__task-label">Do this</span>
           {lesson.task}
         </p>
+      )}
+      {lesson.body.length < 2 ? null : (
+        <details className="coach__more">
+          <summary>More on this rule</summary>
+          {lesson.body.slice(1).map((paragraph) => (
+            <p key={paragraph} className="coach__body">
+              {paragraph}
+            </p>
+          ))}
+        </details>
       )}
       <div className="actions">
         <button

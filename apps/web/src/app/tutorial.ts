@@ -289,7 +289,7 @@ export const TUTORIAL_LESSONS: readonly Lesson[] = [
       + 'turn, for good or ill.',
       'Voters you leave unplaced when the turn ends are lost, so place them before you end it.',
     ],
-    task: 'Pick a zone on the board, then confirm the placement.',
+    task: 'Tap a ringed area in the zone you want, fill the rest of the group, then confirm.',
     when: (facts) => facts.votersToPlace > 0,
     done: (facts) => facts.votersToPlace === 0 && facts.votersOnBoard > 0,
   },
