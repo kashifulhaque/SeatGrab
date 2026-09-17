@@ -29,7 +29,6 @@ export function PageFrame({
   back,
   wide = false,
   compact = false,
-  hero = false,
   footer,
 }: {
   title: string;
@@ -45,8 +44,6 @@ export function PageFrame({
   wide?: boolean;
   /** A one-line header with no edition facts, for screens whose content must start high. */
   compact?: boolean;
-  /** The home screen's larger header, with room for a tagline. */
-  hero?: boolean;
   /** Content drawn in the footer above the rules link, such as a screen's settings. */
   footer?: ReactNode;
 }) {
@@ -58,7 +55,6 @@ export function PageFrame({
     'page',
     wide ? 'page--wide' : '',
     compact ? 'page--compact' : '',
-    hero ? 'page--hero' : '',
   ].filter(Boolean).join(' ');
   return (
     <div className={classes}>
