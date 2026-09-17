@@ -196,8 +196,8 @@ export function Home({
         <header className="title-card">
           <p className="title-card__eyebrow">{INSTALLED_CAMPAIGN.displayName}</p>
           <h1 className="title-card__name">
-            <span>Seat</span>
-            <span className="title-card__name-b">Grab</span>
+            <span>Gerry</span>
+            <span className="title-card__name-b">mander</span>
           </h1>
           <p className="title-card__tagline">
             Answer policy questions. Win voters. Hold majorities.
