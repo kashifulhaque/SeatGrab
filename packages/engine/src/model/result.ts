@@ -1,4 +1,4 @@
-import type { CommandFailure, CommandSuccess, GameCommand } from '@seatgrab/protocol';
+import type { CommandFailure, CommandSuccess, GameCommand } from '@gerrymander/protocol';
 import type { GameEvent, GameState, PlayerId } from './state.js';
 
 export type AuthenticatedActor = { playerId: PlayerId };

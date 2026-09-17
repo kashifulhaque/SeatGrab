@@ -18,8 +18,8 @@
  * 3. A rematch is a new match. The settings are copied; the seed is not, and the config
  *    this file builds carries no state from the finished game.
  */
-import type { GameConfig } from '@seatgrab/engine';
-import type { PlayerView, PublicPlayerView } from '@seatgrab/protocol';
+import type { GameConfig } from '@gerrymander/engine';
+import type { PlayerView, PublicPlayerView } from '@gerrymander/protocol';
 
 /** One seat's voters in one zone, split by whether they counted. */
 export interface ZoneHoldingResult {

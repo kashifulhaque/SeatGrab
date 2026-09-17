@@ -8,7 +8,7 @@
  * defect in the enumerator, a policy or a composer derivation, exactly as a stalled
  * autoplay run is: the driver surfaces it and does not retry on a timer.
  */
-import type { CommandResponse, ComputerDifficulty, GameCommand, PlayerView } from '@seatgrab/protocol';
+import type { CommandResponse, ComputerDifficulty, GameCommand, PlayerView } from '@gerrymander/protocol';
 
 import { decideEasy } from './policies/easy.js';
 import { decideHard } from './policies/hard.js';

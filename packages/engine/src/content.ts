@@ -3,7 +3,7 @@ import type {
   EffectCard,
   PolicyCard,
   VoterCard,
-} from '@seatgrab/content';
+} from '@gerrymander/content';
 import {
   TRICK_CARDS,
   CONTENT_PACK_ID,
@@ -14,7 +14,7 @@ import {
   RULESET_ID,
   RULESET_VERSION,
   VOTER_CARDS,
-} from '@seatgrab/content';
+} from '@gerrymander/content';
 
 export interface GameContent {
   contentPackId: string;

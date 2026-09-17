@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ChoicePromptContext, ChoicePromptOp, PlayerView } from '@seatgrab/protocol';
+import type { ChoicePromptContext, ChoicePromptOp, PlayerView } from '@gerrymander/protocol';
 import {
   CORE_CONTENT,
   VOTER_SUPPLY_PER_PLAYER,

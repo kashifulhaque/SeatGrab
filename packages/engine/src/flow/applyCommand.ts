@@ -1,5 +1,5 @@
-import type { BoardZoneId, Cost, ResourceVector } from '@seatgrab/content';
-import { GameCommandSchema, type GameCommand } from '@seatgrab/protocol';
+import type { BoardZoneId, Cost, ResourceVector } from '@gerrymander/content';
+import { GameCommandSchema, type GameCommand } from '@gerrymander/protocol';
 import type { GameContent } from '../content.js';
 import { commandFailure as failure, commandSuccess as accept, createPublicEvent as publicEvent } from './commandResult.js';
 import { applyCampaignCommand } from './campaign.js';

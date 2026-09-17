@@ -13,7 +13,7 @@
  */
 import { useRef, type RefObject } from 'react';
 
-import type { PublicPlayerView } from '@seatgrab/protocol';
+import type { PublicPlayerView } from '@gerrymander/protocol';
 
 import { PartyMark } from './PartyMark';
 import { revealedSeatId, type HandoffAction, type HandoffState } from './handoff';

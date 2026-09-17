@@ -19,7 +19,7 @@
  * and even that is through a two-method interface, so nothing in this file depends on a
  * WebSocket implementation.
  */
-import type { CommandResponse, SeatView, ServerFrame } from '@seatgrab/protocol';
+import type { CommandResponse, SeatView, ServerFrame } from '@gerrymander/protocol';
 
 import { MatchQueue } from './matchQueue.js';
 import type { RoomService, SeatIdentity } from './roomService.js';

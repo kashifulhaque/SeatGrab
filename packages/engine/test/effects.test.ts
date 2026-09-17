@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GameCommand } from '@seatgrab/protocol';
+import type { GameCommand } from '@gerrymander/protocol';
 import {
   CORE_CONTENT,
   applyCommand,

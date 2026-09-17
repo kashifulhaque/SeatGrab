@@ -9,7 +9,7 @@
  *
  * Three things are worth stating about the shapes below.
  *
- * `LobbyView`, `ClaimedSeat` and `SeatView` all come from `@seatgrab/protocol` and are
+ * `LobbyView`, `ClaimedSeat` and `SeatView` all come from `@gerrymander/protocol` and are
  * re-exported below, so a caller finds them beside the functions that return them. Until
  * Session 16 the first two were declared twice — once in the server, once here — because
  * the browser cannot import the server; there is now one declaration of each, on the
@@ -31,7 +31,7 @@ import type {
   LobbySeatView,
   LobbyView,
   SeatView,
-} from '@seatgrab/protocol';
+} from '@gerrymander/protocol';
 
 /**
  * The shapes the room routes answer with, re-exported from the protocol package.

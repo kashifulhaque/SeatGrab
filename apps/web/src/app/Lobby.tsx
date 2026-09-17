@@ -10,9 +10,9 @@
  */
 import { useMemo, useState } from 'react';
 
-import { COMPUTER_DIFFICULTIES } from '@seatgrab/computer';
-import { CORE_CONTENT } from '@seatgrab/engine';
-import type { ComputerDifficulty } from '@seatgrab/protocol';
+import { COMPUTER_DIFFICULTIES } from '@gerrymander/computer';
+import { CORE_CONTENT } from '@gerrymander/engine';
+import type { ComputerDifficulty } from '@gerrymander/protocol';
 
 import { BoardArtwork } from '../board/BoardArtwork';
 import { RESOURCE_ASSETS } from '../assets/manifest';

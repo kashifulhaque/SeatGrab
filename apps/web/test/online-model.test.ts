@@ -306,11 +306,11 @@ describe('the seat credential store', () => {
 
   it('drops a stored record it cannot use rather than repairing one', () => {
     const storage = memoryStorage();
-    storage.setItem('seatgrab.online.seats.v1', JSON.stringify([{ matchId: 'match-1' }, 'nonsense']));
+    storage.setItem('gerrymander.online.seats.v1', JSON.stringify([{ matchId: 'match-1' }, 'nonsense']));
     expect(openSeatStore(storage).list()).toEqual([]);
 
     const unparseable = memoryStorage();
-    unparseable.setItem('seatgrab.online.seats.v1', '{not json');
+    unparseable.setItem('gerrymander.online.seats.v1', '{not json');
     expect(openSeatStore(unparseable).list()).toEqual([]);
   });
 });

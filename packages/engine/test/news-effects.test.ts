@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { Cost, Archetype, ResourceVector } from '@seatgrab/content';
-import type { ChoiceSelection, GameCommand } from '@seatgrab/protocol';
+import type { Cost, Archetype, ResourceVector } from '@gerrymander/content';
+import type { ChoiceSelection, GameCommand } from '@gerrymander/protocol';
 import {
   CORE_CONTENT,
   applyCommand,

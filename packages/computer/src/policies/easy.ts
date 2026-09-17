@@ -5,8 +5,8 @@
  * It is the autoplay driver's `spread` ladder with the trick rungs removed and a seeded
  * coin flip for the policy answer.
  */
-import type { GameCommand, PlayerView } from '@seatgrab/protocol';
-import { NO_RESOURCES, RESOURCE_ORDER, printedTotal } from '@seatgrab/seat';
+import type { GameCommand, PlayerView } from '@gerrymander/protocol';
+import { NO_RESOURCES, RESOURCE_ORDER, printedTotal } from '@gerrymander/seat';
 
 import {
   IDENTITY_ORDER,

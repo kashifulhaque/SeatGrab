@@ -3,7 +3,7 @@
  *
  * This is the pass-and-play half of the driver `apps/server/src/rooms/computerDriver.ts`
  * is the online half of. Both follow the same four rules, and both get every decision
- * from `@seatgrab/computer`, which reads a seat's own `PlayerView` and nothing else:
+ * from `@gerrymander/computer`, which reads a seat's own `PlayerView` and nothing else:
  *
  * 1. After every accepted command, and once when the match opens, look for the first
  *    computer seat whose own view says it has something to do.
@@ -25,15 +25,15 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { hasSomethingToDo, stepComputer, type ComputerTable } from '@seatgrab/computer';
-import type { ComputerDifficulty } from '@seatgrab/protocol';
+import { hasSomethingToDo, stepComputer, type ComputerTable } from '@gerrymander/computer';
+import type { ComputerDifficulty } from '@gerrymander/protocol';
 
 import type { LocalMatch } from '../local';
 
 /** How long a computer seat waits before acting, as a person chooses it. */
 export type ComputerPace = 'normal' | 'fast';
 
-export const COMPUTER_PACE_KEY = 'seatgrab.computerPace';
+export const COMPUTER_PACE_KEY = 'gerrymander.computerPace';
 
 export const COMPUTER_PACES: readonly { id: ComputerPace; label: string; description: string }[] = [
   { id: 'normal', label: 'Normal', description: 'The computer pauses briefly so you can follow its turn.' },

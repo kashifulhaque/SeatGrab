@@ -1,5 +1,5 @@
 {
-  "name": "seatgrab",
+  "name": "gerrymander",
   "private": true,
   "version": "0.0.0",
   "packageManager": "pnpm@10.28.0",
@@ -7,10 +7,10 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "tsc -b && pnpm --filter @seatgrab/web build",
-    "build:online": "tsc -b && pnpm --filter @seatgrab/web build:online",
-    "dev": "pnpm --parallel --filter @seatgrab/server --filter @seatgrab/web dev",
-    "start": "pnpm --filter @seatgrab/server start",
+    "build": "tsc -b && pnpm --filter @gerrymander/web build",
+    "build:online": "tsc -b && pnpm --filter @gerrymander/web build:online",
+    "dev": "pnpm --parallel --filter @gerrymander/server --filter @gerrymander/web dev",
+    "start": "pnpm --filter @gerrymander/server start",
     "typecheck": "tsc -b --pretty false && tsc -p apps/web/tsconfig.json --pretty false && tsc -p apps/server/tsconfig.test.json --pretty false && node scripts/check_emitted_imports.mjs",
     "test": "vitest run",
     "check:imports": "node scripts/check_emitted_imports.mjs",

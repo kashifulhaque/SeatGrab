@@ -14,8 +14,8 @@
  * first and who acts first, and a tournament that never rotated would measure the seat as
  * much as the policy.
  */
-import { CORE_CONTENT, type GameConfig } from '@seatgrab/engine';
-import type { ComputerDifficulty } from '@seatgrab/protocol';
+import { CORE_CONTENT, type GameConfig } from '@gerrymander/engine';
+import type { ComputerDifficulty } from '@gerrymander/protocol';
 
 import { createLocalMatch, createMemoryStore, type LocalMatchOptions } from '../src/local';
 import { playComputers } from './computerPlay';

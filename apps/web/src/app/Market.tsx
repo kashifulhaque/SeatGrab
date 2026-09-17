@@ -15,7 +15,7 @@
  * The button stays enabled either way, because Volunteers or a trade may still make
  * the purchase possible and the engine is the one that refuses.
  */
-import type { PlayerView } from '@seatgrab/protocol';
+import type { PlayerView } from '@gerrymander/protocol';
 
 import { CostIcons } from './CostIcons';
 import { NO_RESOURCES, affordability, volunteersRemaining, purchaseCost } from './actions';

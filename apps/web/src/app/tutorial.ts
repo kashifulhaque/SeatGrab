@@ -28,7 +28,7 @@
  * place, keeps every lesson a plain predicate over named values that a test can build, and
  * keeps the projection contract in one function rather than in fifteen.
  */
-import type { PlayerView } from '@seatgrab/protocol';
+import type { PlayerView } from '@gerrymander/protocol';
 
 import { affordability, powerStatuses, purchaseCost } from './actions';
 import { defaultSetupDraft, type SetupDraft } from './setup';
@@ -454,7 +454,7 @@ export function lessonsCompleted(facts: TutorialFacts, read: ReadonlySet<string>
  * read, which is a smaller failure than losing the match.
  */
 export function readLessonsKey(matchId: string): string {
-  return `seatgrab.tutorial.${matchId}`;
+  return `gerrymander.tutorial.${matchId}`;
 }
 
 export function readLessons(matchId: string): ReadonlySet<string> {

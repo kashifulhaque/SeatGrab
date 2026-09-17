@@ -26,7 +26,7 @@ const FORBIDDEN_TEXT = [
 
 /** Every development-only route, by virtual module ID and source directory. */
 const DEV_ROUTES = [
-  { virtual: 'virtual:seatgrab-transport-check', directory: 'transport-check/' },
+  { virtual: 'virtual:gerrymander-transport-check', directory: 'transport-check/' },
 ];
 
 /**
@@ -34,15 +34,15 @@ const DEV_ROUTES = [
  *
  * `src/remote/` is the socket, the room client and the seat credential store; the
  * `Online*` screens are the only modules that import it. Both are reached only through
- * `virtual:seatgrab-online`, so stubbing that one module keeps all of it out.
+ * `virtual:gerrymander-online`, so stubbing that one module keeps all of it out.
  */
 const ONLINE_MODULES = [
-  { virtual: 'virtual:seatgrab-online', directory: 'src/remote/' },
-  { virtual: 'virtual:seatgrab-online', directory: 'app/Online' },
+  { virtual: 'virtual:gerrymander-online', directory: 'src/remote/' },
+  { virtual: 'virtual:gerrymander-online', directory: 'app/Online' },
 ];
 
 /** The meta tag `vite.config.ts` stamps every build's HTML with. */
-const BUILD_MARKER = /<meta name="seatgrab-build" content="([a-z-]+)"/;
+const BUILD_MARKER = /<meta name="gerrymander-build" content="([a-z-]+)"/;
 /** What a development-only route module must compile to outside the dev server. */
 const EMPTY_ROUTE = 'export default null;';
 

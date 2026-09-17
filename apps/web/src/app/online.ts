@@ -23,8 +23,8 @@
  * 2. `rejected` is terminal. `describeConnection` offers no retry there — retrying says
  *    nothing new — and offers the way back to the room code instead.
  */
-import type { ContentAdvisory } from '@seatgrab/content';
-import type { CommandResponse, ComputerDifficulty, SeatController } from '@seatgrab/protocol';
+import type { ContentAdvisory } from '@gerrymander/content';
+import type { CommandResponse, ComputerDifficulty, SeatController } from '@gerrymander/protocol';
 
 import { PARTY_IDENTITIES, type PartyIdentity } from '../assets/parties';
 import type { ConnectionStatus, LobbySeatView, LobbyView, StoredSeat } from '../remote';

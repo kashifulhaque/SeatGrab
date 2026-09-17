@@ -63,7 +63,7 @@ export function createMemoryStore(): LocalSnapshotStore {
   };
 }
 
-export const LOCAL_DATABASE_NAME = 'seatgrab-local';
+export const LOCAL_DATABASE_NAME = 'gerrymander-local';
 const LOCAL_DATABASE_VERSION = 1;
 const MATCH_STORE = 'matches';
 

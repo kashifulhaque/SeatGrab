@@ -7,7 +7,7 @@
  * answers the leader's beneficial cards, and the placement score carries the endgame
  * terms. See `shared.ts` for each filter, keyed on the level.
  */
-import type { GameCommand, PlayerView } from '@seatgrab/protocol';
+import type { GameCommand, PlayerView } from '@gerrymander/protocol';
 
 import type { Random } from '../random.js';
 import { decideRanked } from './medium.js';

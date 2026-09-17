@@ -1,4 +1,4 @@
-import type { ResourceVector } from '@seatgrab/content';
+import type { ResourceVector } from '@gerrymander/content';
 import { shuffle } from '../random/prng.js';
 import type { GameContent } from '../content.js';
 import {
@@ -36,7 +36,7 @@ function zeroResources(): ResourceVector {
 
 export function createGame(config: GameConfig, content: GameContent, seed: number): GameState {
   if (config.players.length < 3 || config.players.length > 5) {
-    throw new Error('SeatGrab seats 3 to 5 players');
+    throw new Error('A match seats 3 to 5 players');
   }
   const playerIds = config.players.map((player) => player.id);
   const partyIds = config.players.map((player) => player.partyId);

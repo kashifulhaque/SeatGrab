@@ -24,9 +24,9 @@
  *
  * The two positional arguments are read first, so put `--policy` after them.
  */
-import { CORE_CONTENT, type GameConfig } from '@seatgrab/engine';
+import { CORE_CONTENT, type GameConfig } from '@gerrymander/engine';
 
-import type { ComputerDifficulty } from '@seatgrab/protocol';
+import type { ComputerDifficulty } from '@gerrymander/protocol';
 
 import { createLocalMatch, createMemoryStore, type LocalMatchOptions } from '../src/local';
 import { autoplay, type AutoplayResult } from './autoplay';

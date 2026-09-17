@@ -1,5 +1,5 @@
-import { RESOURCE_TYPES, type Cost, type ResourceVector } from '@seatgrab/content';
-import type { PaymentDto } from '@seatgrab/protocol';
+import { RESOURCE_TYPES, type Cost, type ResourceVector } from '@gerrymander/content';
+import type { PaymentDto } from '@gerrymander/protocol';
 import { resourceEntries, resourceTotal, type GameState, type PlayerState } from '../model/state.js';
 
 export type PaymentValidation =

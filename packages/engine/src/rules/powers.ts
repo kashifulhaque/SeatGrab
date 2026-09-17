@@ -1,4 +1,4 @@
-import type { Archetype } from '@seatgrab/content';
+import type { Archetype } from '@gerrymander/content';
 import type { GameState, PlayerId, PlayerState } from '../model/state.js';
 
 export function archetypeCount(state: GameState, player: PlayerState, archetype: Archetype): number {

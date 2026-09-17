@@ -38,7 +38,7 @@
  */
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 
-import type { PlayerView } from '@seatgrab/protocol';
+import type { PlayerView } from '@gerrymander/protocol';
 
 import { BOARD_VIEW_RATIO, TableBoard, slotLabel } from '../board/TableBoard';
 import { PARTY_BY_ID, RESOURCE_ASSETS } from '../assets/manifest';

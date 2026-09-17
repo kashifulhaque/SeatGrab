@@ -64,7 +64,7 @@ export function PageFrame({
       <header className={compact ? 'page__header page__header--compact' : 'page__header'}>
         <div className="page__titles">
           <p className="page__wordmark">
-            {back === undefined ? 'SeatGrab' : <a href={ROUTES.home}>SeatGrab</a>}
+            {back === undefined ? 'Gerrymander' : <a href={ROUTES.home}>Gerrymander</a>}
           </p>
           <h1>{title}</h1>
           {lede === undefined ? null : <p className="page__lede">{lede}</p>}

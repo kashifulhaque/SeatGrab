@@ -19,8 +19,8 @@ import type {
   SeatView,
   ServerFrame,
   SocketSeatIdentity,
-} from '@seatgrab/protocol';
-import { SEATABLE_PARTY_IDS } from '@seatgrab/protocol';
+} from '@gerrymander/protocol';
+import { SEATABLE_PARTY_IDS } from '@gerrymander/protocol';
 
 import { PARTY_IDENTITIES, PARTY_IDENTITY_BY_ID } from '../src/assets/parties';
 import { openRemoteMatch, socketUrl, type RemoteMatch } from '../src/remote';
@@ -260,8 +260,8 @@ describe('opening a connection', () => {
 
   it('turns an http server URL into a ws one, and https into wss', () => {
     expect(socketUrl('', 'http://localhost:5173')).toBe('ws://localhost:5173/ws');
-    expect(socketUrl('https://seatgrab.example', 'http://localhost:5173'))
-      .toBe('wss://seatgrab.example/ws');
+    expect(socketUrl('https://gerrymander.example', 'http://localhost:5173'))
+      .toBe('wss://gerrymander.example/ws');
   });
 });
 

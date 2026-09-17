@@ -9,8 +9,8 @@
  */
 import { useEffect, useState } from 'react';
 
-import OnlineRoutes from 'virtual:seatgrab-online';
-import TransportCheck from 'virtual:seatgrab-transport-check';
+import OnlineRoutes from 'virtual:gerrymander-online';
+import TransportCheck from 'virtual:gerrymander-transport-check';
 
 import { Home } from './app/Home';
 import { Lobby } from './app/Lobby';

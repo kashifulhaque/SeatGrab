@@ -16,7 +16,7 @@
  *   act continues the match when it comes back, and a replayed decision is answered from
  *   the idempotency record rather than applied twice.
  *
- * `SEATGRAB_COMPUTER_DELAY_MS` is 0 throughout, and the tests await the driver's
+ * `GERRYMANDER_COMPUTER_DELAY_MS` is 0 throughout, and the tests await the driver's
  * `settled` rather than sleeping.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -26,7 +26,7 @@ import { bearer, openSocket, startHarness, type Harness } from './harness';
 let harness: Harness;
 
 beforeEach(async () => {
-  harness = await startHarness({ env: { SEATGRAB_COMPUTER_DELAY_MS: '0' } });
+  harness = await startHarness({ env: { GERRYMANDER_COMPUTER_DELAY_MS: '0' } });
 });
 
 afterEach(async () => {

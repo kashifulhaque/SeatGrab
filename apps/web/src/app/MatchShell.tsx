@@ -44,8 +44,8 @@
  */
 import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from 'react';
 
-import { CORE_CONTENT } from '@seatgrab/engine';
-import type { GameCommand, PlayerView } from '@seatgrab/protocol';
+import { CORE_CONTENT } from '@gerrymander/engine';
+import type { GameCommand, PlayerView } from '@gerrymander/protocol';
 
 import {
   LOCAL_MODE_NOTICE,
@@ -151,7 +151,7 @@ function Cover({
  *
  * The pace is a property of this browser rather than of the match: it says how fast the
  * person watching wants to read what happened, and it is stored under
- * `seatgrab.computerPace` so the next match starts the way the last one ended.
+ * `gerrymander.computerPace` so the next match starts the way the last one ended.
  */
 function PaceMenu({ pace, onChoose }: { pace: ComputerPace; onChoose: (pace: ComputerPace) => void }) {
   const menu = useRef<HTMLDetailsElement>(null);
@@ -304,7 +304,7 @@ export function MatchShell({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${match.matchId}.seatgrab-save.json`;
+    link.download = `${match.matchId}.gerrymander-save.json`;
     link.click();
     URL.revokeObjectURL(url);
   }, [match]);

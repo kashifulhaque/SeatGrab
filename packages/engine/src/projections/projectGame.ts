@@ -1,5 +1,5 @@
-import type { BoardZoneId, Archetype } from '@seatgrab/content';
-import type { MatchSetupView, PendingDecisionView, PlayerView, VisibleEvent } from '@seatgrab/protocol';
+import type { BoardZoneId, Archetype } from '@gerrymander/content';
+import type { MatchSetupView, PendingDecisionView, PlayerView, VisibleEvent } from '@gerrymander/protocol';
 import type { GameContent } from '../content.js';
 import type { GameEvent, GameState, PendingInteraction, PlayerId } from '../model/state.js';
 import { BASE_RESOURCE_CAP } from '../model/state.js';

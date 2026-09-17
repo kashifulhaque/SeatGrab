@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Cost, Archetype, ResourceVector } from '@seatgrab/content';
+import type { Cost, Archetype, ResourceVector } from '@gerrymander/content';
 import {
   CORE_CONTENT,
   applyCommand,

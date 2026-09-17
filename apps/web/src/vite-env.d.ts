@@ -13,7 +13,7 @@
  * Resolved the same way as the content review: the real component only while the dev
  * server is running.
  */
-declare module 'virtual:seatgrab-transport-check' {
+declare module 'virtual:gerrymander-transport-check' {
   const TransportCheck: (() => import('react').ReactElement) | null;
   export default TransportCheck;
 }
@@ -26,7 +26,7 @@ declare module 'virtual:seatgrab-transport-check' {
  * online screens — and through them `src/remote/` — are reached by, so a local build that
  * says it carries no network code contains none.
  */
-declare module 'virtual:seatgrab-online' {
+declare module 'virtual:gerrymander-online' {
   const OnlineRoutes:
     | ((props: { route: import('./app/routes').OnlineRoute }) => import('react').ReactElement)
     | null;

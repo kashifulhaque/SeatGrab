@@ -23,7 +23,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 
-import type { PlayerView } from '@seatgrab/protocol';
+import type { PlayerView } from '@gerrymander/protocol';
 
 import { Glyph } from './Glyph';
 import { ROUTES } from './routes';

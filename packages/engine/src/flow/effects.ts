@@ -4,8 +4,8 @@ import {
   type BoardZoneId,
   type EffectCard,
   type Archetype,
-} from '@seatgrab/content';
-import type { ChoicePromptOp, ChoiceSelection } from '@seatgrab/protocol';
+} from '@gerrymander/content';
+import type { ChoicePromptOp, ChoiceSelection } from '@gerrymander/protocol';
 import type { GameContent } from '../content.js';
 import {
   resourceEntries,

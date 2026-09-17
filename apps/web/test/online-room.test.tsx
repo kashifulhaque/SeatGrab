@@ -37,7 +37,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { LobbyView, PlayerView, SeatView, ServerFrame } from '@seatgrab/protocol';
+import type { LobbyView, PlayerView, SeatView, ServerFrame } from '@gerrymander/protocol';
 
 import { OnlineRoom } from '../src/app/OnlineRoom';
 import {
@@ -160,7 +160,7 @@ function playerView(overrides: Partial<PlayerView> = {}): PlayerView {
       contentAdvisories: [],
       contentPackId: 'core-set',
       contentVersion: '0.9.0',
-      rulesetId: 'seatgrab-photo',
+      rulesetId: 'gerrymander-photo',
       rulesetVersion: '1.0.0',
       boardId: 'grid-nine',
       boardVersion: '1.0.0',

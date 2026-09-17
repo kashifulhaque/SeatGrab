@@ -1,4 +1,4 @@
-import { type ChoiceSelection, type GameCommand } from '@seatgrab/protocol';
+import { type ChoiceSelection, type GameCommand } from '@gerrymander/protocol';
 import type { GameContent } from '../content.js';
 import type { AuthenticatedActor, CommandResult } from '../model/result.js';
 import {

@@ -24,8 +24,8 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { CORE_BOARD } from '@seatgrab/content';
-import type { PublicPlayerView, PublicSlotView, PublicZoneView } from '@seatgrab/protocol';
+import { CORE_BOARD } from '@gerrymander/content';
+import type { PublicPlayerView, PublicSlotView, PublicZoneView } from '@gerrymander/protocol';
 
 import { PARTY_BY_ID } from '../assets/manifest';
 import { FRAME, PLAQUE } from './BoardArtwork';

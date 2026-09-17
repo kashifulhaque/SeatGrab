@@ -11,8 +11,8 @@
  * the whole of this file runs in a plain unit test against a socket that is a few lines
  * of bookkeeping. The default factory is the browser's own `WebSocket`.
  */
-import type { ClientFrame, ServerFrame } from '@seatgrab/protocol';
-import { PERMANENT_SOCKET_ERRORS, SOCKET_CLOSE, SOCKET_PATH } from '@seatgrab/protocol';
+import type { ClientFrame, ServerFrame } from '@gerrymander/protocol';
+import { PERMANENT_SOCKET_ERRORS, SOCKET_CLOSE, SOCKET_PATH } from '@gerrymander/protocol';
 
 /** What the connection tells a socket to tell it. */
 export interface SocketHandlers {

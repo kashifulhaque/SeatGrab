@@ -15,7 +15,7 @@ import {
   isComputerDifficulty,
   type ComputerDifficulty,
   type SeatController,
-} from '@seatgrab/protocol';
+} from '@gerrymander/protocol';
 
 import { inTransaction, type Database } from './database.js';
 

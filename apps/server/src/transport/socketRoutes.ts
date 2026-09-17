@@ -26,7 +26,7 @@ import {
   type ServerFrame,
   type SocketSeatIdentity,
   type SyncPayload,
-} from '@seatgrab/protocol';
+} from '@gerrymander/protocol';
 
 import type { ServerConfig } from '../config.js';
 import { readBearer } from '../credentials.js';

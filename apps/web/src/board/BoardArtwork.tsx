@@ -5,8 +5,8 @@
  * nothing. Zone legality, capacity and movement stay with the engine, and this file must
  * never become a second source of truth for them.
  */
-import { CORE_BOARD } from '@seatgrab/content';
-import type { BoardZoneId } from '@seatgrab/content';
+import { CORE_BOARD } from '@gerrymander/content';
+import type { BoardZoneId } from '@gerrymander/content';
 
 const BOARD = CORE_BOARD;
 const WIDTH = 1000;
@@ -46,7 +46,7 @@ export function BoardArtwork({
   highlightedZones = [],
   showLabels = true,
   showVolatile = true,
-  title = 'SeatGrab board: an island of nine districts and 129 voter areas',
+  title = 'Gerrymander board: an island of nine districts and 129 voter areas',
 }: BoardArtworkProps) {
   const highlighted = new Set(highlightedZones);
   return (

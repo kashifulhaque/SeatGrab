@@ -9,7 +9,7 @@
  * nearest one along that axis, and penalise sideways drift so a press of Right does not
  * jump diagonally across the map when a closer area sits straight ahead.
  */
-import { CORE_BOARD, type BoardZoneId } from '@seatgrab/content';
+import { CORE_BOARD, type BoardZoneId } from '@gerrymander/content';
 
 export type BoardDirection = 'left' | 'right' | 'up' | 'down';
 

@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { CORE_CONTENT, createGame } from '@seatgrab/engine';
+import { CORE_CONTENT, createGame } from '@gerrymander/engine';
 
 import { PARTY_IDENTITIES } from '../src/assets/parties';
 import { createLocalMatch, createMemoryStore, listLocalMatches, randomSeed } from '../src/local';

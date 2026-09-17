@@ -27,7 +27,7 @@
  */
 
 /** The key everything below lives under. Versioned, so a shape change cannot be misread. */
-export const SEAT_STORE_KEY = 'seatgrab.online.seats.v1';
+export const SEAT_STORE_KEY = 'gerrymander.online.seats.v1';
 
 /** One seat this browser holds, as it was claimed. */
 export interface StoredSeat {

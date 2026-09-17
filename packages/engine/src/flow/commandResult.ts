@@ -1,4 +1,4 @@
-import type { EngineErrorCode } from '@seatgrab/protocol';
+import type { EngineErrorCode } from '@gerrymander/protocol';
 import type { GameContent } from '../content.js';
 import type { CommandResult } from '../model/result.js';
 import type { GameEvent, GameState } from '../model/state.js';

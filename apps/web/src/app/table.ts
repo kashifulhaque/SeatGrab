@@ -1,4 +1,4 @@
 /**
- * Re-export shim. The table derivations moved to `@seatgrab/seat`; see `actions.ts`.
+ * Re-export shim. The table derivations moved to `@gerrymander/seat`; see `actions.ts`.
  */
-export * from '@seatgrab/seat';
+export * from '@gerrymander/seat';

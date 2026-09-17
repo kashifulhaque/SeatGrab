@@ -6,7 +6,7 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": [
         "--filter",
-        "@seatgrab/web",
+        "@gerrymander/web",
         "dev"
       ],
       "port": 5173
@@ -16,7 +16,7 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": [
         "--filter",
-        "@seatgrab/web",
+        "@gerrymander/web",
         "exec",
         "vite",
         "--mode",
@@ -32,7 +32,7 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": [
         "--filter",
-        "@seatgrab/web",
+        "@gerrymander/web",
         "exec",
         "vite",
         "--mode",
@@ -48,7 +48,7 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": [
         "--filter",
-        "@seatgrab/web",
+        "@gerrymander/web",
         "exec",
         "vite",
         "--mode",
@@ -64,7 +64,7 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": [
         "--filter",
-        "@seatgrab/web",
+        "@gerrymander/web",
         "dev:local",
         "--",
         "--port",

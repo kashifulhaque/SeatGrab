@@ -7,8 +7,8 @@
  */
 import Fastify, { type FastifyError, type FastifyInstance } from 'fastify';
 
-import type { GameContent } from '@seatgrab/engine';
-import { CORE_CONTENT } from '@seatgrab/engine';
+import type { GameContent } from '@gerrymander/engine';
+import { CORE_CONTENT } from '@gerrymander/engine';
 
 import type { ServerConfig } from './config.js';
 import { openDatabase, type Database } from './persistence/database.js';

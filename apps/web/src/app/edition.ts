@@ -13,8 +13,8 @@ import {
   HOUSE_RULES,
   RULESET_ID,
   RULESET_VERSION,
-} from '@seatgrab/content';
-import { ENGINE_VERSION, GAME_SCHEMA_VERSION, CORE_CONTENT } from '@seatgrab/engine';
+} from '@gerrymander/content';
+import { ENGINE_VERSION, GAME_SCHEMA_VERSION, CORE_CONTENT } from '@gerrymander/engine';
 
 import { MAX_SEATS, MIN_SEATS } from './setup';
 
@@ -28,7 +28,7 @@ export const INSTALLED_CAMPAIGN = {
   boardVersion: BOARD_VERSION,
   engineVersion: ENGINE_VERSION,
   schemaVersion: GAME_SCHEMA_VERSION,
-  displayName: 'SeatGrab core set',
+  displayName: 'Gerrymander core set',
 } as const;
 
 export const DECK_SIZES = {

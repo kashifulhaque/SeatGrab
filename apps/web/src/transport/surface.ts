@@ -15,8 +15,8 @@
  *   offering an ordinary player a full-state export, so the remote adapter has no such
  *   method to call rather than a method that refuses.
  */
-import type { CommandResponse, GameCommand, PlayerView } from '@seatgrab/protocol';
-import type { Viewer } from '@seatgrab/engine';
+import type { CommandResponse, GameCommand, PlayerView } from '@gerrymander/protocol';
+import type { Viewer } from '@gerrymander/engine';
 
 /**
  * A projected view, or a refusal to render one.

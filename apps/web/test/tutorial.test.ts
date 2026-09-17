@@ -17,10 +17,10 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { CORE_BOARD } from '@seatgrab/content';
-import { CORE_CONTENT, createGame, projectGame } from '@seatgrab/engine';
-import type { GameConfig, GameState } from '@seatgrab/engine';
-import type { PlayerView } from '@seatgrab/protocol';
+import { CORE_BOARD } from '@gerrymander/content';
+import { CORE_CONTENT, createGame, projectGame } from '@gerrymander/engine';
+import type { GameConfig, GameState } from '@gerrymander/engine';
+import type { PlayerView } from '@gerrymander/protocol';
 
 import { createLocalMatch, createMemoryStore, randomSeed } from '../src/local';
 import { toGameConfig, validateSetup } from '../src/app/setup';

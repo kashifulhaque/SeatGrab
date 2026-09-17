@@ -5,14 +5,14 @@
  * with the evaluator. Nothing here applies a rule; every command is one the composers
  * could have built, and the engine has the last word.
  */
-import { POLICY_CARDS, type Archetype, type Cost, type ResourceType } from '@seatgrab/content';
+import { POLICY_CARDS, type Archetype, type Cost, type ResourceType } from '@gerrymander/content';
 import type {
   ChoicePromptContext,
   GameCommand,
   PlayerView,
   ResourceVectorDto,
   StructuredChoicePromptView,
-} from '@seatgrab/protocol';
+} from '@gerrymander/protocol';
 import {
   NO_RESOURCES,
   RESOURCE_ORDER,
@@ -24,7 +24,7 @@ import {
   volunteersRemaining,
   voterSupply,
   type ChoiceOption,
-} from '@seatgrab/seat';
+} from '@gerrymander/seat';
 
 import {
   affordablePayment,

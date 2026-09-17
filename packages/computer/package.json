@@ -1,5 +1,5 @@
 {
-  "name": "@seatgrab/computer",
+  "name": "@gerrymander/computer",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,8 +11,8 @@
   },
   "files": ["dist"],
   "dependencies": {
-    "@seatgrab/content": "workspace:*",
-    "@seatgrab/protocol": "workspace:*",
-    "@seatgrab/seat": "workspace:*"
+    "@gerrymander/content": "workspace:*",
+    "@gerrymander/protocol": "workspace:*",
+    "@gerrymander/seat": "workspace:*"
   }
 }

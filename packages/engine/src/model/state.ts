@@ -1,11 +1,11 @@
-import type { BoardZoneId, Archetype, ResourceType, ResourceVector } from '@seatgrab/content';
+import type { BoardZoneId, Archetype, ResourceType, ResourceVector } from '@gerrymander/content';
 import type {
   ChoicePromptOp,
   ChoiceSelection,
   ComputerDifficulty,
   SeatController,
   VisibleEvent,
-} from '@seatgrab/protocol';
+} from '@gerrymander/protocol';
 
 export const GAME_SCHEMA_VERSION = 1;
 export const BASE_RESOURCE_CAP = 12;

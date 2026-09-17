@@ -9,7 +9,7 @@
  * whose file is missing or renamed fails the build instead of turning into a broken image
  * at run time.
  */
-import type { ResourceType } from '@seatgrab/content';
+import type { ResourceType } from '@gerrymander/content';
 
 import { PARTY_IDENTITIES, type PartyIdentity } from './parties';
 

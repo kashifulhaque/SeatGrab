@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import type { PlayerView, PublicPlayerView, SeatController } from '@seatgrab/protocol';
+import type { PlayerView, PublicPlayerView, SeatController } from '@gerrymander/protocol';
 
 import {
   SHARED_HANDOFF,

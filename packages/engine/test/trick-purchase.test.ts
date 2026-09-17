@@ -4,9 +4,9 @@
  * Every trick carries a wholly generic back price of 4 or 5; the split is house rule R17.
  */
 import { describe, expect, it } from 'vitest';
-import { TRICK_CARDS, NEWS_CARDS, HOUSE_RULES } from '@seatgrab/content';
-import type { Archetype, ResourceVector } from '@seatgrab/content';
-import type { GameCommand } from '@seatgrab/protocol';
+import { TRICK_CARDS, NEWS_CARDS, HOUSE_RULES } from '@gerrymander/content';
+import type { Archetype, ResourceVector } from '@gerrymander/content';
+import type { GameCommand } from '@gerrymander/protocol';
 import {
   CORE_CONTENT,
   applyCommand,

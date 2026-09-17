@@ -1,4 +1,4 @@
-"""Generate the SeatGrab board: nine districts of an island, laid out on a hex lattice.
+"""Generate the Gerrymander board: nine districts of an island, laid out on a hex lattice.
 
 Run it with no arguments to rewrite `packages/content/src/boards/isle-nine.ts`:
 
@@ -656,7 +656,7 @@ def build() -> tuple[str, dict]:
 
 import type {{ BoardDefinition }} from '../schema.js';
 
-/** The nine-district, 129-area SeatGrab board. */
+/** The nine-district, 129-area Gerrymander board. */
 export const CORE_BOARD: BoardDefinition = {{
   id: '{BOARD_ID}',
   version: '{BOARD_VERSION}',

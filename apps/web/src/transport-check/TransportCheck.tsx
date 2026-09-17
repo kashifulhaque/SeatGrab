@@ -15,8 +15,8 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { CORE_CONTENT, type GameConfig, type GameState } from '@seatgrab/engine';
-import type { GameCommand } from '@seatgrab/protocol';
+import { CORE_CONTENT, type GameConfig, type GameState } from '@gerrymander/engine';
+import type { GameCommand } from '@gerrymander/protocol';
 
 import {
   LOCAL_MODE_NOTICE,

@@ -5,7 +5,7 @@
  * fixture and nothing ships it, but it is deliberately not a shortcut: every move it
  * makes goes through `MatchSurface.submit`, every question it answers is read from that
  * seat's own `PlayerView`, and every command it builds comes from the composers'
- * derivations in `@seatgrab/seat`. A driver that reached into `GameState` would prove the
+ * derivations in `@gerrymander/seat`. A driver that reached into `GameState` would prove the
  * engine works and nothing about whether a seat can act on what it is shown, which is the
  * half a full-game run is for.
  *
@@ -13,16 +13,16 @@
  * legal answer, and where an operation offers to pass it passes, because a driver that
  * tried to play well would spend the session failing on strategy rather than on rules.
  *
- * The candidate ladder itself lives in `@seatgrab/computer` as `candidateCommands`, where
+ * The candidate ladder itself lives in `@gerrymander/computer` as `candidateCommands`, where
  * the three difficulty policies share its building blocks. Its order is unchanged, because
  * the sweeps and `full-game.test.ts` are the regression instrument for it.
  */
-import type { GameCommand, PlayerView } from '@seatgrab/protocol';
-import { candidateCommands as ladder, type LadderOptions } from '@seatgrab/computer';
+import type { GameCommand, PlayerView } from '@gerrymander/protocol';
+import { candidateCommands as ladder, type LadderOptions } from '@gerrymander/computer';
 
 import type { MatchSurface } from '../src/transport';
 
-export { affordablePayment } from '@seatgrab/computer';
+export { affordablePayment } from '@gerrymander/computer';
 
 /** What one step of the driver did, for a transcript a failure can be read from. */
 export interface AutoplayStep {

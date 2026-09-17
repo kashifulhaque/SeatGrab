@@ -41,8 +41,8 @@
  */
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
-import { CORE_CONTENT } from '@seatgrab/engine';
-import type { GameCommand } from '@seatgrab/protocol';
+import { CORE_CONTENT } from '@gerrymander/engine';
+import type { GameCommand } from '@gerrymander/protocol';
 
 import { PARTY_BY_ID } from '../assets/manifest';
 import type { DrawableViewResult } from '../transport';

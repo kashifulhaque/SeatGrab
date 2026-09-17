@@ -11,9 +11,9 @@
  * The constants are the tunable part and live in one place. Record the first tournament's
  * figures before touching them.
  */
-import { ARCHETYPES } from '@seatgrab/content';
-import type { PlayerView, PublicSlotView, PublicZoneView, ResourceVectorDto } from '@seatgrab/protocol';
-import { RESOURCE_ORDER, effectivePolicyCounts, passiveIncome, totalOf } from '@seatgrab/seat';
+import { ARCHETYPES } from '@gerrymander/content';
+import type { PlayerView, PublicSlotView, PublicZoneView, ResourceVectorDto } from '@gerrymander/protocol';
+import { RESOURCE_ORDER, effectivePolicyCounts, passiveIncome, totalOf } from '@gerrymander/seat';
 
 export const WEIGHTS = {
   /** Points already locked in a zone this seat holds, per threshold voter. */

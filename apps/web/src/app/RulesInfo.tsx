@@ -375,7 +375,7 @@ function SetChapter() {
  *
  * A person sitting down against the computer is entitled to know whether it is reading
  * their hand. It is not, and the answer is structural rather than a promise:
- * `@seatgrab/computer` does not depend on the engine, so it cannot reach the
+ * `@gerrymander/computer` does not depend on the engine, so it cannot reach the
  * authoritative state at all.
  */
 function ComputerChapter() {

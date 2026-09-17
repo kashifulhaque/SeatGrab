@@ -1,6 +1,6 @@
-/** Versioned identifiers and house rules for the SeatGrab core set. */
+/** Versioned identifiers and house rules for the Gerrymander core set. */
 
-export const RULESET_ID = 'seatgrab-base';
+export const RULESET_ID = 'gerrymander-base';
 export const RULESET_VERSION = '2.0.0';
 export const CONTENT_PACK_ID = 'core-set';
 export const CONTENT_PACK_VERSION = '3.0.0';

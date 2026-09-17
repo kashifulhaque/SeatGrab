@@ -1,5 +1,5 @@
-import type { Archetype } from '@seatgrab/content';
-import type { ChoicePromptContext } from '@seatgrab/protocol';
+import type { Archetype } from '@gerrymander/content';
+import type { ChoicePromptContext } from '@gerrymander/protocol';
 import type { GameContent } from '../content.js';
 import type { ChoiceInteraction, GameState, PlayerId } from '../model/state.js';
 import { getZoneSnapshot } from '../rules/board.js';

@@ -6,8 +6,8 @@
  * is `submit`. It records each accepted command and every refusal a step walked past, so a
  * `stuck` step is reported with the reasons rather than hidden by a retry.
  */
-import type { ComputerDifficulty, GameCommand, PlayerView } from '@seatgrab/protocol';
-import { stepComputer, type ComputerRefusal, type ComputerTable } from '@seatgrab/computer';
+import type { ComputerDifficulty, GameCommand, PlayerView } from '@gerrymander/protocol';
+import { stepComputer, type ComputerRefusal, type ComputerTable } from '@gerrymander/computer';
 
 import type { MatchSurface } from '../src/transport';
 import { actingSeatId } from './autoplay';

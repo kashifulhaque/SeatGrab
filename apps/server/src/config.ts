@@ -179,33 +179,33 @@ function readFlag(env: NodeJS.ProcessEnv, name: string): boolean {
  * `process.env`, and so the defaults are exercised rather than assumed.
  */
 export function readServerConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
-  const rawLevel = env['SEATGRAB_LOG_LEVEL'];
+  const rawLevel = env['GERRYMANDER_LOG_LEVEL'];
   const logLevel = rawLevel === undefined || rawLevel.trim() === '' ? 'info' : rawLevel;
   if (!(LOG_LEVELS as readonly string[]).includes(logLevel)) {
-    throw new ConfigError(`SEATGRAB_LOG_LEVEL must be one of ${LOG_LEVELS.join(', ')}, but it is "${logLevel}".`);
+    throw new ConfigError(`GERRYMANDER_LOG_LEVEL must be one of ${LOG_LEVELS.join(', ')}, but it is "${logLevel}".`);
   }
 
-  const rawPath = env['SEATGRAB_DB_PATH'];
+  const rawPath = env['GERRYMANDER_DB_PATH'];
   const databasePath = rawPath === undefined || rawPath.trim() === ''
-    ? resolve(process.cwd(), 'data', 'seatgrab.db')
+    ? resolve(process.cwd(), 'data', 'gerrymander.db')
     : (isAbsolute(rawPath) ? rawPath : resolve(process.cwd(), rawPath));
 
   return {
-    port: readInteger(env, 'SEATGRAB_PORT', DEFAULT_PORT, 0, 65535),
-    host: env['SEATGRAB_HOST']?.trim() || '127.0.0.1',
+    port: readInteger(env, 'GERRYMANDER_PORT', DEFAULT_PORT, 0, 65535),
+    host: env['GERRYMANDER_HOST']?.trim() || '127.0.0.1',
     databasePath,
-    maxBodyBytes: readInteger(env, 'SEATGRAB_MAX_BODY_BYTES', DEFAULT_MAX_BODY_BYTES, 1024, 4 * 1024 * 1024),
+    maxBodyBytes: readInteger(env, 'GERRYMANDER_MAX_BODY_BYTES', DEFAULT_MAX_BODY_BYTES, 1024, 4 * 1024 * 1024),
     logLevel: logLevel as ServerConfig['logLevel'],
-    shutdownTimeoutSeconds: readInteger(env, 'SEATGRAB_SHUTDOWN_TIMEOUT_SECONDS', 10, 0, 300),
-    allowedOrigins: readList(env, 'SEATGRAB_ALLOWED_ORIGINS', DEFAULT_ALLOWED_ORIGINS),
+    shutdownTimeoutSeconds: readInteger(env, 'GERRYMANDER_SHUTDOWN_TIMEOUT_SECONDS', 10, 0, 300),
+    allowedOrigins: readList(env, 'GERRYMANDER_ALLOWED_ORIGINS', DEFAULT_ALLOWED_ORIGINS),
     socketAuthenticationTimeoutSeconds: readInteger(
-      env, 'SEATGRAB_SOCKET_AUTH_TIMEOUT_SECONDS', 10, 1, 120,
+      env, 'GERRYMANDER_SOCKET_AUTH_TIMEOUT_SECONDS', 10, 1, 120,
     ),
-    socketBurstFrames: readInteger(env, 'SEATGRAB_SOCKET_BURST_FRAMES', 40, 1, 10000),
-    socketFramesPerSecond: readInteger(env, 'SEATGRAB_SOCKET_FRAMES_PER_SECOND', 10, 1, 1000),
-    httpBurstRequests: readInteger(env, 'SEATGRAB_HTTP_BURST_REQUESTS', 60, 1, 100000),
-    httpRequestsPerSecond: readInteger(env, 'SEATGRAB_HTTP_REQUESTS_PER_SECOND', 5, 1, 10000),
-    trustProxy: readFlag(env, 'SEATGRAB_TRUST_PROXY'),
-    computerDelayMs: readInteger(env, 'SEATGRAB_COMPUTER_DELAY_MS', 800, 0, 60000),
+    socketBurstFrames: readInteger(env, 'GERRYMANDER_SOCKET_BURST_FRAMES', 40, 1, 10000),
+    socketFramesPerSecond: readInteger(env, 'GERRYMANDER_SOCKET_FRAMES_PER_SECOND', 10, 1, 1000),
+    httpBurstRequests: readInteger(env, 'GERRYMANDER_HTTP_BURST_REQUESTS', 60, 1, 100000),
+    httpRequestsPerSecond: readInteger(env, 'GERRYMANDER_HTTP_REQUESTS_PER_SECOND', 5, 1, 10000),
+    trustProxy: readFlag(env, 'GERRYMANDER_TRUST_PROXY'),
+    computerDelayMs: readInteger(env, 'GERRYMANDER_COMPUTER_DELAY_MS', 800, 0, 60000),
   };
 }

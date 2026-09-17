@@ -9,7 +9,7 @@
  * Every accepted command is saved before `submit` resolves, so a reload can never land
  * between an accepted command and its save.
  */
-import type { CommandResponse, GameCommand, PlayerView } from '@seatgrab/protocol';
+import type { CommandResponse, GameCommand, PlayerView } from '@gerrymander/protocol';
 import {
   applyCommand,
   createGame,
@@ -18,7 +18,7 @@ import {
   type GameContent,
   type GameState,
   type Viewer,
-} from '@seatgrab/engine';
+} from '@gerrymander/engine';
 
 import {
   buildEnvelope,

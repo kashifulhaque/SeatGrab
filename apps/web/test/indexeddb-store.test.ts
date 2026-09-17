@@ -39,7 +39,7 @@ const opened: LocalSnapshotStore[] = [];
 /** A database per test, so ordering and deletion cannot leak between them. */
 async function freshStore(): Promise<LocalSnapshotStore> {
   databaseCount += 1;
-  const store = await openIndexedDbStore(`seatgrab-test-${databaseCount}`);
+  const store = await openIndexedDbStore(`gerrymander-test-${databaseCount}`);
   opened.push(store);
   return store;
 }
@@ -123,7 +123,7 @@ describe('openIndexedDbStore', () => {
   });
 
   it('reopens the same database and finds what an earlier handle wrote', async () => {
-    const name = `seatgrab-reopen-${(databaseCount += 1)}`;
+    const name = `gerrymander-reopen-${(databaseCount += 1)}`;
     const first = await openIndexedDbStore(name);
     await first.write(record('m1', '2026-01-01T00:00:00.000Z', 12));
     first.close();
@@ -150,7 +150,7 @@ describe('openIndexedDbStore', () => {
   });
 
   it('reports a refused open as STORE_UNAVAILABLE rather than as a save failure', async () => {
-    const name = `seatgrab-refused-${(databaseCount += 1)}`;
+    const name = `gerrymander-refused-${(databaseCount += 1)}`;
     // A database already at a higher version is the browser's own reason to refuse: the
     // open request errors, and the distinction that matters to a player is that nothing
     // was saved, not that a transaction failed.

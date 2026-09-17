@@ -1,7 +1,7 @@
-# SEATGRAB computer opponents: implementation brief
+# Gerrymander computer opponents: implementation brief
 
 This document is a brief for a coding agent. It describes how to add computer-controlled
-seats to SEATGRAB so that a person can play against the computer, locally on one device and
+seats to Gerrymander so that a person can play against the computer, locally on one device and
 in an online room, with a choice of difficulty. The game engine is complete and correct;
 this work adds no rule. It adds a decision-maker that reads what a seat is shown and
 submits commands the way a player does.
@@ -47,7 +47,7 @@ The following invariants are asserted by the existing suite and must hold after 
   around. This is the rule `apps/web/test/autoplay.ts` was written under; keep it.
 - **A computer reads only its own projection.** Its input is
   `viewFor({ kind: 'player', playerId })` for its own seat. Enforce this structurally:
-  the new `@seatgrab/computer` package must not depend on `@seatgrab/engine`, so it cannot
+  the new `@gerrymander/computer` package must not depend on `@gerrymander/engine`, so it cannot
   import `GameState`, `applyCommand`, or `projectGame`. Add a test that reads the
   package's `package.json` and asserts the dependency is absent.
 - **Nothing private is drawn for a seat that has not revealed it.** `revealedSeatId` in
@@ -73,13 +73,13 @@ The following invariants are asserted by the existing suite and must hold after 
 The decision logic needs the projection derivations in `apps/web/src/app/actions.ts`
 (3,000 lines: costs, payments, legal placement, choice models, hand cards, reaction cards)
 and `apps/web/src/app/table.ts` (slot ordinals, phase descriptions). Both are plain
-TypeScript with no React and no DOM. They import only `@seatgrab/content` and
-`@seatgrab/protocol`. Move them.
+TypeScript with no React and no DOM. They import only `@gerrymander/content` and
+`@gerrymander/protocol`. Move them.
 
 ```
-packages/seat/          @seatgrab/seat      What one seat can see and do, derived from its
+packages/seat/          @gerrymander/seat      What one seat can see and do, derived from its
                                          PlayerView. actions.ts and table.ts move here.
-packages/computer/      @seatgrab/computer  The computer opponent: enumerator, evaluator,
+packages/computer/      @gerrymander/computer  The computer opponent: enumerator, evaluator,
                                          three policies, and the step function both
                                          drivers call.
 ```
@@ -92,15 +92,15 @@ Rules for the move:
 - Relative imports inside a package need the `.js` extension, because Node loads the
   emitted `dist/` directly. `actions.ts` imports `./table`; that becomes `./table.js`.
 - Leave `apps/web/src/app/actions.ts` and `apps/web/src/app/table.ts` in place as
-  one-line re-exports (`export * from '@seatgrab/seat';`). Twelve source files and several
+  one-line re-exports (`export * from '@gerrymander/seat';`). Twelve source files and several
   tests import them by relative path, and all keep working unchanged. Removing the shims is a
   follow-up, not part of this brief.
-- `@seatgrab/computer` depends on `@seatgrab/seat`, `@seatgrab/protocol`, and `@seatgrab/content`.
-  It does **not** depend on `@seatgrab/engine`. It needs a small seeded pseudorandom
+- `@gerrymander/computer` depends on `@gerrymander/seat`, `@gerrymander/protocol`, and `@gerrymander/content`.
+  It does **not** depend on `@gerrymander/engine`. It needs a small seeded pseudorandom
   generator for tie-breaking; write a 20-line xorshift in the package rather than
   importing the engine's.
 
-### What `@seatgrab/computer` exports
+### What `@gerrymander/computer` exports
 
 ```ts
 // packages/computer/src/index.ts
@@ -143,7 +143,7 @@ export type ComputerStep =
 - `view.activePlayerId === seatId` and `view.pendingDecision === undefined`.
 - `view.privateTradeOffers` contains an offer whose `opponentId` is this seat.
 
-### Internal layout of `@seatgrab/computer`
+### Internal layout of `@gerrymander/computer`
 
 ```
 src/
@@ -310,8 +310,8 @@ The same rules apply in the browser and on the server.
 
 The delay exists so a human can follow what happened. Default 800 ms locally, configurable
 per browser as **Computer pace: Normal or Fast** (Fast is 0 ms), stored under the
-`localStorage` key `seatgrab.computerPace`. On the server it is
-`SEATGRAB_COMPUTER_DELAY_MS`, default 800, and tests pass 0. Tests await a promise the driver
+`localStorage` key `gerrymander.computerPace`. On the server it is
+`GERRYMANDER_COMPUTER_DELAY_MS`, default 800, and tests pass 0. Tests await a promise the driver
 exposes (`settled(matchId)`) rather than sleeping.
 
 ## Work items, in order
@@ -320,7 +320,7 @@ Each item is one session in the sense `DESIGN.md` uses: it ends with
 the narrowest relevant tests green, the root typecheck green, and a record in 0.7. Do not
 start an item before the previous one's checks pass.
 
-### Item 1: extract `@seatgrab/seat`
+### Item 1: extract `@gerrymander/seat`
 
 - Create `packages/seat` and move `actions.ts` and `table.ts` into `src/`, adding `.js`
   to relative imports. Export both from `src/index.ts`.
@@ -331,7 +331,7 @@ start an item before the previous one's checks pass.
 - Run `pnpm typecheck`, `pnpm vitest run`, both builds with `pnpm check:build`, and the
   sweep on a fresh seed offset. Nothing may change behavior.
 
-### Item 2: extract the enumerator and build `@seatgrab/computer`
+### Item 2: extract the enumerator and build `@gerrymander/computer`
 
 - Create `packages/computer`. Move `candidateCommands`, `affordablePayment`,
   `discardVector`, `placementSlots`, `fillControl`, and `answerChoice` from
@@ -339,7 +339,7 @@ start an item before the previous one's checks pass.
   public surface (`autoplay`, `candidateCommands`, `AutoplayOptions`) unchanged.
 - Write `evaluate.ts`, `random.ts`, the three policies, `hasSomethingToDo`, `decide`, and
   `stepComputer`.
-- Add the dependency test: `@seatgrab/computer` does not list `@seatgrab/engine`.
+- Add the dependency test: `@gerrymander/computer` does not list `@gerrymander/engine`.
 - Add `packages/computer/test/`: unit tests per policy on hand-built views (placement
   picks Central over North with equal counts; Hard blocks a leader's card and Medium does
   not; Easy never returns a `PlayTrick`; `decide` is deterministic for the same
@@ -436,7 +436,7 @@ start an item before the previous one's checks pass.
   computer seat shows its difficulty and a **Remove** control that calls `releaseSeat`.
   `hostStartState` in `online.ts` needs no change because it reads `lobby.ready`.
 - Server tests, in `apps/server/test/computers.test.ts` on the real harness with
-  `SEATGRAB_COMPUTER_DELAY_MS=0`:
+  `GERRYMANDER_COMPUTER_DELAY_MS=0`:
   - A host seats a computer; a guest cannot; a computer seat cannot be claimed with the
     room code; the lobby reports it and `ready` becomes true with one human and two
     computers.
@@ -502,10 +502,10 @@ start an item before the previous one's checks pass.
   refusal list, both with the default policy and with `--policy mixed`.
 - In the 60-game tournament, `hard` wins more games than `medium`, and `medium` wins more
   than `easy`. Record the actual counts.
-- `@seatgrab/computer` has no dependency on `@seatgrab/engine`, asserted by a test.
+- `@gerrymander/computer` has no dependency on `@gerrymander/engine`, asserted by a test.
 - Old local saves and old server snapshots load and treat every seat as human.
-- `pnpm typecheck`, `pnpm test`, `pnpm --filter @seatgrab/web build && pnpm check:build`,
-  and `pnpm --filter @seatgrab/web build:online && pnpm check:build` pass.
+- `pnpm typecheck`, `pnpm test`, `pnpm --filter @gerrymander/web build && pnpm check:build`,
+  and `pnpm --filter @gerrymander/web build:online && pnpm check:build` pass.
 
 ## Verification
 
@@ -532,10 +532,10 @@ pnpm tsx apps/web/test/tournament.ts
 ```
 
 ```bash
-pnpm --filter @seatgrab/web build && pnpm check:build && pnpm --filter @seatgrab/web build:online && pnpm check:build
+pnpm --filter @gerrymander/web build && pnpm check:build && pnpm --filter @gerrymander/web build:online && pnpm check:build
 ```
 
-For browser evidence, start Vite directly with `nohup pnpm --filter @seatgrab/web dev:local &`
+For browser evidence, start Vite directly with `nohup pnpm --filter @gerrymander/web dev:local &`
 rather than through an IDE preview tool, which has stalled on this project before. Create
 a solo match from the home screen and record a screenshot of the computer's turn
 advancing and of the results screen.

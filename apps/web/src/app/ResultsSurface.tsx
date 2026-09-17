@@ -29,8 +29,8 @@
  */
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 
-import { CORE_CONTENT } from '@seatgrab/engine';
-import type { PlayerView } from '@seatgrab/protocol';
+import { CORE_CONTENT } from '@gerrymander/engine';
+import type { PlayerView } from '@gerrymander/protocol';
 
 import { createLocalMatch, randomSeed, type LocalSnapshotStore } from '../local';
 

@@ -33,8 +33,8 @@ import type {
   SeatView,
   ServerFrame,
   SocketSeatIdentity,
-} from '@seatgrab/protocol';
-import type { Viewer } from '@seatgrab/engine';
+} from '@gerrymander/protocol';
+import type { Viewer } from '@gerrymander/engine';
 
 import type { MatchSurface, MatchViewResult } from '../transport/surface';
 

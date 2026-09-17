@@ -7,7 +7,7 @@
 
 import type { BoardDefinition } from '../schema.js';
 
-/** The nine-district, 129-area SeatGrab board. */
+/** The nine-district, 129-area Gerrymander board. */
 export const CORE_BOARD: BoardDefinition = {
   id: 'isle-nine',
   version: '1.0.0',

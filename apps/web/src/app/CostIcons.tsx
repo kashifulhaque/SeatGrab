@@ -8,8 +8,8 @@
  * never sit inside a development-only directory: `check_build_privacy.mjs` requires
  * every module under `review/` to compile away to nothing.
  */
-import { RESOURCE_TYPES } from '@seatgrab/content';
-import type { Cost } from '@seatgrab/content';
+import { RESOURCE_TYPES } from '@gerrymander/content';
+import type { Cost } from '@gerrymander/content';
 
 import { RESOURCE_ASSETS } from '../assets/manifest';
 import type { CostIconId } from '../assets/manifest';

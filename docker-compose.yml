@@ -5,10 +5,10 @@ services:
       dockerfile: apps/server/Dockerfile
     restart: unless-stopped
     environment:
-      SEATGRAB_HOST: 0.0.0.0
-      SEATGRAB_PORT: "8787"
-      SEATGRAB_DB_PATH: /data/seatgrab.db
-      SEATGRAB_ALLOWED_ORIGINS: ${SEATGRAB_ALLOWED_ORIGINS:-https://seatgrab.ifkash.dev}
+      GERRYMANDER_HOST: 0.0.0.0
+      GERRYMANDER_PORT: "8787"
+      GERRYMANDER_DB_PATH: /data/gerrymander.db
+      GERRYMANDER_ALLOWED_ORIGINS: ${GERRYMANDER_ALLOWED_ORIGINS:-https://gerrymander.ifkash.dev}
     volumes:
       - server-data:/data
     expose:
@@ -18,7 +18,7 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-    container_name: seatgrab-web
+    container_name: gerrymander-web
     restart: unless-stopped
     depends_on:
       - server

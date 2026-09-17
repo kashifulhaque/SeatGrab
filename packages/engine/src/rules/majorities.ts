@@ -1,4 +1,4 @@
-import type { BoardZoneId } from '@seatgrab/content';
+import type { BoardZoneId } from '@gerrymander/content';
 import type { GameContent } from '../content.js';
 import type { GameState, MajoritySelectionInteraction, PlayerId, VoterState } from '../model/state.js';
 

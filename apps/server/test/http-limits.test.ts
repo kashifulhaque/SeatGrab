@@ -25,8 +25,8 @@ afterEach(async () => {
 async function limitedHarness(burst: number, perSecond = 1): Promise<Harness> {
   harness = await startHarness({
     env: {
-      SEATGRAB_HTTP_BURST_REQUESTS: String(burst),
-      SEATGRAB_HTTP_REQUESTS_PER_SECOND: String(perSecond),
+      GERRYMANDER_HTTP_BURST_REQUESTS: String(burst),
+      GERRYMANDER_HTTP_REQUESTS_PER_SECOND: String(perSecond),
     },
   });
   return harness;

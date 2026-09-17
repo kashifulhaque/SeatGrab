@@ -9,7 +9,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { BOARD_ID, BOARD_VERSION, BOARD_ZONE_IDS, CORE_BOARD } from '@seatgrab/content';
+import { BOARD_ID, BOARD_VERSION, BOARD_ZONE_IDS, CORE_BOARD } from '@gerrymander/content';
 
 describe('the board', () => {
   it('is the one the ruleset names', () => {

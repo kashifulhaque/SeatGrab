@@ -15,8 +15,8 @@
  * and the description opens on demand. The unlocked ones that can be used also have a
  * button in the action column, so nothing here needs to be one.
  */
-import { ARCHETYPES, ARCHETYPE_RESOURCE, type Archetype } from '@seatgrab/content';
-import type { PlayerView } from '@seatgrab/protocol';
+import { ARCHETYPES, ARCHETYPE_RESOURCE, type Archetype } from '@gerrymander/content';
+import type { PlayerView } from '@gerrymander/protocol';
 
 import { RESOURCE_ASSETS } from '../../assets/manifest';
 import {

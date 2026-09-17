@@ -2,7 +2,7 @@
  * The medium policy: goes for the cheapest majorities, uses its unlocked powers, and plays
  * tricks that help itself or hurt the leader.
  */
-import type { GameCommand, PlayerView } from '@seatgrab/protocol';
+import type { GameCommand, PlayerView } from '@gerrymander/protocol';
 
 import { answerChoice, enumerateActions, firstPlayerVote } from '../enumerate.js';
 import type { Random } from '../random.js';

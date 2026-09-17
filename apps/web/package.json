@@ -1,5 +1,5 @@
 {
-  "name": "@seatgrab/web",
+  "name": "@gerrymander/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,11 +11,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@seatgrab/computer": "workspace:*",
-    "@seatgrab/content": "workspace:*",
-    "@seatgrab/engine": "workspace:*",
-    "@seatgrab/protocol": "workspace:*",
-    "@seatgrab/seat": "workspace:*",
+    "@gerrymander/computer": "workspace:*",
+    "@gerrymander/content": "workspace:*",
+    "@gerrymander/engine": "workspace:*",
+    "@gerrymander/protocol": "workspace:*",
+    "@gerrymander/seat": "workspace:*",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },

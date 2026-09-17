@@ -1,7 +1,7 @@
 /**
  * How the five party identities are drawn.
  *
- * *Which* identities exist is not decided here: `SEATABLE_PARTY_IDS` in `@seatgrab/protocol`
+ * *Which* identities exist is not decided here: `SEATABLE_PARTY_IDS` in `@gerrymander/protocol`
  * is the one source, because the server has to refuse an identity no client can draw and
  * a client must offer only identities the server seats. This module gives each of those
  * slugs a name, a colour and a mark, which are presentation and belong in the browser.
@@ -17,7 +17,7 @@
  * insignia of real parties, and every one has a distinct silhouette so ownership never
  * depends on colour alone.
  */
-import { SEATABLE_PARTY_IDS, type SeatablePartyId } from '@seatgrab/protocol';
+import { SEATABLE_PARTY_IDS, type SeatablePartyId } from '@gerrymander/protocol';
 
 export interface PartyIdentity {
   /** Stable party identity a lobby seat is assigned. Stored in the match config. */
@@ -83,7 +83,7 @@ for (const partyId of SEATABLE_PARTY_IDS) {
   if (!PARTY_IDENTITY_BY_ID.has(partyId)) {
     throw new Error(
       `The protocol seats the party "${partyId}" but this browser has no identity for it. `
-      + 'Add it here, or remove it from SEATABLE_PARTY_IDS in @seatgrab/protocol.',
+      + 'Add it here, or remove it from SEATABLE_PARTY_IDS in @gerrymander/protocol.',
     );
   }
 }

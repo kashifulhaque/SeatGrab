@@ -20,7 +20,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { CommandResponse, SeatView } from '@seatgrab/protocol';
+import type { CommandResponse, SeatView } from '@gerrymander/protocol';
 
 import { bearer, openSocket, startHarness, type Harness, type TestSocket } from './harness';
 
@@ -207,9 +207,9 @@ describe('the upgrade', () => {
 
   it('accepts an origin an operator added', async () => {
     await harness.dispose();
-    harness = await startHarness({ env: { SEATGRAB_ALLOWED_ORIGINS: 'https://seatgrab.example' } });
+    harness = await startHarness({ env: { GERRYMANDER_ALLOWED_ORIGINS: 'https://gerrymander.example' } });
     await expect(openSocket(harness, { origin: 'http://localhost:5173' })).rejects.toThrow(/403/u);
-    const socket = await openSocket(harness, { origin: 'https://seatgrab.example' });
+    const socket = await openSocket(harness, { origin: 'https://gerrymander.example' });
     socket.send({ type: 'ping' });
     await socket.next('pong');
     socket.close();
@@ -238,7 +238,7 @@ describe('an unauthenticated connection', () => {
 
   it('is closed when it never presents a credential', async () => {
     await harness.dispose();
-    harness = await startHarness({ env: { SEATGRAB_SOCKET_AUTH_TIMEOUT_SECONDS: '1' } });
+    harness = await startHarness({ env: { GERRYMANDER_SOCKET_AUTH_TIMEOUT_SECONDS: '1' } });
     const socket = await openSocket(harness);
     expect((await socket.next('error', 3000)).code).toBe('AUTHENTICATION_TIMEOUT');
     expect((await socket.closed(3000)).code).toBe(4408);
@@ -547,7 +547,7 @@ describe('frame limits', () => {
   it('refuses frames arriving faster than the seat’s budget', async () => {
     await harness.dispose();
     harness = await startHarness({
-      env: { SEATGRAB_SOCKET_BURST_FRAMES: '3', SEATGRAB_SOCKET_FRAMES_PER_SECOND: '1' },
+      env: { GERRYMANDER_SOCKET_BURST_FRAMES: '3', GERRYMANDER_SOCKET_FRAMES_PER_SECOND: '1' },
     });
     const seats = await seatedMatch();
     const { socket } = await connect(seats[0] as Claim);
@@ -569,7 +569,7 @@ describe('frame limits', () => {
 
   it('closes a connection that sends a frame over the size ceiling', async () => {
     await harness.dispose();
-    harness = await startHarness({ env: { SEATGRAB_MAX_BODY_BYTES: '2048' } });
+    harness = await startHarness({ env: { GERRYMANDER_MAX_BODY_BYTES: '2048' } });
     const seats = await seatedMatch();
     const { socket } = await connect(seats[0] as Claim);
     socket.send({ type: 'ping', requestId: 'x'.repeat(4096) });

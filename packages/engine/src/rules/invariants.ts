@@ -1,4 +1,4 @@
-import { RESOURCE_TYPES } from '@seatgrab/content';
+import { RESOURCE_TYPES } from '@gerrymander/content';
 import type { GameContent } from '../content.js';
 import {
   GAME_SCHEMA_VERSION,

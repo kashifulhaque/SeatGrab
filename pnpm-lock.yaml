@@ -35,16 +35,16 @@ importers:
       '@fastify/websocket':
         specifier: 11.2.0
         version: 11.2.0
-      '@seatgrab/computer':
+      '@gerrymander/computer':
         specifier: workspace:*
         version: link:../../packages/computer
-      '@seatgrab/engine':
+      '@gerrymander/engine':
         specifier: workspace:*
         version: link:../../packages/engine
-      '@seatgrab/protocol':
+      '@gerrymander/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
-      '@seatgrab/seat':
+      '@gerrymander/seat':
         specifier: workspace:*
         version: link:../../packages/seat
       fastify:
@@ -60,19 +60,19 @@ importers:
 
   apps/web:
     dependencies:
-      '@seatgrab/computer':
+      '@gerrymander/computer':
         specifier: workspace:*
         version: link:../../packages/computer
-      '@seatgrab/content':
+      '@gerrymander/content':
         specifier: workspace:*
         version: link:../../packages/content
-      '@seatgrab/engine':
+      '@gerrymander/engine':
         specifier: workspace:*
         version: link:../../packages/engine
-      '@seatgrab/protocol':
+      '@gerrymander/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
-      '@seatgrab/seat':
+      '@gerrymander/seat':
         specifier: workspace:*
         version: link:../../packages/seat
       react:
@@ -97,13 +97,13 @@ importers:
 
   packages/computer:
     dependencies:
-      '@seatgrab/content':
+      '@gerrymander/content':
         specifier: workspace:*
         version: link:../content
-      '@seatgrab/protocol':
+      '@gerrymander/protocol':
         specifier: workspace:*
         version: link:../protocol
-      '@seatgrab/seat':
+      '@gerrymander/seat':
         specifier: workspace:*
         version: link:../seat
 
@@ -111,10 +111,10 @@ importers:
 
   packages/engine:
     dependencies:
-      '@seatgrab/content':
+      '@gerrymander/content':
         specifier: workspace:*
         version: link:../content
-      '@seatgrab/protocol':
+      '@gerrymander/protocol':
         specifier: workspace:*
         version: link:../protocol
       zod:
@@ -129,10 +129,10 @@ importers:
 
   packages/seat:
     dependencies:
-      '@seatgrab/content':
+      '@gerrymander/content':
         specifier: workspace:*
         version: link:../content
-      '@seatgrab/protocol':
+      '@gerrymander/protocol':
         specifier: workspace:*
         version: link:../protocol
 

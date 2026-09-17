@@ -33,8 +33,8 @@
  */
 import { useCallback, useEffect, useReducer, useState } from 'react';
 
-import { COMPUTER_DIFFICULTIES } from '@seatgrab/computer';
-import type { ComputerDifficulty, GameCommand } from '@seatgrab/protocol';
+import { COMPUTER_DIFFICULTIES } from '@gerrymander/computer';
+import type { ComputerDifficulty, GameCommand } from '@gerrymander/protocol';
 
 import {
   ONLINE_MODE_NOTICE,

@@ -1,5 +1,5 @@
-import { CORE_CONTENT, type GameConfig } from '@seatgrab/engine';
-import type { ComputerDifficulty } from '@seatgrab/protocol';
+import { CORE_CONTENT, type GameConfig } from '@gerrymander/engine';
+import type { ComputerDifficulty } from '@gerrymander/protocol';
 
 import { createLocalMatch, createMemoryStore } from '../src/local';
 import { playComputers } from './computerPlay';

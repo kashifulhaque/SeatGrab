@@ -11,9 +11,9 @@
  * count and the uniqueness of player and party identifiers, and rejects a config this
  * module should never have produced.
  */
-import type { ContentAdvisory } from '@seatgrab/content';
-import type { GameConfig, GameContent } from '@seatgrab/engine';
-import type { ComputerDifficulty, SeatController } from '@seatgrab/protocol';
+import type { ContentAdvisory } from '@gerrymander/content';
+import type { GameConfig, GameContent } from '@gerrymander/engine';
+import type { ComputerDifficulty, SeatController } from '@gerrymander/protocol';
 
 import { PARTY_IDENTITIES } from '../assets/parties';
 

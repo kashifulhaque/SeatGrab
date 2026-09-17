@@ -23,8 +23,8 @@
  * commands themselves; this keeps the driver from queueing a second decision behind one
  * it has not seen the result of.
  */
-import { hasSomethingToDo, stepComputer, type ComputerTable } from '@seatgrab/computer';
-import type { ComputerDifficulty, GameCommand, PlayerView } from '@seatgrab/protocol';
+import { hasSomethingToDo, stepComputer, type ComputerTable } from '@gerrymander/computer';
+import type { ComputerDifficulty, GameCommand, PlayerView } from '@gerrymander/protocol';
 
 import type { MatchHub } from './matchHub.js';
 import type { RoomService, SeatIdentity } from './roomService.js';

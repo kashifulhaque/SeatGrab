@@ -1,5 +1,5 @@
 /**
- * Content schemas for the SeatGrab core set.
+ * Content schemas for the Gerrymander core set.
  *
  * Everything here is data the engine reads: board topology, card costs, card effects and
  * card text. Nothing in a record depends on how it is drawn.

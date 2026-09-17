@@ -13,7 +13,7 @@ const ONLINE_COMPONENT = join(REPO_ROOT, 'apps', 'web', 'src', 'app', 'OnlineRou
 
 /** Every development-only route, and the component each resolves to while serving. */
 const DEV_ROUTES = [
-  { virtual: 'virtual:seatgrab-transport-check', component: TRANSPORT_COMPONENT },
+  { virtual: 'virtual:gerrymander-transport-check', component: TRANSPORT_COMPONENT },
 ] as const;
 
 /**
@@ -24,7 +24,7 @@ const DEV_ROUTES = [
 function devRoutes(command: 'serve' | 'build'): Plugin {
   const resolved = new Map(DEV_ROUTES.map((route) => [`\0${route.virtual}`, route.component]));
   return {
-    name: 'seatgrab:dev-routes',
+    name: 'gerrymander:dev-routes',
     resolveId(source) {
       return resolved.has(`\0${source}`) ? `\0${source}` : null;
     },
@@ -50,15 +50,15 @@ function devRoutes(command: 'serve' | 'build'): Plugin {
  * The gate is the Vite mode and nothing else, so it is the same decision that sets
  * `__LOCAL_MODE__`: the sentence the home screen prints about this build and the modules
  * the build actually contains cannot disagree. `pnpm dev` serves the online mode, which is
- * what the room server beside it is for; `pnpm --filter @seatgrab/web dev:local` serves the
+ * what the room server beside it is for; `pnpm --filter @gerrymander/web dev:local` serves the
  * pass-and-play build as it ships.
  */
 function onlineRoutes(local: boolean): Plugin {
-  const id = '\0virtual:seatgrab-online';
+  const id = '\0virtual:gerrymander-online';
   return {
-    name: 'seatgrab:online-routes',
+    name: 'gerrymander:online-routes',
     resolveId(source) {
-      return source === 'virtual:seatgrab-online' ? id : null;
+      return source === 'virtual:gerrymander-online' ? id : null;
     },
     load(loaded) {
       if (loaded !== id) return null;
@@ -82,12 +82,12 @@ function onlineRoutes(local: boolean): Plugin {
 function buildMarker(mode: string): Plugin {
   const value = mode === 'online' ? 'online' : 'local-play';
   return {
-    name: 'seatgrab:build-marker',
+    name: 'gerrymander:build-marker',
     apply: 'build',
     transformIndexHtml(html) {
       return html.replace(
         '</head>',
-        `  <meta name="seatgrab-build" content="${value}" />\n  </head>`,
+        `  <meta name="gerrymander-build" content="${value}" />\n  </head>`,
       );
     },
   };

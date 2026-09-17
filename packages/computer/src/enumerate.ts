@@ -11,14 +11,14 @@
  * Nothing here applies a rule. The engine re-checks every payment and every target, and a
  * refusal is a finding rather than something to route around.
  */
-import { TRICK_CARDS, type Cost, type ResourceType } from '@seatgrab/content';
+import { TRICK_CARDS, type Cost, type ResourceType } from '@gerrymander/content';
 import type {
   GameCommand,
   PlayerView,
   ResourceVectorDto,
   StructuredChoicePromptView,
   TradeOfferView,
-} from '@seatgrab/protocol';
+} from '@gerrymander/protocol';
 import {
   KHAKI_TERROR_PAYMENT,
   NO_RESOURCES,
@@ -49,7 +49,7 @@ import {
   type ChoiceDraft,
   type HandCard,
   type PowerStatus,
-} from '@seatgrab/seat';
+} from '@gerrymander/seat';
 
 /** A voter group waiting to be placed, as the projection carries it. */
 export type PendingGroup = PlayerView['pendingVoterGroups'][number];

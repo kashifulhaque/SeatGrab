@@ -29,7 +29,7 @@
  * That is not politeness: `PlayTrick` is the seat's action, and an A18 refusal — five
  * voters it cannot reach, a rights zone it does not hold — arrives after the click.
  */
-import type { PlayerView, TradeOfferView } from '@seatgrab/protocol';
+import type { PlayerView, TradeOfferView } from '@gerrymander/protocol';
 
 import {
   KHAKI_TERROR_PAYMENT,

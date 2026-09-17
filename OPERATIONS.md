@@ -1,4 +1,4 @@
-# Operate the SeatGrab room server
+# Operate the Gerrymander room server
 
 This runbook covers deploying and running the online room server and the browser build
 beside it. Every command and every output in it was run against this repository; where a
@@ -24,7 +24,7 @@ time:
 | `pnpm build` | `local-play` | Pass-and-play only. No network code: no module from `src/remote/`, no `Online*` screen, and no `new WebSocket`. |
 | `pnpm build:online` | `online` | Pass-and-play and the `#/online` family, which needs the room server. |
 
-Each build stamps its marker into the emitted HTML as `<meta name="seatgrab-build">`. To read
+Each build stamps its marker into the emitted HTML as `<meta name="gerrymander-build">`. To read
 which build a directory holds, run `pnpm check:build`, which reads the marker itself and
 applies the assertions that build is owed.
 
@@ -71,12 +71,12 @@ applies the assertions that build is owed.
 4. Start the room server with at least these settings:
 
    ```sh
-   SEATGRAB_DB_PATH=/var/lib/seatgrab/seatgrab.db \
-   SEATGRAB_ALLOWED_ORIGINS=https://seatgrab.example.com \
+   GERRYMANDER_DB_PATH=/var/lib/gerrymander/gerrymander.db \
+   GERRYMANDER_ALLOWED_ORIGINS=https://gerrymander.example.com \
    pnpm start
    ```
 
-   Replace `https://seatgrab.example.com` with the exact origin the browser build is served
+   Replace `https://gerrymander.example.com` with the exact origin the browser build is served
    from. This setting is the one most likely to make a working deployment look broken:
    see [The origin allowlist](#the-origin-allowlist).
 
@@ -87,26 +87,26 @@ Every setting has a default that runs a single-instance development server, so a
 
 | Variable | Default | What it does |
 |---|---|---|
-| `SEATGRAB_DB_PATH` | `./data/seatgrab.db` | The SQLite file. Its directory is created at startup. |
-| `SEATGRAB_HOST` | `127.0.0.1` | Bind address. Leave it on loopback and put a reverse proxy in front. |
-| `SEATGRAB_PORT` | `8787` | TCP port. |
-| `SEATGRAB_ALLOWED_ORIGINS` | the two loopback spellings of the Vite dev server | Comma-separated browser origins allowed to open a WebSocket. `*` is refused. |
-| `SEATGRAB_TRUST_PROXY` | `false` | Read the client address from `X-Forwarded-For`. Set it only behind a proxy that sets the header itself. |
-| `SEATGRAB_HTTP_BURST_REQUESTS` | `60` | Requests one client address may send to `/api/*` in a burst. |
-| `SEATGRAB_HTTP_REQUESTS_PER_SECOND` | `5` | The rate that burst refills at. |
-| `SEATGRAB_SOCKET_BURST_FRAMES` | `40` | Frames one seat may send in a burst. |
-| `SEATGRAB_SOCKET_FRAMES_PER_SECOND` | `10` | The rate that burst refills at. |
-| `SEATGRAB_MAX_BODY_BYTES` | `65536` | Largest accepted request body. |
-| `SEATGRAB_SHUTDOWN_TIMEOUT_SECONDS` | `10` | How long a shutdown waits for in-flight requests. |
-| `SEATGRAB_LOG_LEVEL` | `info` | One of `fatal`, `error`, `warn`, `info`, `debug`, `trace`, `silent`. |
-| `SEATGRAB_COMPUTER_DELAY_MS` | `800` | How long a computer seat waits before it acts. The pause is for the people watching; `0` makes the computers play as fast as the engine allows. |
+| `GERRYMANDER_DB_PATH` | `./data/gerrymander.db` | The SQLite file. Its directory is created at startup. |
+| `GERRYMANDER_HOST` | `127.0.0.1` | Bind address. Leave it on loopback and put a reverse proxy in front. |
+| `GERRYMANDER_PORT` | `8787` | TCP port. |
+| `GERRYMANDER_ALLOWED_ORIGINS` | the two loopback spellings of the Vite dev server | Comma-separated browser origins allowed to open a WebSocket. `*` is refused. |
+| `GERRYMANDER_TRUST_PROXY` | `false` | Read the client address from `X-Forwarded-For`. Set it only behind a proxy that sets the header itself. |
+| `GERRYMANDER_HTTP_BURST_REQUESTS` | `60` | Requests one client address may send to `/api/*` in a burst. |
+| `GERRYMANDER_HTTP_REQUESTS_PER_SECOND` | `5` | The rate that burst refills at. |
+| `GERRYMANDER_SOCKET_BURST_FRAMES` | `40` | Frames one seat may send in a burst. |
+| `GERRYMANDER_SOCKET_FRAMES_PER_SECOND` | `10` | The rate that burst refills at. |
+| `GERRYMANDER_MAX_BODY_BYTES` | `65536` | Largest accepted request body. |
+| `GERRYMANDER_SHUTDOWN_TIMEOUT_SECONDS` | `10` | How long a shutdown waits for in-flight requests. |
+| `GERRYMANDER_LOG_LEVEL` | `info` | One of `fatal`, `error`, `warn`, `info`, `debug`, `trace`, `silent`. |
+| `GERRYMANDER_COMPUTER_DELAY_MS` | `800` | How long a computer seat waits before it acts. The pause is for the people watching; `0` makes the computers play as fast as the engine allows. |
 
 A setting the server cannot read stops it with exit code 2 and a message naming the
 variable. It does not fall back to a default.
 
 ## The origin allowlist
 
-`SEATGRAB_ALLOWED_ORIGINS` defaults to the Vite dev server's two loopback spellings. A
+`GERRYMANDER_ALLOWED_ORIGINS` defaults to the Vite dev server's two loopback spellings. A
 deployment that does not list its own origin refuses every browser at the WebSocket
 upgrade with a 403, which looks like a broken server rather than a policy. **Check this
 first when online play will not connect.**
@@ -128,9 +128,9 @@ forwards to it. Three things matter:
   A proxy that closes an idle socket after 60 seconds disconnects players mid-game; they
   reconnect, but the banner flickers through `reconnecting` for no reason.
 - **Decide where rate limiting lives.** The server counts requests per client address, and
-  behind a proxy every request arrives from the proxy. Either set `SEATGRAB_TRUST_PROXY=true`
+  behind a proxy every request arrives from the proxy. Either set `GERRYMANDER_TRUST_PROXY=true`
   with a proxy that sets `X-Forwarded-For` itself, or rate-limit at the proxy and raise
-  `SEATGRAB_HTTP_BURST_REQUESTS` out of the way. Left alone, the whole internet shares one
+  `GERRYMANDER_HTTP_BURST_REQUESTS` out of the way. Left alone, the whole internet shares one
   bucket and the limit is worse than none: the first busy client locks everyone out.
 
 An nginx location block that satisfies the first two:
@@ -178,7 +178,7 @@ keeps serving, so the status code stays 200 and `status` stays `ok`. Search the 
 error level for the match ID, the revision and the refusals:
 
 ```sh
-journalctl -u seatgrab | grep 'every candidate refused'
+journalctl -u gerrymander | grep 'every candidate refused'
 ```
 
 That is a defect to report with the match ID, not a condition to wait out: the field
@@ -191,17 +191,17 @@ capture a `.db` without the `-wal` beside it. Use SQLite's own backup instead, w
 safe while the server runs:
 
 ```sh
-sqlite3 /var/lib/seatgrab/seatgrab.db ".backup '/var/backups/seatgrab-$(date +%F).db'"
+sqlite3 /var/lib/gerrymander/gerrymander.db ".backup '/var/backups/gerrymander-$(date +%F).db'"
 ```
 
 To restore, stop the server first. A restore under a running process leaves it holding a
 file that no longer matches its WAL:
 
 ```sh
-systemctl stop seatgrab
-rm -f /var/lib/seatgrab/seatgrab.db /var/lib/seatgrab/seatgrab.db-wal /var/lib/seatgrab/seatgrab.db-shm
-cp /var/backups/seatgrab-2026-09-16.db /var/lib/seatgrab/seatgrab.db
-systemctl start seatgrab
+systemctl stop gerrymander
+rm -f /var/lib/gerrymander/gerrymander.db /var/lib/gerrymander/gerrymander.db-wal /var/lib/gerrymander/gerrymander.db-shm
+cp /var/backups/gerrymander-2026-09-16.db /var/lib/gerrymander/gerrymander.db
+systemctl start gerrymander
 ```
 
 Removing the `-wal` and `-shm` files matters. Left in place, they belong to the file you
@@ -218,7 +218,7 @@ mid-command either committed it whole or did not commit it at all.
 
 `SIGTERM` and `SIGINT` both close the HTTP server first, so no new request starts, and
 then close the database. If in-flight requests do not finish within
-`SEATGRAB_SHUTDOWN_TIMEOUT_SECONDS`, the process logs and exits with code 1.
+`GERRYMANDER_SHUTDOWN_TIMEOUT_SECONDS`, the process logs and exits with code 1.
 
 Rooms survive a restart in SQLite. Connected browsers show Reconnecting, retry with a
 backoff, and rejoin the same seat at the same pending decision. Nothing is lost and no
@@ -252,14 +252,14 @@ it next. A table that loses a credential mid-match has lost that seat; open a ne
 ## Troubleshooting
 
 **Every browser fails to connect, and the server logs a 403 at the upgrade.** The origin
-is not in `SEATGRAB_ALLOWED_ORIGINS`. It must be the exact origin the browser build is served
+is not in `GERRYMANDER_ALLOWED_ORIGINS`. It must be the exact origin the browser build is served
 from, scheme and port included.
 
 **Tables connect and then drop every minute.** The proxy is closing an idle WebSocket.
 Raise `proxy_read_timeout`.
 
 **One client gets 429 and so does everyone else.** The server is behind a proxy and
-`SEATGRAB_TRUST_PROXY` is not set, so every request shares one bucket. See
+`GERRYMANDER_TRUST_PROXY` is not set, so every request shares one bucket. See
 [Boomerang proxy](#reverse-proxy).
 
 **The server exits with code 2 at startup.** A setting could not be read. The message on

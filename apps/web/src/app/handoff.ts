@@ -12,7 +12,7 @@
  * seat's cover, straight into a seat's private data.
  */
 
-import type { PlayerView } from '@seatgrab/protocol';
+import type { PlayerView } from '@gerrymander/protocol';
 
 /** Which surface the shared device is showing. */
 export type HandoffState =

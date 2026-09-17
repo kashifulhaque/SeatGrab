@@ -1,8 +1,8 @@
 /**
  * What the computer opponent may know, and what each difficulty does with it.
  *
- * The first test is the structural one and matters most: `@seatgrab/computer` must not
- * depend on `@seatgrab/engine`, because a package that cannot import `GameState`,
+ * The first test is the structural one and matters most: `@gerrymander/computer` must not
+ * depend on `@gerrymander/engine`, because a package that cannot import `GameState`,
  * `applyCommand` or `projectGame` cannot read the authoritative state, apply a rule of
  * its own, or look up the reward of a policy answer the projection hides. Every other
  * guarantee in this file rests on that one.
@@ -22,9 +22,9 @@ import {
   evaluate,
   hasSomethingToDo,
   placementScore,
-} from '@seatgrab/computer';
-import { CORE_CONTENT, type GameConfig } from '@seatgrab/engine';
-import type { ComputerDifficulty, PlayerView } from '@seatgrab/protocol';
+} from '@gerrymander/computer';
+import { CORE_CONTENT, type GameConfig } from '@gerrymander/engine';
+import type { ComputerDifficulty, PlayerView } from '@gerrymander/protocol';
 
 import { createLocalMatch, createMemoryStore, type LocalMatchOptions } from '../src/local';
 import { playComputers, tableOf } from './computerPlay';
@@ -81,12 +81,12 @@ describe('the computer package', () => {
       readFileSync(fileURLToPath(new URL('../../../packages/computer/package.json', import.meta.url)), 'utf8'),
     ) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
     const named = { ...manifest.dependencies, ...manifest.devDependencies };
-    expect(Object.keys(named)).not.toContain('@seatgrab/engine');
+    expect(Object.keys(named)).not.toContain('@gerrymander/engine');
     // And it does depend on the three it is allowed to read.
     expect(Object.keys(manifest.dependencies ?? {}).toSorted()).toEqual([
-      '@seatgrab/content',
-      '@seatgrab/protocol',
-      '@seatgrab/seat',
+      '@gerrymander/content',
+      '@gerrymander/protocol',
+      '@gerrymander/seat',
     ]);
   });
 

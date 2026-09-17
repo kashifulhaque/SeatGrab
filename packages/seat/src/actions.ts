@@ -29,7 +29,7 @@ import {
   type Cost,
   type Archetype,
   type ResourceType,
-} from '@seatgrab/content';
+} from '@gerrymander/content';
 import type {
   ChoiceSelection,
   GameCommand,
@@ -38,7 +38,7 @@ import type {
   ResourceVectorDto,
   StructuredChoicePromptView,
   TradeOfferView,
-} from '@seatgrab/protocol';
+} from '@gerrymander/protocol';
 
 import { SLOT_ORDINALS, describePhase } from './table.js';
 

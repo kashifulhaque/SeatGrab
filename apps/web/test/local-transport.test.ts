@@ -8,8 +8,8 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { CONTENT_PACK_VERSION } from '@seatgrab/content';
-import { CORE_CONTENT, type GameConfig, type GameState } from '@seatgrab/engine';
+import { CONTENT_PACK_VERSION } from '@gerrymander/content';
+import { CORE_CONTENT, type GameConfig, type GameState } from '@gerrymander/engine';
 
 import {
   LocalSnapshotError,

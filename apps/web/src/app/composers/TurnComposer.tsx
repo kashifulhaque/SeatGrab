@@ -35,8 +35,8 @@
  *   it was offered to, and a debt outlives the turn that made it, so both have to be
  *   reachable when this composer has stood down.
  */
-import { ARCHETYPES, type Cost, type Archetype, type ResourceType } from '@seatgrab/content';
-import type { PlayerView, ResourceVectorDto } from '@seatgrab/protocol';
+import { ARCHETYPES, type Cost, type Archetype, type ResourceType } from '@gerrymander/content';
+import type { PlayerView, ResourceVectorDto } from '@gerrymander/protocol';
 
 import { CostIcons } from '../CostIcons';
 import {

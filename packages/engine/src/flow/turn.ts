@@ -1,4 +1,4 @@
-import type { Archetype, ResourceVector } from '@seatgrab/content';
+import type { Archetype, ResourceVector } from '@gerrymander/content';
 import { shuffle } from '../random/prng.js';
 import type { GameContent } from '../content.js';
 import { BASE_RESOURCE_CAP, type GameEvent, type GameState, type PlayerId, type PlayerState, type UsageCounters } from '../model/state.js';

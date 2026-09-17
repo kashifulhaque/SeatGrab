@@ -2,15 +2,15 @@
  * The computer opponent.
  *
  * A computer seat reads exactly what a person at that seat is shown, its own `PlayerView`,
- * and submits commands the way a player does. This package depends on `@seatgrab/seat`,
- * `@seatgrab/protocol` and `@seatgrab/content` and deliberately not on `@seatgrab/engine`,
+ * and submits commands the way a player does. This package depends on `@gerrymander/seat`,
+ * `@gerrymander/protocol` and `@gerrymander/content` and deliberately not on `@gerrymander/engine`,
  * so it cannot read the authoritative state, apply a rule, or look up the reward of a
  * policy answer before committing to it. Difficulty comes from how well it uses public
  * information, and from nothing else.
  */
-import type { ComputerDifficulty } from '@seatgrab/protocol';
+import type { ComputerDifficulty } from '@gerrymander/protocol';
 
-export type { ComputerDifficulty, SeatController } from '@seatgrab/protocol';
+export type { ComputerDifficulty, SeatController } from '@gerrymander/protocol';
 
 export const COMPUTER_DIFFICULTIES: readonly {
   id: ComputerDifficulty;

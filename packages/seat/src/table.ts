@@ -14,14 +14,14 @@
  * 2. Ownership and state are always available as words. Colour and position are
  *    decoration on top of a sentence that already says who owns what.
  */
-import { CORE_BOARD, type BoardSlot } from '@seatgrab/content';
+import { CORE_BOARD, type BoardSlot } from '@gerrymander/content';
 import type {
   PendingDecisionView,
   PlayerView,
   PublicPlayerView,
   PublicSlotView,
   PublicZoneView,
-} from '@seatgrab/protocol';
+} from '@gerrymander/protocol';
 
 /** Board geometry by slot ID, for the drawn board and for the slot ordinals. */
 export const SLOT_GEOMETRY: ReadonlyMap<string, BoardSlot> = new Map(

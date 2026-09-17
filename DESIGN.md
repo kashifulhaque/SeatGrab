@@ -46,9 +46,9 @@ treat them as historical context, not as a live reference.
 - A computer seat reads exactly what a person at that seat is shown — its own
   `PlayerView` — and submits commands through the same `submit` a person's control
   reaches. It applies no rule and it never bypasses `applyCommand`.
-- The decision logic is `packages/computer`, which depends on `@seatgrab/seat`,
-  `@seatgrab/protocol` and `@seatgrab/content` and deliberately **not** on
-  `@seatgrab/engine`. That is what makes the previous point structural rather than a
+- The decision logic is `packages/computer`, which depends on `@gerrymander/seat`,
+  `@gerrymander/protocol` and `@gerrymander/content` and deliberately **not** on
+  `@gerrymander/engine`. That is what makes the previous point structural rather than a
   promise: the package cannot import `GameState`, `applyCommand` or `projectGame`, so it
   cannot read the authoritative state or look up the reward of a policy answer that the
   projection hides. `apps/web/test/computer.test.ts` asserts the missing dependency.

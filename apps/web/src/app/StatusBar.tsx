@@ -26,7 +26,7 @@
  */
 import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 
-import type { PlayerView, PublicPlayerView } from '@seatgrab/protocol';
+import type { PlayerView, PublicPlayerView } from '@gerrymander/protocol';
 
 import { PARTY_BY_ID, RESOURCE_ASSETS } from '../assets/manifest';
 

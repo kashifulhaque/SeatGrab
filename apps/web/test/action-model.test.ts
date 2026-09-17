@@ -15,10 +15,10 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { CORE_BOARD, type Cost, type Archetype } from '@seatgrab/content';
-import { CORE_CONTENT, applyCommand, createGame, projectGame } from '@seatgrab/engine';
-import type { GameConfig, GameState } from '@seatgrab/engine';
-import type { GameCommand, PlayerView, ResourceVectorDto } from '@seatgrab/protocol';
+import { CORE_BOARD, type Cost, type Archetype } from '@gerrymander/content';
+import { CORE_CONTENT, applyCommand, createGame, projectGame } from '@gerrymander/engine';
+import type { GameConfig, GameState } from '@gerrymander/engine';
+import type { GameCommand, PlayerView, ResourceVectorDto } from '@gerrymander/protocol';
 
 import {
   NO_PAYMENT,

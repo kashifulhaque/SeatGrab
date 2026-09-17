@@ -14,7 +14,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { ServerFrame } from '@seatgrab/protocol';
+import type { ServerFrame } from '@gerrymander/protocol';
 
 import { buildServer, type BuiltServer } from '../src/app';
 import { readServerConfig, type ServerConfig } from '../src/config';
@@ -38,12 +38,12 @@ export interface HarnessOptions {
 }
 
 export async function startHarness(options: HarnessOptions = {}): Promise<Harness> {
-  const directory = mkdtempSync(join(tmpdir(), 'seatgrab-server-'));
-  const databasePath = join(directory, 'seatgrab.db');
+  const directory = mkdtempSync(join(tmpdir(), 'gerrymander-server-'));
+  const databasePath = join(directory, 'gerrymander.db');
   const config = readServerConfig({
-    SEATGRAB_DB_PATH: databasePath,
-    SEATGRAB_LOG_LEVEL: 'silent',
-    SEATGRAB_PORT: '0',
+    GERRYMANDER_DB_PATH: databasePath,
+    GERRYMANDER_LOG_LEVEL: 'silent',
+    GERRYMANDER_PORT: '0',
     ...options.env,
   } as NodeJS.ProcessEnv);
 

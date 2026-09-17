@@ -24,7 +24,7 @@ import {
   type LobbyView,
   type SeatView,
   type VisibleEvent,
-} from '@seatgrab/protocol';
+} from '@gerrymander/protocol';
 import {
   applyCommand,
   createGame,
@@ -37,7 +37,7 @@ import {
   type GameContent,
   type GameEvent,
   type GameState,
-} from '@seatgrab/engine';
+} from '@gerrymander/engine';
 
 import {
   credentialMatches,
@@ -59,7 +59,7 @@ import {
 /**
  * The party identities a seat may claim.
  *
- * The list itself is `@seatgrab/protocol`'s, so the server and the browser cannot disagree
+ * The list itself is `@gerrymander/protocol`'s, so the server and the browser cannot disagree
  * about which identities exist. What each one looks like stays in the browser, at
  * `apps/web/src/assets/parties.ts`, because that is presentation. Re-exported here
  * because this is where a reader of the room rules expects to find it.
@@ -101,7 +101,7 @@ export interface SeatIdentity {
 /**
  * The shapes the room routes answer with.
  *
- * All three are `@seatgrab/protocol`'s, because both transports return them and the browser
+ * All three are `@gerrymander/protocol`'s, because both transports return them and the browser
  * reads them: one declaration per shape, on the wire rather than on either side of it.
  * Re-exported here so a caller of `viewFor` or `claimSeat` finds the type beside the
  * method that returns it.

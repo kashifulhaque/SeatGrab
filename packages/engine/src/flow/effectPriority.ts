@@ -1,5 +1,5 @@
-import type { EffectCard } from '@seatgrab/content';
-import type { GameCommand } from '@seatgrab/protocol';
+import type { EffectCard } from '@gerrymander/content';
+import type { GameCommand } from '@gerrymander/protocol';
 import type { GameContent } from '../content.js';
 import type { AuthenticatedActor, CommandResult } from '../model/result.js';
 import type { ChoiceInteraction, GameState, PlayerId } from '../model/state.js';

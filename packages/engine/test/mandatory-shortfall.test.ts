@@ -27,7 +27,7 @@
  * Registered as adjudication A18 in `packages/content/src/ruleset.ts`.
  */
 import { describe, expect, it } from 'vitest';
-import type { ChoiceSelection, GameCommand } from '@seatgrab/protocol';
+import type { ChoiceSelection, GameCommand } from '@gerrymander/protocol';
 import {
   CORE_CONTENT,
   applyCommand,

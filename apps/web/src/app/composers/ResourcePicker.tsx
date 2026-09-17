@@ -14,8 +14,8 @@
  * and what is short, is decided by `paymentBreakdown` in `actions.ts`; this component
  * only draws what it is handed.
  */
-import { RESOURCE_TYPES, type ResourceType } from '@seatgrab/content';
-import type { ResourceVectorDto } from '@seatgrab/protocol';
+import { RESOURCE_TYPES, type ResourceType } from '@gerrymander/content';
+import type { ResourceVectorDto } from '@gerrymander/protocol';
 
 import { RESOURCE_ASSETS } from '../../assets/manifest';
 

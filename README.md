@@ -1,6 +1,6 @@
-# SeatGrab
+# Gerrymander
 
-SeatGrab is a political strategy game for 3 to 5 players, playable in a browser. Players
+Gerrymander is a political strategy game for 3 to 5 players, playable in a browser. Players
 answer policy questions, spend the resources they earn on voters, and place those voters
 on a nine-zone board. Hold a zone's majority and its voters score; when every zone is held,
 the player with the most scoring voters wins.

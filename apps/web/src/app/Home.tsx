@@ -32,7 +32,7 @@ import {
   type LocalMatchSummary,
   type LocalSnapshotStore,
 } from '../local';
-import { CORE_CONTENT } from '@seatgrab/engine';
+import { CORE_CONTENT } from '@gerrymander/engine';
 
 import { Glyph, type GlyphName } from './Glyph';
 import { PartyMark } from './PartyMark';

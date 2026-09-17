@@ -17,7 +17,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
-import { ComputerDifficultySchema } from '@seatgrab/protocol';
+import { ComputerDifficultySchema } from '@gerrymander/protocol';
 
 import { readBearer } from '../credentials.js';
 import type { MatchHub } from '../rooms/matchHub.js';

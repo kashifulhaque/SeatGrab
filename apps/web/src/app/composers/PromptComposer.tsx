@@ -20,7 +20,7 @@
  */
 import { useEffect, useState } from 'react';
 
-import type { GameCommand, PlayerView, ResourceVectorDto, StructuredChoicePromptView } from '@seatgrab/protocol';
+import type { GameCommand, PlayerView, ResourceVectorDto, StructuredChoicePromptView } from '@gerrymander/protocol';
 
 import type { DrawableViewResult } from '../../transport';
 import {

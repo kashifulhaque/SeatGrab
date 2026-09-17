@@ -16,22 +16,22 @@ import {
   BOARD_VERSION,
   CONTENT_PACK_ID,
   CONTENT_PACK_VERSION,
-} from '@seatgrab/content';
+} from '@gerrymander/content';
 import {
   GAME_SCHEMA_VERSION,
   loadGame,
   serializeGame,
   type GameContent,
   type GameState,
-} from '@seatgrab/engine';
+} from '@gerrymander/engine';
 import {
   isComputerDifficulty,
   type ComputerDifficulty,
   type SeatController,
-} from '@seatgrab/protocol';
+} from '@gerrymander/protocol';
 
-/** Identifies the file as a SeatGrab local save rather than any other JSON document. */
-export const LOCAL_SNAPSHOT_FORMAT = 'seatgrab.local-snapshot';
+/** Identifies the file as a Gerrymander local save rather than any other JSON document. */
+export const LOCAL_SNAPSHOT_FORMAT = 'gerrymander.local-snapshot';
 
 /** The layout of the envelope around the state. Bump it only for envelope changes. */
 export const LOCAL_SNAPSHOT_FORMAT_VERSION = 1;
@@ -185,7 +185,7 @@ export function readEnvelope(value: unknown): LocalSnapshotEnvelope {
   if (format !== LOCAL_SNAPSHOT_FORMAT) {
     throw new LocalSnapshotError(
       'NOT_A_SNAPSHOT',
-      `The file is not a SeatGrab local save. Expected format "${LOCAL_SNAPSHOT_FORMAT}", found `
+      `The file is not a Gerrymander local save. Expected format "${LOCAL_SNAPSHOT_FORMAT}", found `
       + `${typeof format === 'string' ? `"${format}"` : 'no format field'}.`,
     );
   }

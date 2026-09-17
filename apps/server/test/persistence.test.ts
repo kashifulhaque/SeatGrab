@@ -29,8 +29,8 @@ let directory: string;
 let database: Database;
 
 beforeEach(() => {
-  directory = mkdtempSync(join(tmpdir(), 'seatgrab-persistence-'));
-  database = openDatabase(join(directory, 'seatgrab.db'));
+  directory = mkdtempSync(join(tmpdir(), 'gerrymander-persistence-'));
+  database = openDatabase(join(directory, 'gerrymander.db'));
 });
 
 afterEach(() => {
@@ -155,19 +155,19 @@ describe('configuration', () => {
     expect(config.port).toBe(DEFAULT_PORT);
     expect(config.host).toBe('127.0.0.1');
     expect(config.maxBodyBytes).toBe(DEFAULT_MAX_BODY_BYTES);
-    expect(config.databasePath.endsWith('/data/seatgrab.db')).toBe(true);
+    expect(config.databasePath.endsWith('/data/gerrymander.db')).toBe(true);
   });
 
   it('names the setting that is wrong rather than falling back to a default', () => {
-    expect(() => readServerConfig({ SEATGRAB_PORT: 'eighty' } as NodeJS.ProcessEnv)).toThrow(ConfigError);
-    expect(() => readServerConfig({ SEATGRAB_PORT: '70000' } as NodeJS.ProcessEnv)).toThrow(/SEATGRAB_PORT/u);
-    expect(() => readServerConfig({ SEATGRAB_LOG_LEVEL: 'chatty' } as NodeJS.ProcessEnv)).toThrow(
-      /SEATGRAB_LOG_LEVEL/u,
+    expect(() => readServerConfig({ GERRYMANDER_PORT: 'eighty' } as NodeJS.ProcessEnv)).toThrow(ConfigError);
+    expect(() => readServerConfig({ GERRYMANDER_PORT: '70000' } as NodeJS.ProcessEnv)).toThrow(/GERRYMANDER_PORT/u);
+    expect(() => readServerConfig({ GERRYMANDER_LOG_LEVEL: 'chatty' } as NodeJS.ProcessEnv)).toThrow(
+      /GERRYMANDER_LOG_LEVEL/u,
     );
   });
 
   it('resolves a relative database path against the working directory', () => {
-    const config = readServerConfig({ SEATGRAB_DB_PATH: 'var/seatgrab.db' } as NodeJS.ProcessEnv);
-    expect(config.databasePath).toBe(join(process.cwd(), 'var/seatgrab.db'));
+    const config = readServerConfig({ GERRYMANDER_DB_PATH: 'var/gerrymander.db' } as NodeJS.ProcessEnv);
+    expect(config.databasePath).toBe(join(process.cwd(), 'var/gerrymander.db'));
   });
 });

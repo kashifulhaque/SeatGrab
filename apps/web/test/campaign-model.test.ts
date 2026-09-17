@@ -18,7 +18,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { CORE_BOARD, type Archetype } from '@seatgrab/content';
+import { CORE_BOARD, type Archetype } from '@gerrymander/content';
 import {
   CORE_CONTENT,
   applyCommand,
@@ -28,13 +28,13 @@ import {
   startAuction,
   type GameConfig,
   type GameState,
-} from '@seatgrab/engine';
+} from '@gerrymander/engine';
 import type {
   ChoicePromptOp,
   GameCommand,
   PlayerView,
   StructuredChoicePromptView,
-} from '@seatgrab/protocol';
+} from '@gerrymander/protocol';
 
 import {
   NO_RESOURCES,

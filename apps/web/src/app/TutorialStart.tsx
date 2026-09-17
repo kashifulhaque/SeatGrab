@@ -13,7 +13,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { CORE_CONTENT } from '@seatgrab/engine';
+import { CORE_CONTENT } from '@gerrymander/engine';
 
 import {
   createLocalMatch,
