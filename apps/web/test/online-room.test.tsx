@@ -337,6 +337,24 @@ describe('OnlineRoom', () => {
     expect(container.querySelector('.board--live')).toBeNull();
   });
 
+  it('offers the host a computer on the free seat, with a difficulty beside it', async () => {
+    render(seatStoreHolding(SEAT));
+    await settle();
+    act(() => FakeBrowserSocket.latest().open());
+    act(() => FakeBrowserSocket.latest().deliver(welcome(null)));
+    await settle();
+
+    // Seat 3 is the only free one, and this browser holds the host seat.
+    expect(buttonLabelled('Seat a computer')).not.toBeNull();
+    const difficulty = container.querySelector<HTMLSelectElement>('#seat-2-difficulty');
+    expect(difficulty).not.toBeNull();
+    expect([...(difficulty?.options ?? [])].map((option) => option.value))
+      .toEqual(['easy', 'medium', 'hard']);
+    expect(difficulty?.value).toBe('medium');
+    // The two held seats offer no such control: a computer goes on a free seat only.
+    expect(container.querySelectorAll('select[id$="-difficulty"]')).toHaveLength(1);
+  });
+
   it('stops polling the lobby the moment a projection arrives', async () => {
     render(seatStoreHolding(SEAT));
     await settle();
