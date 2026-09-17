@@ -9,6 +9,13 @@ Play it three ways: pass and play on one device, against the computer at one of 
 difficulties, or in an online room on separate devices. Any seat at a table can be a
 computer, as long as one seat is a person.
 
+New to the game? **Learn to play** on the title screen starts a guided match against two
+Easy computers. A coach panel on the match screen names the rule the table is asking for
+at the moment it asks — the vote, the starting resources, the policy question, the market,
+placement, majorities, redistricting and the rest — and retires each lesson once you have
+used it. It is an ordinary match underneath, saved like any other, so nothing you learn
+there is a tutorial-only rule.
+
 All card text, board art, icons and rules text in this repository are original to this
 project. The resource icons are [Lucide](https://lucide.dev) icons (ISC licence, see
 `LICENSES/`).

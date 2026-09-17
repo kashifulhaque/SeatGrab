@@ -9,6 +9,8 @@ export const ROUTES = {
   lobby: '#/new',
   /** The lobby, opened on a table of one person and two computers. */
   lobbyComputer: '#/new/computer',
+  /** The guided tutorial's front door. It starts a local match of its own. */
+  tutorial: '#/tutorial',
   rules: '#/rules',
   match: (matchId: string): string => `#/match/${encodeURIComponent(matchId)}`,
   /** The rooms this browser holds a seat in, and the two ways into a new one. */

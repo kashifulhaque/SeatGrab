@@ -4136,6 +4136,102 @@ a {
 
 /* ------------------------------------------------ title screen, small screens */
 
+/* ------------------------------------------------------------- the tutorial */
+
+/*
+ * The coach card, between the status bar and the table on a tutorial match.
+ *
+ * It is the loudest thing on the page while it is there, because on a tutorial match it
+ * is the thing to read first. The trim edge and the dark plaque are the vocabulary the
+ * board and the panels already use; nothing here is a colour of its own.
+ */
+.coach {
+  background: var(--paper-bright);
+  /* The page frame is dark and sets a pale ink; the coach is parchment, like a panel. */
+  color: var(--ink);
+  border: 2px solid var(--trim);
+  border-radius: var(--radius);
+  padding: 12px 14px 14px;
+  margin: 0 0 12px;
+  box-shadow: 0 1px 0 #ffffff66 inset, 0 3px 0 #14090f, 0 10px 24px #00000040;
+}
+
+.coach--quiet {
+  border-width: 1px;
+  border-color: var(--panel-edge);
+  background: var(--paper);
+}
+
+.coach__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  color: var(--ink-soft);
+}
+
+.coach__eyebrow .glyph {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.coach__title {
+  margin: 0 0 8px;
+  font-size: 19px;
+  line-height: 1.15;
+}
+
+.coach__body {
+  margin: 0 0 8px;
+  max-width: 72ch;
+}
+
+.coach__quiet-line {
+  margin: 0 0 8px;
+  max-width: 72ch;
+  color: var(--ink-soft);
+}
+
+.coach__task {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin: 10px 0;
+  padding: 8px 10px;
+  border-left: 4px solid var(--trim);
+  background: var(--paper-sunk);
+  border-radius: var(--radius-small);
+}
+
+.coach__task-label {
+  font-family: var(--condensed);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  color: var(--ink-soft);
+}
+
+/* The tutorial's front door lists what the match is, one claim per line. */
+.facts-list {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  max-width: 72ch;
+}
+
+.facts-list li {
+  margin-bottom: 6px;
+}
+
 @media (max-width: 760px) {
   .title-screen {
     padding: 16px 12px 16px;

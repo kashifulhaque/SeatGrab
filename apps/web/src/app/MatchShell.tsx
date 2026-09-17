@@ -36,6 +36,11 @@
  * the revealed seat's actions beside it, and the immutable match settings last, folded
  * into the footer. The first playtest had that order inverted, with the board four
  * screens down.
+ *
+ * A tutorial match — one whose ID `isTutorialMatchId` recognizes — draws `TutorialCoach`
+ * between the status bar and the table. It is the only difference between a tutorial and
+ * any other local match: the engine, the content, the computer seats and every control
+ * are the same ones, so a rule the coach teaches is a rule the player has just used.
  */
 import { useCallback, useEffect, useReducer, useRef, useState, type CSSProperties } from 'react';
 
@@ -58,6 +63,7 @@ import { SeatSurface } from './SeatSurface';
 import { SeatSwitcher } from './SeatSwitcher';
 import { StatusBar } from './StatusBar';
 import { TableSurface } from './TableSurface';
+import { TutorialCoach } from './TutorialCoach';
 import { ROUTES } from './routes';
 import { ADVISORY_FILTERS } from './setup';
 import {
@@ -75,6 +81,7 @@ import {
   type ComputerPace,
 } from './useComputerSeats';
 import { describeDecision, mustActSeat } from './table';
+import { isTutorialMatchId } from './tutorial';
 import { describeError } from './useLocalStore';
 import {
   NO_DRAFT,
@@ -303,6 +310,8 @@ export function MatchShell({
   }, [match]);
 
   const publicResult = match?.viewFor({ kind: 'public' }) ?? null;
+  // A tutorial match differs from any other local match in one thing: the coach.
+  const tutorial = isTutorialMatchId(matchId);
 
   const body = () => {
     if (storeError !== null) {
@@ -397,6 +406,10 @@ export function MatchShell({
             : {})}
         />
 
+        {tutorial && revealed !== null && seatResult !== null ? (
+          <TutorialCoach matchId={matchId} view={seatResult.view} seatId={revealed} />
+        ) : null}
+
         {computers.stuck === null ? null : (
           <div className="alert alert--error" role="alert">
             <p>
@@ -481,7 +494,7 @@ export function MatchShell({
 
   return (
     <PageFrame
-      title="Local match"
+      title={tutorial ? 'Tutorial match' : 'Local match'}
       back={{ href: ROUTES.home, label: 'Home' }}
       wide
       compact

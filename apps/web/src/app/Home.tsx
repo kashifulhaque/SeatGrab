@@ -1,11 +1,11 @@
 /**
  * The title screen of section 13.2.
  *
- * It offers the five entry points the section names — start a local match, create a
- * private online room, join a room, resume a save, and read the rules and edition — and
- * it is honest about which of them this build can carry out. Session 15 made the two
- * online ones real in the online build; in the pass-and-play build they stay present and
- * disabled with the reason, rather than absent or pretending to work.
+ * It offers the entry points the section names — learn the game in the guided tutorial,
+ * start a local match, create a private online room, join a room, resume a save, and read
+ * the rules and edition — and it is honest about which of them this build can carry out.
+ * Session 15 made the two online ones real in the online build; in the pass-and-play build
+ * they stay present and disabled with the reason, rather than absent or pretending to work.
  *
  * It is laid out as a game's title screen rather than as a document: the wordmark and the
  * one or two things a player came here to press sit in the middle of the screen, and
@@ -244,6 +244,20 @@ export function Home({
               </span>
             </button>
           )}
+          <button
+            type="button"
+            className={`cta${saves !== null && saves.length === 0 ? ' cta--primary' : ''}`}
+            disabled={store === null}
+            onClick={() => navigate(ROUTES.tutorial)}
+          >
+            <Glyph name="book" size={30} />
+            <span className="cta__text">
+              <span className="cta__label">Learn to play</span>
+              <span className="cta__sub">
+                A guided first match against the computer, with the rules explained as they come up
+              </span>
+            </span>
+          </button>
           <button
             type="button"
             className="cta cta--primary"

@@ -509,6 +509,11 @@ export function RulesInfo() {
         <h2>{active.label}</h2>
         <Body />
       </section>
+
+      <p className="hint">
+        To learn these rules by playing them instead, start the{' '}
+        <a href={ROUTES.tutorial}>guided tutorial against the computer</a>.
+      </p>
     </PageFrame>
   );
 }

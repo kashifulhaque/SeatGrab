@@ -1,8 +1,8 @@
 /**
  * The application shell.
  *
- * Production routes: the home screen, the lobby, the rules and edition page, a local
- * match, and the `#/online` family. The development-only route resolves to `null` in
+ * Production routes: the home screen, the lobby, the tutorial, the rules and edition page,
+ * a local match, and the `#/online` family. The development-only route resolves to `null` in
  * both production builds, which `scripts/check_build_privacy.mjs` asserts from the emitted
  * files; the online family resolves to `null` in the pass-and-play build for the same
  * reason and by the same mechanism, so that build contains no network code to reach.
@@ -16,6 +16,7 @@ import { Home } from './app/Home';
 import { Lobby } from './app/Lobby';
 import { MatchShell } from './app/MatchShell';
 import { RulesInfo } from './app/RulesInfo';
+import { TutorialStart } from './app/TutorialStart';
 import type { DevRouteLink } from './app/Home';
 import { matchIdFromRoute, onlineRouteFrom } from './app/routes';
 import { useLocalStore } from './app/useLocalStore';
@@ -40,6 +41,7 @@ export function App() {
 
   if (route === '/transport' && TransportCheck) return <TransportCheck />;
   if (route === '/rules') return <RulesInfo />;
+  if (route === '/tutorial') return <TutorialStart store={store} storeError={error} />;
   if (route === '/new') return <Lobby store={store} storeError={error} />;
   // The same lobby, opened on a table the person shares with the computer. Keyed so
   // moving between the two addresses re-seeds the draft rather than keeping the old one.
