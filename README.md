@@ -1,76 +1,42 @@
 # Gerrymander
 
-Gerrymander is a political strategy game for 3 to 5 players, playable in a browser. Players
-answer policy questions, spend the resources they earn on voters, and place those voters
-on a nine-zone board. Hold a zone's majority and its voters score; when every zone is held,
-the player with the most scoring voters wins.
+Gerrymander is a political strategy game for 3 to 5 players, playable in a browser.
+Players answer policy questions, spend the resources they earn on voters, and place those
+voters on a nine-zone board. Hold a zone's majority and its voters score; when every zone
+is held, the player with the most scoring voters wins.
 
 Play it three ways: pass and play on one device, against the computer at one of three
 difficulties, or in an online room on separate devices. Any seat at a table can be a
-computer, as long as one seat is a person.
+computer, as long as one seat is a person. New to the game? **Learn to play** on the title
+screen starts a guided match that names each rule as the table asks for it.
 
-New to the game? **Learn to play** on the title screen starts a guided match against two
-Easy computers. A coach panel on the match screen names the rule the table is asking for
-at the moment it asks — the vote, the starting resources, the policy question, the market,
-placement, majorities, redistricting and the rest — and retires each lesson once you have
-used it. It is an ordinary match underneath, saved like any other, so nothing you learn
-there is a tutorial-only rule.
+For the rules, the design commitments, and the full runbook for the room server, see
+[CLAUDE.md](CLAUDE.md).
 
 All card text, board art, icons and rules text in this repository are original to this
-project. The resource icons are [Lucide](https://lucide.dev) icons (ISC licence, see
-`LICENSES/`).
+project. The resource icons are [Lucide](https://lucide.dev) icons, ISC licence, in
+`LICENSES/`.
 
-## Rules in brief
+## Requirements
 
-- **Goal.** Each zone shows a threshold. Reach it with your own voters and you hold the
-  zone. When all nine zones are held, the player with the most majority voters wins.
-- **Your turn.** Take passive income. Answer a policy question by picking one of two
-  answers; the answer builds one of four archetypes (Corporate, Nationalist, Populist,
-  Reformer) and pays resources (Cash, Influence, Press, Faith). Buy voter cards from the
-  market and place each card's voters together in one zone. Use unlocked powers, buy or
-  play a Dirty Trick, or trade. End your turn; unplaced voters are lost.
-- **Archetypes.** Two policy cards in one archetype pay one resource a turn. Three unlock
-  that archetype's first power, five its second.
-- **Redistricting.** Strictly the most voters in a zone gives you its redistricting
-  rights: once a turn, move one voter into, out of or within that zone. Majority voters
-  cannot be moved.
-- **The map.** The nine zones are the districts of one island: Central at its heart,
-  North and South belting it, and the other six around the coast. Two districts are
-  neighbours for redistricting exactly when their borders touch on the map.
-- **Volatile areas.** A voter placed there is fixed for the game and deals its owner a
-  Breaking News card that resolves at the end of the turn.
-- **Dirty Tricks.** Bought face down for the price on the back; played on your turn, or
-  as a reaction when the card says so.
-- **The computer.** A computer seat reads the same table you do. It does not see any hand
-  but its own, and it does not know what a policy answer pays before it commits. Easy
-  buys cheap voters and spreads them around; Medium goes for the cheapest majorities and
-  uses its powers; Hard targets the leader and times the end of the game.
+- Node.js 24 or later. The server uses `node:sqlite`, which Node still marks experimental,
+  so every start prints an `ExperimentalWarning`. The warning is expected.
+- pnpm 10.28.0, pinned in `package.json`.
+- Python 3, to regenerate the cards and the board. Not needed to run the game.
 
-The house rules the engine applies where a table might argue are listed in
-`packages/content/src/ruleset.ts` and on the rules screen of the app.
+There's no native build step and no separate database server.
 
-## Repository layout
-
-| Path | What it holds |
-| --- | --- |
-| `packages/content` | Typed card, board and house-rule data. Generated from `content/`. |
-| `packages/engine` | The rules engine: commands, effects, projections. |
-| `packages/protocol` | Shared command, view and socket schemas. |
-| `packages/seat` | What one seat can see and do, derived from its own projection. |
-| `packages/computer` | The computer opponent. Reads a seat's own projection; no engine dependency. |
-| `apps/web` | The React client. Pass-and-play and online builds. |
-| `apps/server` | The online room server. See `OPERATIONS.md`. |
-| `content/` | Editable JSON: card text and mechanical skeletons. |
-| `scripts/` | Content generators and build checks. |
-
-## Develop
+## Run it locally
 
 ```bash
 pnpm install
+```
+
+```bash
 pnpm dev
 ```
 
-`pnpm dev` starts the room server and the web client together. Other commands:
+`pnpm dev` starts the room server and the web client together. The checks:
 
 ```bash
 pnpm typecheck
@@ -80,29 +46,70 @@ pnpm typecheck
 pnpm test
 ```
 
-```bash
-pnpm build
-```
+## Deploy
 
-```bash
-pnpm check:build
-```
+The application is two independent pieces, and a pass-and-play deployment needs only the
+first: a static browser build in `apps/web/dist`, and a Node process,
+`apps/server/dist/index.js`, with one SQLite file for online rooms.
+
+1. Install, typecheck and build. `pnpm typecheck` compiles every package into its `dist/`,
+   which is what the server process runs, so don't skip it:
+
+   ```sh
+   pnpm install --frozen-lockfile
+   pnpm typecheck
+   pnpm build:online
+   ```
+
+   `pnpm build:online` produces a browser build with online rooms. For a pass-and-play
+   deployment, run `pnpm build` instead, which emits no network code at all.
+
+2. Verify what the browser build contains:
+
+   ```sh
+   pnpm check:build
+   ```
+
+   The output lists one `.map` file per build. Source maps are emitted `hidden`: nothing
+   in the bundle links to one, and `check:build` reads them to prove that no development
+   route and no online module was compiled into a chunk. **Don't copy the `.map` files to
+   the web host.** They carry the full application source, and the check prints their exact
+   paths so you can exclude them.
+
+3. Copy `apps/web/dist` to the web host, without the `.map` files.
+
+   The container build does this for you: `apps/web/Dockerfile` deletes every `.map` from
+   the nginx image after copying `dist/` into it, and `apps/web/nginx.conf` answers `404`
+   for any `.map` request. If your deployment copies `dist/` itself, exclude the `.map`
+   files by hand.
+
+4. Start the room server with at least these settings:
+
+   ```sh
+   GERRYMANDER_DB_PATH=/var/lib/gerrymander/gerrymander.db \
+   GERRYMANDER_ALLOWED_ORIGINS=https://gerrymander.example.com \
+   pnpm start
+   ```
+
+   Replace `https://gerrymander.example.com` with the exact origin the browser build is
+   served from. A deployment that doesn't list its own origin refuses every browser at the
+   WebSocket upgrade with a 403, which is the mistake most likely to make a working
+   deployment look broken.
+
+The server binds to loopback by default, so put a reverse proxy in front of it that
+forwards the WebSocket upgrade on `/ws`. For that configuration, the rest of the settings,
+health checks, backups and troubleshooting, see [CLAUDE.md](CLAUDE.md).
 
 ## Change the cards
 
-Card text lives in `content/*-text.json`; mechanical facts (costs, handler IDs,
-advisory flags) live in `content/*-skeleton.json`. Edit the JSON, then regenerate the
-typed modules:
+Card text lives in `content/*-text.json`; mechanical facts — costs, handler IDs, advisory
+flags — live in `content/*-skeleton.json`. Edit the JSON, then regenerate the typed
+modules:
 
 ```bash
 pnpm generate:content
 ```
 
-The map is produced by `scripts/generate_board.py`, which lays the nine districts out on
-a hex lattice and then refuses to emit a map whose drawn borders disagree with the
-adjacency the ruleset lists. To see the map on its own while you work on it, pass
-`--preview`:
-
-```bash
-python3 scripts/generate_board.py --preview board.svg
-```
+The map is produced by `scripts/generate_board.py`, which lays the nine districts out on a
+hex lattice and then refuses to emit a map whose drawn borders disagree with the adjacency
+the ruleset lists.
