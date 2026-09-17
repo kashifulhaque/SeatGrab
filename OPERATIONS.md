@@ -63,6 +63,11 @@ applies the assertions that build is owed.
 
 3. Copy `apps/web/dist` to the web host, without the `.map` files.
 
+   The container build does this for you: `apps/web/Dockerfile` deletes every `.map`
+   from the nginx image after copying `dist/` into it, and `apps/web/nginx.conf`
+   answers `404` for any `.map` request. If your deployment copies `dist/` itself,
+   exclude the `.map` files by hand.
+
 4. Start the room server with at least these settings:
 
    ```sh
